@@ -1,0 +1,8 @@
+// Place your settings in this file to overwrite default and user settings.
+{   
+        "fortran.includePaths": [
+            "/usr/local/include",
+            "/usr/local",
+            "/home/rnwatanabe/Dropbox/projectFR"
+        ]
+}
