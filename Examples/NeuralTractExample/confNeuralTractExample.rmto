@@ -1,0 +1,10 @@
+Number_CMExt,400,
+MUnumber_SOL-S,5,
+MUnumber_SOL-FR,0,
+MUnumber_SOL-FF,0,
+timeStep,0.05,
+simDuration,10000,
+% Inputs
+GammaOrder_CMExt,1,
+threshold:SOL-S,12.35,16.45
+MUParameterDistribution,linear,

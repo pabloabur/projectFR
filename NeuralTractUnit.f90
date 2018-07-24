@@ -38,7 +38,7 @@ module NeuralTractUnitClass
 
         contains
             procedure :: atualizeNeuralTractUnit
-            !procedure :: transmitSpikes !TODO
+            !procedure :: transmitSpikes !TODO:
             procedure :: reset
     end type NeuralTractUnit
 
@@ -48,73 +48,72 @@ module NeuralTractUnitClass
 
     contains
 
-    type(NeuralTractUnit) function init_NeuralTractUnit(pool, index)
-        ! '''
-        ! Constructor
+        type(NeuralTractUnit) function init_NeuralTractUnit(pool, index)
+            ! '''
+            ! Constructor
 
-        ! - Inputs:
-        !     + **pool**: string with the name of the Neural tract.
+            ! - Inputs:
+            !     + **pool**: string with the name of the Neural tract.
 
-        !     + **index**: integer corresponding to the neural tract unit identification.
+            !     + **index**: integer corresponding to the neural tract unit identification.
 
-        ! '''     
-        character(len = 6), intent(in) :: pool
-        integer, intent(in) :: index
+            ! '''     
+            character(len = 6), intent(in) :: pool
+            integer, intent(in) :: index
+            
+
+            init_NeuralTractUnit%pool = pool
+            init_NeuralTractUnit%neuronKind = ' ' 
+            !  Integer corresponding to the neural tract unit identification.
+            init_NeuralTractUnit%index = index  
+            ! A PointProcessGenerator object, corresponding the generator of
+            ! spikes of the neural tract unit.   
+            init_NeuralTractUnit%spikesGenerator = PointProcessGenerator(index)  
+            
+            ! TODO: 
+            ! # Build synapses       
+            ! ## 
+            ! self.SynapsesOut = []
+            ! self.transmitSpikesThroughSynapses = []
+            ! self.indicesOfSynapsesOnTarget = []
+            ! TODO
         
+        end function init_NeuralTractUnit
 
-        init_NeuralTractUnit%pool = pool
-        init_NeuralTractUnit%neuronKind = ' ' 
-        !  Integer corresponding to the neural tract unit identification.
-        init_NeuralTractUnit%index = index  
-        ! A PointProcessGenerator object, corresponding the generator of
-        ! spikes of the neural tract unit.   
-        init_NeuralTractUnit%spikesGenerator = PointProcessGenerator(index)  
-        
-        ! TODO 
-        ! # Build synapses       
-        ! ## 
-        ! self.SynapsesOut = []
-        ! self.transmitSpikesThroughSynapses = []
-        ! self.indicesOfSynapsesOnTarget = []
-        ! TODO
+        subroutine atualizeNeuralTractUnit(self, t, FR, GammaOrder)
+            ! '''
+
+            ! - Inputs:
+            !     + **t**: current instant, in ms.
+
+            !     + **FR**:
+            ! '''
+            class(NeuralTractUnit), intent(inout) :: self
+            real(wp), intent(in) :: t, FR
+            integer, intent(in) :: GammaOrder
+
+            call self%spikesGenerator%atualizeGenerator(t, FR, GammaOrder)
+            ! TODO:
+            ! if (self%terminalSpikeTrain and -1e-3 < (t - self.terminalSpikeTrain[-1][0]) < 1e-3) then
+            !     self.transmitSpikes(t)
+            ! end if
+            ! TODO
+        end subroutine
+
+        ! TODO:        
+        ! def transmitSpikes(self, t):
+        !     '''
+        !     - Inputs:
+        !         + **t**: current instant, in ms.
+        !     '''
+        !     for i in xrange(len(self.indicesOfSynapsesOnTarget)):
+        !         self.transmitSpikesThroughSynapses[i].receiveSpike(t, self.indicesOfSynapsesOnTarget[i])
       
-    end function init_NeuralTractUnit
+        subroutine reset(self)
+            class(NeuralTractUnit), intent(inout) :: self
 
-    subroutine atualizeNeuralTractUnit(self, t, FR, GammaOrder)
-        ! '''
-
-        ! - Inputs:
-        !     + **t**: current instant, in ms.
-
-        !     + **FR**:
-        ! '''
-        class(NeuralTractUnit), intent(inout) :: self
-        real(wp), intent(in) :: t, FR
-        integer, intent(in) :: GammaOrder
-
-        call self%spikesGenerator%atualizeGenerator(t, FR, GammaOrder)
-        ! TODO
-        ! if (self%terminalSpikeTrain and -1e-3 < (t - self.terminalSpikeTrain[-1][0]) < 1e-3) then
-        !     self.transmitSpikes(t)
-        ! end if
-        ! TODO
-    end subroutine
-
-    ! TODO        
-    ! def transmitSpikes(self, t):
-    !     '''
-    !     - Inputs:
-    !         + **t**: current instant, in ms.
-    !     '''
-    !     for i in xrange(len(self.indicesOfSynapsesOnTarget)):
-    !         self.transmitSpikesThroughSynapses[i].receiveSpike(t, self.indicesOfSynapsesOnTarget[i])
-    ! TODO
-
-    subroutine reset(self)
-        class(NeuralTractUnit), intent(inout) :: self
-
-        call self%spikesGenerator%reset()        
-    end subroutine
+            call self%spikesGenerator%reset()        
+        end subroutine
 
 end module NeuralTractUnitClass
 
