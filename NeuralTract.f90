@@ -19,173 +19,126 @@
 ! '''
 
 module NeuralTractClass
+    ! '''
+    ! Class that implements a a neural tract, composed by the descending
+    ! commands from the motor cortex.
+    ! '''
     use NeuralTractUnitClass
+    use ConfigurationClass
     implicit none
     private
-    integer, parameter :: wp = kind( 1.0d0 )
+    integer, parameter :: wp = kind(1.0d0)
     public :: NeuralTract
 
     type NeuralTract
-        integer :: index
-        character(len=6) :: pool
-        character(len = 6) :: neuronKind
-        type(NeuralTractUnit), dimension(:), allocatable :: units
+        type(NeuralTractUnit), dimension(:), allocatable :: unit
+        type(Configuration) :: conf
+        character(len = 6) :: poolKind, pool
+        integer :: Number
+        real(wp) , dimension(:,:), allocatable :: poolTerminalSpikes
         
 
         contains
-            procedure :: atualizeNeuralTract
-            !procedure :: transmitSpikes !TODO
+            procedure :: atualizePool
+            procedure :: listSpikes
             procedure :: reset
     end type NeuralTract
 
-    interface NeuralTractUnit
+    interface NeuralTract
         module procedure init_NeuralTract
     end interface
 
     contains
 
-        type(NeuralTract) function init_NeuralTract(pool)
+        type(NeuralTract) function init_NeuralTract(conf, pool)
             ! '''
             ! Constructor
 
             ! - Inputs:
+            !     + **conf**: Configuration object with the simulation parameters.
+
             !     + **pool**: string with the name of the Neural tract.
-
-            !     + **index**: integer corresponding to the neural tract unit identification.
-
-            ! '''     
-            character(len = 6), intent(in) :: pool
-            integer, intent(in) :: index
-            
-
-            init_NeuralTractUnit%pool = pool
-            init_NeuralTractUnit%neuronKind = ' ' 
-            !  Integer corresponding to the neural tract unit identification.
-            init_NeuralTractUnit%index = index  
-            ! A PointProcessGenerator object, corresponding the generator of
-            ! spikes of the neural tract unit.   
-            init_NeuralTractUnit%spikesGenerator = PointProcessGenerator(index)  
-            
-            ! TODO 
-            ! # Build synapses       
-            ! ## 
-            ! self.SynapsesOut = []
-            ! self.transmitSpikesThroughSynapses = []
-            ! self.indicesOfSynapsesOnTarget = []
-            ! TODO
-        
-        end function init_NeuralTractUnit
-
-        subroutine atualizeNeuralTractUnit(self, t, FR, GammaOrder)
             ! '''
+            
+            character(len = 6), intent(in) :: pool
+            class(Configuration), intent(in) :: conf
+            character(len=80) :: paramTag, paramChar
+            real(wp) :: paramReal
+            integer :: i
+            
+            
+            init_NeuralTract%conf = conf
+            ! ## Indicates that is a neural tract.
+            init_NeuralTract%poolKind = 'NT'
+            ! ## String with the name of the Neural tract.
+            init_NeuralTract%pool = pool
+            ! ## The number of neural tract units.
+            paramTag = 'Number_' // pool
+            paramChar = init_NeuralTract%conf%parameterSet(paramTag, pool, 0)
+            read(paramChar, *)paramReal
+            init_NeuralTract%Number = int(paramReal)
+            
+            ! ## List of NeuralTRactUnit objects.
+            allocate(init_NeuralTract%unit(init_NeuralTract%Number))
+            
+            do i = 1, init_NeuralTract%Number
+                init_NeuralTract%unit(i) = NeuralTractUnit(pool, i)
+            end do         
+            
+            print '(A)', 'Descending Command ' // pool // ' built'    
+                
+        end function init_NeuralTract
 
+        subroutine atualizePool(self, t, FR, GammaOrder)
+            ! '''
+            ! Update all neural tract units from the neural tract.
+            
             ! - Inputs:
             !     + **t**: current instant, in ms.
-
-            !     + **FR**:
+            !     + **FR**: firing rate, in Hz     
+            !     + **GammaOrder** : order of the Gamma distribution, integer      
             ! '''
-            class(NeuralTractUnit), intent(inout) :: self
+            class(NeuralTract), intent(inout) :: self
             real(wp), intent(in) :: t, FR
             integer, intent(in) :: GammaOrder
+            integer :: i
 
-            call self%spikesGenerator%atualizeGenerator(t, FR, GammaOrder)
-            ! TODO
-            ! if (self%terminalSpikeTrain and -1e-3 < (t - self.terminalSpikeTrain[-1][0]) < 1e-3) then
-            !     self.transmitSpikes(t)
-            ! end if
-            ! TODO
+            do i = 1, self%Number 
+                call self%unit(i)%atualizeNeuralTractUnit(t, FR*self%conf%timeStep_ms/1000.0, GammaOrder)
+            end do
         end subroutine
 
-        ! TODO        
-        ! def transmitSpikes(self, t):
-        !     '''
-        !     - Inputs:
-        !         + **t**: current instant, in ms.
-        !     '''
-        !     for i in xrange(len(self.indicesOfSynapsesOnTarget)):
-        !         self.transmitSpikesThroughSynapses[i].receiveSpike(t, self.indicesOfSynapsesOnTarget[i])
-        ! TODO
-
-        subroutine reset(self)
-            class(NeuralTractUnit), intent(inout) :: self
-
-            call self%spikesGenerator%reset()        
-        end subroutine
-
-
-end module NeuralTractClass
-
-from NeuralTractUnit import NeuralTractUnit
-import numpy as np
-
-class NeuralTract(object):
-    '''
-    Class that implements a a neural tract, composed by the descending
-    commands from the motor cortex.
-    '''
-    
-    def __init__(self, conf, pool):
-        '''
-        Constructor
-
-        - Inputs:
-            + **conf**: Configuration object with the simulation parameters.
-
-            + **pool**: string with the name of the Neural tract.
-        '''
-        self.conf = conf
-        ## Indicates that is a neural tract.
-        self.kind = 'NT'
-        ## String with the name of the Neural tract.
-        self.pool = pool
-        ## The number of neural tract units.
-        self.Number = int(conf.parameterSet('Number_' + pool, pool, 0))
-        
-        ## List of NeuralTRactUnit objects.
-        self.unit = dict() 
-        
-        self.GammaOrder = int(conf.parameterSet('GammaOrder_' + pool, pool, 0))
-
-        for i in xrange(0, self.Number): 
-            self.unit[i] = NeuralTractUnit(conf, pool, i)
-        ## Vector with the instants of spikes in the terminal, in ms.
-        self.poolTerminalSpikes = np.array([]) 
-        ## Indicates the measure that the TargetFunction of the
-        ## spikes follows. For now it can be *ISI* (interspike
-        ## interval) or *FR* (firing rate).
-        
-        ## The  mean firing rate of the neural tract units. 
-        
-        ## 
-        self.timeIndex = 0
-        ##
-        print 'Descending Command ' + pool + ' built'
-    
-    def atualizePool(self, t, FR, GammaOrder):
-        '''
-        Update all neural tract units from the neural tract.
-        
-        - Inputs:
-            + **t**: cuurent instant, in ms.
-        '''    
-        for i in xrange(self.Number): self.unit[i].atualizeNeuralTractUnit(t, FR*self.conf.timeStep_ms/1000.0, GammaOrder)
-        self.timeIndex +=1        
-        
-    def listSpikes(self):
-        '''
-        List the spikes that occurred in neural tract units.
-        '''
-        
-        #spikeTrain = np.zeros((self.MUnumber,2))
-        
-        for i in xrange(0,self.Number):
-            if i == 0: terminalSpikeTrain = np.array(self.unit[i].terminalSpikeTrain)
-            else: terminalSpikeTrain = np.append(terminalSpikeTrain, np.array(self.unit[i].terminalSpikeTrain))
-        self.poolTerminalSpikes = terminalSpikeTrain
+        subroutine listSpikes(self)
+            ! '''
+            ! List the spikes that occurred in neural tract units.
+            ! '''
+            class(NeuralTract), intent(inout) :: self
+            integer :: i
+            integer :: numberOfSpikes, initInd, endInd
+            integer, dimension(self%Number) :: numberOfNewSpikes
             
-        self.poolTerminalSpikes = np.reshape(self.poolTerminalSpikes, (-1, 2))
+            
+            do i = 1, self%Number
+                numberOfNewSpikes(i) = size(self%unit(i)%spikesGenerator%points)
+            end do
+            numberOfSpikes = sum(numberOfNewSpikes)
+
+                      
+            allocate(self%poolTerminalSpikes(numberOfSpikes,2))
+            initInd = 1
+            do i = 1, self%Number
+                endInd = initInd + size(self%unit(i)%spikesGenerator%points) - 1
+                self%poolTerminalSpikes(initInd:endInd,1) = self%unit(i)%spikesGenerator%points
+                self%poolTerminalSpikes(initInd:endInd,2) = i
+                initInd = endInd+1                
+            end do                                
+        end subroutine
     
-    def reset(self):
-        for i in xrange(0,self.Number):
-            self.unit[i].reset()    
-        
+        subroutine reset(self)
+            class(NeuralTract), intent(inout) :: self
+            integer :: i
+            do i = 1, self%Number
+                call self%unit(i)%reset()    
+            end do
+        end subroutine
+end module NeuralTractClass
