@@ -116,7 +116,6 @@ module PointProcessGeneratorClass
             class(PointProcessGenerator), intent(inout) :: self
             
             deallocate(self%points)
-            allocate(self%points(1))
             self%points(1) = -1
             call self%newThreshold(1)
         end subroutine   

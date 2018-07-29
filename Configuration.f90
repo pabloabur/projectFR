@@ -160,20 +160,29 @@ module ConfigurationClass
                 class(Configuration), intent(inout) :: self
                 character(len=6), intent(in) :: pool
                 integer, intent(in) :: index
-                character(len = 80) :: requestedParameter
                 integer :: ierr, il, j, stop1, i
                 character(len = 80) :: line
                 character(len = 80) :: param1, param2, param3
                 real(wp) :: param2Real, param3Real
-                integer :: MUnumber_S=0, MUnumber_FR=0, MUnumber_FF=0, Nnumber=0
+                integer :: MUnumber_S, MUnumber_FR, MUnumber_FF, Nnumber
                 real(wp), dimension(:), allocatable :: paramVec_S, paramVec_FR, paramVec_FF, paramVec
                 character(len=30), intent(in) ::paramTag
-                logical :: distribute = .true.
-
-                open(1,file = self%filename, status='old',iostat=ierr)
-
+                logical :: distribute
+                
+                distribute = .true.
+                MUnumber_S = 0
+                MUnumber_FR = 0
+                MUnumber_FF = 0
+                Nnumber = 0
+                
+                
+                
+                open(unit=1,file = self%filename, status='unknown',iostat=ierr)
+                
+                !print '(I2)', ierr
                 do while (ierr.eq.0)
-                    read(1, '(A)', iostat=ierr) line
+                    read(1, '(A)', iostat=ierr)line
+                    
                     il=len_trim(line)
                     j = 1
                     do i = 1, il
@@ -188,27 +197,30 @@ module ConfigurationClass
                             end if 
                         end if            
                     end do
-
+                    
                     if (pool.eq.'SOL'.or.pool.eq.'MG'.or.pool.eq.'LG'.or.pool.eq.'TA') then
                         if (param1.eq.('MUnumber_' // trim(pool) // '-S')) then
                             read(param2(1:len_trim(param2)), *)MUnumber_S
-                        else if (param1.eq.('MUnumber_' // pool // '-FR')) then
+                        else if (param1.eq.('MUnumber_' // trim(pool) // '-FR')) then
                             read(param2(1:len_trim(param2)), *)MUnumber_FR
-                        else if (param1.eq.('MUnumber_' // pool // '-FF')) then
+                        else if (param1.eq.('MUnumber_' // trim(pool) // '-FF')) then
                             read(param2(1:len_trim(param2)), *)MUnumber_FF
                         end if
                         Nnumber = MUnumber_S + MUnumber_FR + MUnumber_FF 
                     else 
-                        if (param1.eq.('Number_' // pool)) read(param2(1:len_trim(param2)), *)Nnumber
+                        if (trim(param1).eq.('Number_' // trim(pool))) read(param2(1:len_trim(param2)), *)Nnumber
                     end if
-                    
                 end do
+
+                
                 allocate(paramVec(Nnumber)) 
                 if (MUnumber_S.gt.0) allocate(paramVec_S(MUnumber_S))
                 if (MUnumber_FR.gt.0) allocate(paramVec_FR(MUnumber_FR))  
                 if (MUnumber_FF.gt.0) allocate(paramVec_FF(MUnumber_FF))
                 close(unit = 1)                  
-                open(1,file = self%filename, status='old',iostat=ierr)
+                
+                open(unit = 1,file = self%filename, status='old',iostat=ierr)
+                
                 do while (ierr.eq.0)
                     read(1, '(A)', iostat=ierr) line
                     il=len_trim(line)
@@ -225,6 +237,7 @@ module ConfigurationClass
                             end if 
                         end if            
                     end do
+                    
                     if (trim(param1).eq.trim(paramTag)) then
                         requestedParamater = param2
                         distribute = .false.
@@ -232,16 +245,16 @@ module ConfigurationClass
                         if (trim(param1).eq.(trim(paramTag) // ':' // trim(pool) // '-S')) then
                             read(param2,*)param2Real
                             read(param3,*)param3Real
-                            paramVec_S = [((param3Real-param2Real)/MUnumber_S*(i-1)+param2Real, i=1, MUnumber_S)]                                    
-                            paramVec(1:MUnumber_S) = paramVec_S
+                            paramVec_S = [((param3Real-param2Real)/(MUnumber_S-1)*(i-1)+param2Real, i=1, MUnumber_S)]                                    
+                            paramVec(1:MUnumber_S) = paramVec_S                            
                         else if (trim(param1).eq.(trim(paramTag) // ':' // trim(pool) // '-FR')) then
                             read(param2,*)param2Real
                             read(param3,*)param3Real
-                            paramVec_FR = [((param3Real-param2Real)/MUnumber_FR*(i-1)+param2Real, i=1, MUnumber_FR)]                                    
+                            paramVec_FR = [((param3Real-param2Real)/(MUnumber_FR-1)*(i-1)+param2Real, i=1, MUnumber_FR)]                                    
                         else if (trim(param1).eq.(trim(paramTag) // ':' // trim(pool) // '-FF')) then
                             read(param2,*)param2Real
                             read(param3,*)param3Real
-                            paramVec_FF = [((param3Real-param2Real)/MUnumber_FF*(i-1)+param2Real, i=1, MUnumber_FF)]                                    
+                            paramVec_FF = [((param3Real-param2Real)/(MUnumber_FF-1)*(i-1)+param2Real, i=1, MUnumber_FF)]                                    
                         else if (trim(param1).eq.(trim(paramTag) // ':' // trim(pool) // '-')) then
                             read(param2,*)param2Real
                             read(param3,*)param3Real
@@ -264,15 +277,14 @@ module ConfigurationClass
                 end do
                 
                 
+                
                 close(unit = 1)
                    
                 
                 if (trim(self%MUParameterDistribution).eq.'linear'.and.distribute) then
                     if (MUnumber_FR.gt.0) paramVec(MUnumber_S+1:MUnumber_S+MUnumber_FR) = paramVec_FR
                     if (MUnumber_FF.gt.0) paramVec(MUnumber_S+MUnumber_FR:MUnumber_S+MUnumber_FR+MUnumber_FF) = paramVec_FF
-
                     write(requestedParamater, '(F15.6)')paramVec(index)
-                    
                 !TODO:
                 ! elif self.MUParameterDistribution == 'exponential':           
                 !     if paramVec_S.size > 0:
@@ -285,6 +297,11 @@ module ConfigurationClass
                 !                 * (1 - np.exp(1.0/MUnumber_FF*np.log(((paramVec_FR[1]+paramVec_FF[0])/2.0 - (paramVec_S[1] + paramVec_FR[0])/2.0)/(paramVec_FF[1]- (paramVec_S[1]+paramVec_FR[0])/2.0)) * (Nnumber - indexUnits)))
                 !                 + paramVec_FF[1]) 
                 end if
+
+                if (allocated(paramVec)) deallocate(paramVec)
+                if (allocated(paramVec_S)) deallocate(paramVec_S)
+                if (allocated(paramVec_FF)) deallocate(paramVec_FF)
+                if (allocated(paramVec_FR)) deallocate(paramVec_FR)
                 
         
                 
