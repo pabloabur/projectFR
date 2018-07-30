@@ -479,8 +479,8 @@ module MotorUnitClass
         paramChar = init_MotorUnit%conf%parameterSet(paramTag, pool, index)
         read(paramChar, *)init_MotorUnit%bSat
         ! ## Twitch- tetanus relationship
-        paramChar = 'twTet' // trim(activationModel)
-        paramChar = init_MotorUnit%conf%parameterSet(paramTag, pool, index)
+        paramTag = 'twTet' // trim(activationModel)
+        paramChar = init_MotorUnit%conf%parameterSet(paramTag, pool, index)       
         read(paramChar,*)init_MotorUnit%twTet
         
         ! ## EMG data

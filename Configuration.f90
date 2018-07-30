@@ -67,7 +67,7 @@ module ConfigurationClass
         
         contains
             procedure :: parameterSet
-            !procedure :: determineSynapses !TODO
+            !procedure :: determineSynapses !TODO:
     end type Configuration
 
     interface Configuration

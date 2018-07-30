@@ -22,8 +22,8 @@ module MotorUnitPoolClass
     ! '''
     use ConfigurationClass
     use MotorUnitClass
-    !TODO: use MuscularActivationClass
-    !TODO: use MuscleNoHillClass
+    use MuscularActivationClass
+    use MuscleNoHillClass
     !TODO: use MuscleHillClass
     !TODO: use MuscleSpindleClass
     implicit none
@@ -39,7 +39,7 @@ module MotorUnitPoolClass
         character(len = 6) :: pool
         integer :: MUnumber, totalNumberOfCompartments
         real(wp) :: muscleThickness_mm
-        type(MotorUnit), dimension(:), allocatable :: unit
+        type(MotorUnit), dimension(:), allocatable:: unit
         real(wp), dimension(:), allocatable :: v_mV
         real(wp), dimension(:,:), allocatable :: G
         real(wp), dimension(:), allocatable :: iInjected, capacitanceInv, iIonic, EqCurrent_nA
@@ -47,6 +47,10 @@ module MotorUnitPoolClass
         real(wp), dimension(:,:), allocatable :: poolLastCompSpikes   ! ## Vector with the instants of spikes in the last dynamical compartment, in ms.
         real(wp), dimension(:,:), allocatable :: poolTerminalSpikes ! ## Vector with the instants of spikes in the terminal, in ms.
         real(wp), dimension(:), allocatable :: emg
+        type(MuscularActivation) :: Activation
+        type(MuscleNoHill) :: NoHillMuscle
+        !TODO:type(MuscleHill) :: HillMuscle
+        character(len=80) :: hillModel
 
         contains
             procedure :: dVdt
@@ -78,6 +82,7 @@ module MotorUnitPoolClass
         integer :: i
         character(len = 2) ::  neuronKind
         integer :: simDurationSteps
+
 
 
         init_MotorUnitPool%t = 0.0
@@ -180,17 +185,22 @@ module MotorUnitPoolClass
         
         
         
-        ! TODO: #activation signal
-        ! self.Activation = MuscularActivation(self.conf,self.pool, self.MUnumber,self.unit)
+        ! #activation signal
+        init_MotorUnitPool%Activation = MuscularActivation(init_MotorUnitPool%conf,init_MotorUnitPool%pool,&
+                                             init_MotorUnitPool%MUnumber, init_MotorUnitPool%unit)
         
-        ! TODO: #Force
+        ! #Force
         ! ## String indicating whther a Hill  model is used or not. For now, it can be *No*.
-        ! self.hillModel = conf.parameterSet('hillModel', pool, 0)
-        ! if self.hillModel == 'No': 
-        !     self.Muscle = MuscleNoHill(self.conf, self.pool, self.MUnumber, MUnumber_S, self.unit)
-        ! else:
+        paramTag = 'hillModel'
+        init_MotorUnitPool%hillModel = init_MotorUnitPool%conf%parameterSet(paramTag, pool, 0)
+        if (trim(init_MotorUnitPool%hillModel).eq.'No') then 
+            init_MotorUnitPool%NoHillMuscle = MuscleNoHill(init_MotorUnitPool%conf, &
+                                                           init_MotorUnitPool%pool, &
+                                                           init_MotorUnitPool%MUnumber, &
+                                                           MUnumber_S, init_MotorUnitPool%unit)
+        ! TODO: else:
         !     self.Muscle = MuscleHill(self.conf, self.pool, self.MUnumber, MUnumber_S, self.unit)
-        
+        end if
         ! # EMG 
         ! ## EMG along time, in mV.
         simDurationSteps = nint(init_MotorUnitPool%conf%simDuration_ms/init_MotorUnitPool%conf%timeStep_ms)
@@ -238,15 +248,16 @@ module MotorUnitPoolClass
         ! - Inputs:
         !     + **t**: current instant, in ms.
         ! '''
-        class(MotorUnitPool) , intent(inout) :: self
+        class(MotorUnitPool) , intent(inout), target:: self
         real(wp), intent(in) :: t
         real(wp), dimension(self%totalNumberOfCompartments) :: k1, k2, k3, k4
         integer :: i
         real(wp) :: vmax, vmin
         real(wp), dimension(self%totalNumberOfCompartments) :: newPotential
         real(wp) :: newTime
+        
 
-
+        
         vmin = -30.0
         vmax = 120.0      
 
@@ -267,8 +278,12 @@ module MotorUnitPoolClass
         do i = 1, self%MUnumber 
             call self%unit(i)%atualizeMotorUnit(t, self%v_mV((i-1)*self%unit(i)%compNumber+1:i*self%unit(i)%compNumber))
         end do
-        !TODO: self.Activation.atualizeActivationSignal(t, self.unit)
-        !TODO:self.Muscle.atualizeForce(self.Activation.activation_Sat)
+        self%Activation%unit => self%unit(:)
+        
+        call self%Activation%atualizeActivationSignal(t)
+        if (trim(self%hillModel).eq.'No') then 
+            call self%NoHillMuscle%atualizeForce(self%Activation%activation_Sat)
+        end if
         !TODO: self.spindle.atualizeMuscleSpindle(t, self.Muscle.lengthNorm,
                                         !    self.Muscle.velocityNorm, 
                                         !    self.Muscle.accelerationNorm, 
@@ -392,8 +407,10 @@ module MotorUnitPoolClass
                        i*self%unit(i)%compNumber) = self%unit(i)%v_mV
         end do
         
-        !TODO: self.Activation.reset()
-        !TODO: self.Muscle.reset()
+        call self%Activation%reset()
+        if (trim(self%hillModel).eq.'No') then
+            call self%NoHillMuscle%reset()
+        end if
     end subroutine
 
 

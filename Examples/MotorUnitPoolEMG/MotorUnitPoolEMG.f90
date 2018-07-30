@@ -3,6 +3,7 @@ program MotorUnitPoolEMG
     use ConfigurationClass
     use ogpf 
     use randomSeedInitialize
+    use MuscleNoHillClass
     implicit none 
     !integer, parameter :: wp = kind(1.0d0)
     type(Configuration) :: conf
@@ -18,6 +19,8 @@ program MotorUnitPoolEMG
     character(len = 80) :: filename = 'confMotorUnitPoolEMG.rmto'
     type(MotorUnitPool) :: poolSOL
     
+    
+
     call init_random_seed()
     conf = Configuration(filename)
     
@@ -47,6 +50,7 @@ program MotorUnitPoolEMG
     if (allocated(poolSOL%unit(50)%somaSpikeTrain)) print '(I3)', size(poolSOL%unit(50)%somaSpikeTrain)
 
     call poolSol%listSpikes()
+    call poolSOL%getMotorUnitPoolEMG()
     
     call gp%title('Membrane potential of the soma of the MN #15')
     call gp%xlabel('t (ms))')
@@ -63,4 +67,14 @@ program MotorUnitPoolEMG
     call gp%xlabel('t (s))')
     call gp%ylabel('Descending command index')
     call gp%plot(poolSOL%poolTerminalSpikes(:,1), poolSOL%poolTerminalSpikes(:,2), 'with points pt 5 lc rgb "#0008B0"')
+
+    call gp%title('Muscle force')
+    call gp%xlabel('t (ms))')
+    call gp%ylabel('Force (N)')
+    call gp%plot(t, poolSOL%NoHillMuscle%force, 'with line lw 2 lc rgb "#0008B0"')
+    
+    call gp%title('Muscle EMG')
+    call gp%xlabel('t (ms))')
+    call gp%ylabel('EMG (mV)')
+    call gp%plot(t, poolSOL%emg, 'with line lw 2 lc rgb "#0008B0"')
 end program MotorUnitPoolEMG
