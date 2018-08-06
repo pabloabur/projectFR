@@ -1,0 +1,113 @@
+program MotorUnitPoolWithDescendingCommand
+    use MotorUnitPoolClass
+    use NeuralTractClass
+    use ConfigurationClass
+    use ogpf 
+    use randomSeedInitialize
+    use MuscleNoHillClass
+    use CharacterArrayClass
+    use CharacterMatrixClass
+    use QueueClass
+    use SynapsesFactoryModule
+    implicit none 
+    !integer, parameter :: wp = kind(1.0d0)
+    type(Configuration) :: conf
+    real(wp), parameter :: PI = 4 * atan(1.0_wp)    
+    real(wp) :: dt
+    real(wp) :: tf
+    integer :: timeLength
+    integer :: i, j
+    real(wp), dimension(:), allocatable :: t, MNv_mV
+    real(wp) :: tic, toc
+    type(gpf) :: gp
+    real(wp) :: FR
+    integer :: GammaOrder 
+    character(len = 80) :: pool = 'CMExt'
+    character(len = 80) :: filename = 'confMNPoolWithDescendingCommand.rmto'
+    type(CharacterArray) :: dynamics  
+    Character(len = 80) :: synapseDyn
+    type(Queue) :: spikesQueue
+    integer :: newItem
+    logical, dimension(10) :: logList
+    integer, dimension(10) :: logCount
+    type(CharacterMatrix) :: Synapses
+    type(MotorUnitPool), dimension(1), target :: motorUnitPools
+    type(NeuralTract), dimension(1) :: neuralTractPools    
+
+    call init_random_seed()
+
+    conf = Configuration(filename)
+
+    neuralTractPools(1) = NeuralTract(conf, pool)
+    pool = 'SOL'
+    motorUnitPools(1) = MotorUnitPool(conf, pool)    
+    call synapseFactory(conf, neuralTractPools, motorUnitPools)
+    
+    conf = Configuration(filename)
+    
+    tf = conf%simDuration_ms
+    dt = conf%timeStep_ms
+    timeLength = int(tf/dt)
+    
+    allocate(t(timeLength))
+    allocate(MNv_mV(timeLength))
+
+    
+      
+    t = [(dt*(i-1), i=1, timeLength)]
+    
+    FR = 1000.0/12.0
+    GammaOrder = 10
+
+    call cpu_time(tic)
+    do i = 1, size(t)        
+        do j = 1, size(neuralTractPools)
+            call neuralTractPools(j)%atualizePool(t(i), FR, GammaOrder)
+        end do
+        do j = 1, size(motorUnitPools)
+            call motorUnitPools(j)%atualizeMotorUnitPool(t(i))
+            MNv_mV(i) = motorUnitPools(j)%v_mV(30)        
+        end do
+    end do
+    call cpu_time(toc)
+
+    print '(F15.6, A)', toc - tic, ' seconds'
+
+    
+    
+    
+    call neuralTractPools(1)%listSpikes()
+    call motorUnitPools(1)%listSpikes()
+    call motorUnitPools(1)%getMotorUnitPoolEMG()
+    
+    call gp%title('Membrane potential of the soma of the MN #15')
+    call gp%xlabel('t (ms))')
+    call gp%ylabel('Descending command index')
+    call gp%plot(t, MNv_mV, 'with line lw 2 lc rgb "#0008B0"')  
+
+
+    call gp%title('MN spike instants at the soma')
+    call gp%xlabel('t (s))')
+    call gp%ylabel('Motoneuron index')
+    call gp%plot(motorUnitPools(1)%poolSomaSpikes(:,1), motorUnitPools(1)%poolSomaSpikes(:,2), 'with points pt 5 lc rgb "#0008B0"')
+
+    call gp%title('MN spike instants at the terminal')
+    call gp%xlabel('t (s))')
+    call gp%ylabel('Motoneuron index')
+    call gp%plot(motorUnitPools(1)%poolTerminalSpikes(:,1), &
+    motorUnitPools(1)%poolTerminalSpikes(:,2), 'with points pt 5 lc rgb "#0008B0"')
+
+    call gp%title('MN spike instants at the terminal')
+    call gp%xlabel('t (s))')
+    call gp%ylabel('Motoneuron index')
+    call gp%plot(neuralTractPools(1)%poolTerminalSpikes(:,1), &
+    neuralTractPools(1)%poolTerminalSpikes(:,2), 'with points pt 5 lc rgb "#0008B0"')
+
+
+    call gp%title('Muscle force')
+    call gp%xlabel('t (ms))')
+    call gp%ylabel('Force (N)')
+    call gp%plot(t, motorUnitPools(1)%NoHillMuscle%force, 'with line lw 2 lc rgb "#0008B0"')
+    
+    
+end program MotorUnitPoolWithDescendingCommand

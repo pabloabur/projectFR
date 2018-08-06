@@ -52,7 +52,8 @@ module ConfigurationClass
     ! '''
     ! Class that builds an object of Configuration, based on a configuration file.
     ! '''
-
+    use CharacterArrayClass
+    use CharacterMatrixClass
     implicit none
     private
     integer, parameter :: wp = kind( 1.0d0 )
@@ -67,7 +68,7 @@ module ConfigurationClass
         
         contains
             procedure :: parameterSet
-            !procedure :: determineSynapses !TODO:
+            procedure :: determineSynapses
     end type Configuration
 
     interface Configuration
@@ -166,7 +167,7 @@ module ConfigurationClass
                 real(wp) :: param2Real, param3Real
                 integer :: MUnumber_S, MUnumber_FR, MUnumber_FF, Nnumber
                 real(wp), dimension(:), allocatable :: paramVec_S, paramVec_FR, paramVec_FF, paramVec
-                character(len=30), intent(in) ::paramTag
+                character(len=50), intent(in) ::paramTag
                 logical :: distribute
                 
                 distribute = .true.
@@ -179,7 +180,6 @@ module ConfigurationClass
                 
                 open(unit=1,file = self%filename, status='unknown',iostat=ierr)
                 
-                !print '(I2)', ierr
                 do while (ierr.eq.0)
                     read(1, '(A)', iostat=ierr)line
                     
@@ -187,11 +187,11 @@ module ConfigurationClass
                     j = 1
                     do i = 1, il
                         if (line(i:i) == ',') then
-                            if (j.eq.1) then 
+                            if (j.eq.1) then
                                 param1 = line(1:i-1)
                                 j = j + 1
                                 stop1 = i
-                            else if (j.eq.2) then 
+                            else if (j.eq.2) then
                                 param2 = line(stop1+1:i-1)
                                 param3 = line(i+1:il)
                             end if 
@@ -227,18 +227,19 @@ module ConfigurationClass
                     j = 1
                     do i = 1, il
                         if (line(i:i) == ',') then
-                            if (j.eq.1) then 
+                            if (j.eq.1) then
                                 param1 = line(1:i-1)
                                 j = j + 1
                                 stop1 = i
-                            else if (j.eq.2) then 
+                            else if (j.eq.2) then
                                 param2 = line(stop1+1:i-1)
                                 param3 = line(i+1:il)
                             end if 
                         end if            
                     end do
                     
-                    if (trim(param1).eq.trim(paramTag)) then
+                    
+                    if (trim(param1).eq.trim(paramTag)) then                        
                         requestedParamater = param2
                         distribute = .false.
                     else if (trim(self%MUParameterDistribution).eq.'linear') then                         
@@ -307,31 +308,83 @@ module ConfigurationClass
                 
 
             end function parameterSet
-            !TODO:
-            !def determineSynapses(self, neuralSource):
-            !         '''
-            !         Function used to determine all the synapses that a given pool makes. It is used in the SynapsesFactory class.
-                    
-            ! - Inputs:
-            !     + **neuralSource** - string with the pool name from which is desired to know what synapses it will make.
+            
+            type(CharacterMatrix) function determineSynapses(self, neuralSource) result(Synapses)
+                ! '''
+                ! Function used to determine all the synapses that a given pool makes. It is used in the SynapsesFactory class.
+                
+                ! - Inputs:
+                !     + **neuralSource** - string with the pool name from which is desired to know what synapses it will make.
 
-            ! - Outputs:
-            !     + array of strings with all the synapses target that the neuralSource will make.
-            !         '''
-            !         Synapses = []
+                ! - Outputs:
+                !     + array of strings with all the synapses target that the neuralSource will make.
+                ! '''
+                class(Configuration), intent(inout) :: self
+                character(len=80), intent(in) :: neuralSource
+                character(len=80) :: line, param1, param2, param3, paramTag, param
+                integer :: ierr, il, j, i, stop1, pos, posUnitKind, posComp, posKind
+                real(wp) :: paramReal
+                type(CharacterArray) :: newSynapse 
+                
 
-            !         for i in xrange(0, len(self.confArray)):
-            !             pos = self.confArray[i][0].find('Con:' + neuralSource)
-            !             if pos >= 0 and float(self.confArray[i][1]) > 0:
-            !                 posUnitKind = self.confArray[i][0].find('-', pos+len('Con:' + neuralSource)+1)
-            !                 posComp = self.confArray[i][0].find('@')
-            !                 posKind = self.confArray[i][0].find('|')
-            !                 Synapses.append([self.confArray[i][0][pos+len('Con:' + neuralSource)+1:posUnitKind],
-            !                                  self.confArray[i][0][posUnitKind+1:posComp],
-            !                                  self.confArray[i][0][posComp+1:posKind],
-            !                                  self.confArray[i][0][posKind+1:]])
-            !         return Synapses
+                Synapses = CharacterMatrix()
+                open(unit=1,file = self%filename, status='unknown',iostat=ierr)
+                paramTag = 'Con:' // trim(neuralSource)
+                do while (ierr.eq.0)
+                    read(1, '(A)', iostat=ierr)line
+                    il=len_trim(line)
+                    j = 1
+                    do i = 1, il
+                        if (line(i:i) == ',') then
+                            if (j.eq.1) then
+                                param1 = line(1:i-1)
+                                j = j + 1
+                                stop1 = i
+                            else if (j.eq.2) then
+                                param2 = line(stop1+1:i-1)
+                                param3 = line(i+1:il)
+                            end if
+                        end if            
+                    end do
+                    il = len_trim(param1)
+                    pos = 0
+                    do i = 1, il
+                        if (param1(1:i).eq.paramTag) then
+                            pos = i
+                            read(param2, *)paramReal
+                        end if
+                    end do
+                                       
+                    if ((pos > 0).and.(paramReal > 0.0)) then
+                        posUnitKind = 0
+                        do i = pos+2, il
+                            if (param1(i:i).eq.'-') posUnitKind = i-1
+                        end do
+                        posComp = 0
+                        do i = posUnitKind+1, il
+                            if (param1(i:i).eq.'@') posComp = i-1
+                        end do
+                        posKind = 0
+                        do i = posComp, il
+                            if (param1(i:i).eq.'|') posKind = i-1
+                        end do
+                        newSynapse = CharacterArray()
+                        param = param1(pos+2:posUnitKind)
+                        call newSynapse%AddToList(param)
+                        param = param1(posUnitKind+2:posComp)
+                        call newSynapse%AddToList(param)
+                        param = param1(posComp+2:posKind)
+                        call newSynapse%AddToList(param)
+                        param = param1(posKind+2:il)
+                        call newSynapse%AddToList(param)
 
+                        call Synapses%append(newSynapse)
+                    end if               
+                end do
+               
+                close(unit = 1)                  
+            end function
+            
             ! TODO:
             ! def changeConfigurationParameter(self, parameter, value1, value2):
             ! '''

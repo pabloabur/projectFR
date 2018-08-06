@@ -24,6 +24,8 @@ module NeuralTractUnitClass
     ! It consists of a point process generator.
     ! '''
     use PointProcessGeneratorClass
+    use CharacterMatrixClass
+    use SynapsePointerClass
     implicit none
     private
     integer, parameter :: wp = kind( 1.0d0 )
@@ -34,11 +36,15 @@ module NeuralTractUnitClass
         character(len=6) :: pool
         character(len = 6) :: neuronKind
         type(PointProcessGenerator) :: spikesGenerator
+        type(CharacterMatrix) :: SynapsesOut
+        integer, dimension(:), allocatable :: indicesOfSynapsesOnTarget
+        type(SynapsePointer), dimension(:), allocatable :: transmitSpikesThroughSynapses
+        real(wp) :: position_mm
         
 
         contains
             procedure :: atualizeNeuralTractUnit
-            !procedure :: transmitSpikes !TODO:
+            procedure :: transmitSpikes
             procedure :: reset
     end type NeuralTractUnit
 
@@ -73,11 +79,10 @@ module NeuralTractUnitClass
             ! TODO: 
             ! # Build synapses       
             ! ## 
-            ! self.SynapsesOut = []
-            ! self.transmitSpikesThroughSynapses = []
-            ! self.indicesOfSynapsesOnTarget = []
+            init_NeuralTractUnit%SynapsesOut = CharacterMatrix()
+            
             ! TODO
-        
+            init_NeuralTractUnit%position_mm = 0.0 !for compatibility with other pools      
         end function init_NeuralTractUnit
 
         subroutine atualizeNeuralTractUnit(self, t, FR, GammaOrder)
@@ -91,24 +96,37 @@ module NeuralTractUnitClass
             class(NeuralTractUnit), intent(inout) :: self
             real(wp), intent(in) :: t, FR
             integer, intent(in) :: GammaOrder
-
+            
             call self%spikesGenerator%atualizeGenerator(t, FR, GammaOrder)
-            ! TODO:
-            ! if (self%terminalSpikeTrain and -1e-3 < (t - self.terminalSpikeTrain[-1][0]) < 1e-3) then
-            !     self.transmitSpikes(t)
-            ! end if
-            ! TODO
+            
+            
+            if (allocated(self%spikesGenerator%points)) then
+                if (abs(t - self%spikesGenerator%points(size(self%spikesGenerator%points))) < 1e-2) then
+                    call self%transmitSpikes(t)
+                end if
+            end if
+            
+            
         end subroutine
 
-        ! TODO:        
-        ! def transmitSpikes(self, t):
-        !     '''
-        !     - Inputs:
-        !         + **t**: current instant, in ms.
-        !     '''
-        !     for i in xrange(len(self.indicesOfSynapsesOnTarget)):
-        !         self.transmitSpikesThroughSynapses[i].receiveSpike(t, self.indicesOfSynapsesOnTarget[i])
-      
+        
+        subroutine transmitSpikes(self, t)
+            !     '''
+            !     - Inputs:
+            !         + **t**: current instant, in ms.
+            !     '''
+            class(NeuralTractUnit), intent(inout) :: self
+            real(wp), intent(in) :: t     
+            integer :: i
+            
+            if (allocated(self%indicesOfSynapsesOnTarget)) then
+                do i = 1, size(self%indicesOfSynapsesOnTarget)
+                    call self%transmitSpikesThroughSynapses(i)%synapse%receiveSpike(t, self%indicesOfSynapsesOnTarget(i))
+                end do
+            end if
+            
+        end subroutine
+
         subroutine reset(self)
             class(NeuralTractUnit), intent(inout) :: self
 

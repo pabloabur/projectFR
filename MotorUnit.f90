@@ -139,9 +139,7 @@ module MotorUnitClass
         NumberOfAxonNodes = int(paramReal)
         
         ! ## Integer corresponding to the motor unit order in the pool, according to the Henneman's principle (size principle).
-        init_MotorUnit%index = index
-        
-               
+        init_MotorUnit%index = index             
 
         ! ## Anatomical position of the neuron in the spinal cord, in mm.
         paramTag = 'position'
@@ -521,7 +519,7 @@ module MotorUnitClass
         real(wp), intent(in) :: t
         real(wp), dimension(self%compNumber) :: v_mV
         integer :: i
-
+        
         self%v_mV(:) = v_mV
 
         do i = self%somaIndex, self%compNumber
@@ -529,7 +527,7 @@ module MotorUnitClass
                 call self%addCompartmentSpike(t, i)
             end if
         end do  
-
+        
     end subroutine
 
     subroutine addCompartmentSpike(self, t, comp)
@@ -575,7 +573,7 @@ module MotorUnitClass
         real(wp), intent(in) :: t
         integer :: i, j
         
-        if (abs(t - self%Delay%terminalSpikeTrain) < 1E-3) then
+        if (abs(t - self%Delay%terminalSpikeTrain) < 1e-3) then
             call AddToList(self%terminalSpikeTrain, t)
         end if
         
@@ -583,7 +581,7 @@ module MotorUnitClass
         ! # Check whether there is antidromic impulse reaching soma or RC
         if (allocated(self%Delay%antidromicSpikeTrain)) then
             if (self%Delay%indexAntidromicSpike <= size(self%Delay%antidromicSpikeTrain)) then
-                if (abs(t - self%Delay%antidromicSpikeTrain(self%Delay%indexAntidromicSpike)) < 1E-2) then 
+                if (abs(t - self%Delay%antidromicSpikeTrain(self%Delay%indexAntidromicSpike)) < 1e-2) then 
 
                     ! # Considers only MN-RC connections
                     !TODO: self.transmitSpikes(t)
@@ -628,33 +626,48 @@ module MotorUnitClass
         class(MotorUnit), intent(inout) :: self     
         real(wp), intent(in) :: t
         real(wp), dimension(:), allocatable :: numberOfSpikesUntilt
-        real(wp) :: ta
+        real(wp) :: ta, newSpike
         integer :: i
+        integer :: numberOfSpikes, sizeOfNumberOfSpikesUntilt
 
+        sizeOfNumberOfSpikesUntilt = 0
         emg = 0.0
-        
+        newSpike = 0.0
         ta = 0.0        
+        if (allocated(numberOfSpikesUntilt)) deallocate(numberOfSpikesUntilt)
+        
+        if (allocated(self%terminalSpikeTrain)) then 
+            numberOfSpikes = size(self%terminalSpikeTrain)
+            if (numberOfSpikes == 0) then
+                emg = 0.0
+            else
+                do i = 1, numberOfSpikes
+                    newSpike = self%terminalSpikeTrain(i)
+                    if (newSpike < t) then                                             
+                        call AddToList(numberOfSpikesUntilt, newSpike)
+                    end if
+                end do
+            end if
+        end if
 
-        if (size(self%terminalSpikeTrain) == 0) then
-            emg = 0.0
-        else
-            do i = 1, size(self%terminalSpikeTrain)
-                if (self%terminalSpikeTrain(i) < t) then
-                    call AddToList(numberOfSpikesUntilt,self%terminalSpikeTrain(i))
+        
+        if (allocated(numberOfSpikesUntilt)) then
+            sizeOfNumberOfSpikesUntilt = size(numberOfSpikesUntilt)
+            do i = 1, sizeOfNumberOfSpikesUntilt
+                ta = t - numberOfSpikesUntilt(i) - 3.0 * self%timeCteEMG_ms
+                if (ta <= 6 * self%timeCteEMG_ms) then                
+                    if (self%hrType == 1) then
+                        emg = emg + 1.19 * self%ampEMG_mV * ta * &
+                                    exp(-(ta/self%timeCteEMG_ms)**2) / self%timeCteEMG_ms
+                    else
+                        emg = emg + 0.69 * self%ampEMG_mV * &
+                                    (1 - 2*((ta / self%timeCteEMG_ms)**2)) *&
+                                     exp(-(ta/self%timeCteEMG_ms)**2)
+                    end if
                 end if
             end do
         end if
-
-        do i = 1, size(numberOfSpikesUntilt)
-            ta = t - numberOfSpikesUntilt(i) - 3 * self%timeCteEMG_ms
-            if (ta <= 6 * self%timeCteEMG_ms) then                
-                if (self%hrType == 1) then
-                    emg = emg + 1.19 * self%ampEMG_mV * ta * exp(-(ta/self%timeCteEMG_ms)**2) / self%timeCteEMG_ms
-                else
-                    emg = emg + 0.69 * self%ampEMG_mV * (1 - 2*((ta / self%timeCteEMG_ms)**2)) * exp(-(ta/self%timeCteEMG_ms)**2)
-                end if
-            end if
-        end do
+        
         
     end function
 
@@ -680,7 +693,7 @@ module MotorUnitClass
         deallocate(self%terminalSpikeTrain)
     end subroutine
 
-    ! def createStimulus(self):
+    !TODO: def createStimulus(self):
     !     '''
 
     !     '''

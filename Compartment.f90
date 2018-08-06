@@ -23,8 +23,9 @@ module CompartmentClass
     ! Class that implements a neural compartment. For now it is implemented
     ! *dendrite* and *soma*.
     ! '''
-    use ChannelConductanceClass
     use ConfigurationClass
+    use ChannelConductanceClass    
+    use SynapseClass
     !TODO: use SynapseClass
     implicit none
     private
@@ -40,6 +41,8 @@ module CompartmentClass
         type(Configuration) :: conf
         real(wp) :: length_mum, diameter_mum, capacitance_nF
         real(wp) :: EqPot_mV, IPump_nA, gLeak_muS
+        type(Synapse), dimension(2) :: SynapsesIn
+        
         contains
 
             procedure :: reset
@@ -79,6 +82,7 @@ module CompartmentClass
         character(len=80) :: paramTag, paramChar
         real(wp) :: area_cm2, specifRes_Ohmcm2, membraneCapacitance
         character(len = 6) :: channelKind
+        character(len = 10) :: synapseKind
 
         
         init_Compartment%conf = conf
@@ -89,11 +93,12 @@ module CompartmentClass
         
         !TODO: self.SynapsesOut = []
         
-        !TODO:
+        
         ! ## List of summed synapses (see Lytton, 1996) that the Compartment receive from other neural components.
-        ! self.SynapsesIn = [] 
-        ! self.SynapsesIn.append(Synapse(conf, pool, index, kind, 'excitatory', neuronKind))
-        ! self.SynapsesIn.append(Synapse(conf, pool, index, kind, 'inhibitory', neuronKind))
+        synapseKind = 'excitatory'
+        init_Compartment%SynapsesIn(1) = Synapse(conf, pool, index, compKind, synapseKind, neuronKind)
+        synapseKind = 'inhibitory'
+        init_Compartment%SynapsesIn(2) = Synapse(conf, pool, index, compKind, synapseKind, neuronKind)
         
         ! ## The kind of compartment. For now, it can be *soma* or *dendrite*, *node* or *internode*..
         init_Compartment%compKind = compKind
@@ -133,41 +138,52 @@ module CompartmentClass
         ! ## Leak conductance of the compartment, in \f$\mu\f$S.
         init_Compartment%gLeak_muS = (1E6 * area_cm2) / specifRes_Ohmcm2
 
+        init_Compartment%numberChannels = 0    
         if (trim(init_Compartment%compKind).eq.'soma') then
             allocate(init_Compartment%Channels(3))
             channelKind = 'Kf'
             init_Compartment%Channels(1) = ChannelConductance(channelKind, init_Compartment%conf,&
                                                               area_cm2, pool, neuronKind, compKind, index)
+            init_Compartment%numberChannels = init_Compartment%numberChannels + 1                                                            
             channelKind = 'Ks'
             init_Compartment%Channels(2) = ChannelConductance(channelKind, init_Compartment%conf,&
                                                               area_cm2, pool, neuronKind, compKind, index)
+            init_Compartment%numberChannels = init_Compartment%numberChannels + 1
             channelKind = 'Na'
             init_Compartment%Channels(3) = ChannelConductance(channelKind, init_Compartment%conf,&
                                                               area_cm2, pool, neuronKind, compKind, index)
+            init_Compartment%numberChannels = init_Compartment%numberChannels + 1                                                              
         !TODO: else if (kind == 'dendrite'):
         !    pass
         else if (trim(init_Compartment%compKind).eq.'node') then
             allocate(init_Compartment%Channels(4))
             channelKind = 'Na'
             init_Compartment%Channels(1) = ChannelConductance(channelKind, conf, area_cm2, pool, neuronKind, compKind, index)
+            init_Compartment%numberChannels = init_Compartment%numberChannels + 1
             channelKind = 'Nap'    
             init_Compartment%Channels(2) = ChannelConductance(channelKind, conf, area_cm2, pool, neuronKind, compKind, index)
+            init_Compartment%numberChannels = init_Compartment%numberChannels + 1
             channelKind = 'Kf'
             init_Compartment%Channels(3) = ChannelConductance(channelKind, conf, area_cm2, pool, neuronKind, compKind, index)
+            init_Compartment%numberChannels = init_Compartment%numberChannels + 1
             channelKind = 'KsAxon'
             init_Compartment%Channels(4) = ChannelConductance(channelKind, conf, area_cm2, pool, neuronKind, compKind, index)
+            init_Compartment%numberChannels = init_Compartment%numberChannels + 1
         else if (trim(init_Compartment%compKind).eq.'internode') then
             allocate(init_Compartment%Channels(3))
             channelKind = 'Kf'
             init_Compartment%Channels(1) = ChannelConductance(channelKind, conf, area_cm2, pool, neuronKind, compKind, index)
+            init_Compartment%numberChannels = init_Compartment%numberChannels + 1
             channelKind = 'KsAxon'
             init_Compartment%Channels(2) = ChannelConductance(channelKind, conf, area_cm2, pool, neuronKind, compKind, index)
+            init_Compartment%numberChannels = init_Compartment%numberChannels + 1
             channelKind = 'H'
             init_Compartment%Channels(3) = ChannelConductance(channelKind, conf, area_cm2, pool, neuronKind, compKind, index)
+            init_Compartment%numberChannels = init_Compartment%numberChannels + 1
         end if
 
         ! ## Integer with the number of ionic channels.
-        init_Compartment%numberChannels = size(init_Compartment%Channels)    
+        
 
     end function
 
@@ -185,10 +201,14 @@ module CompartmentClass
         real(wp), intent(in) :: t, V_mV
         integer :: i
         
+        
         current = 0.0
-
-        !TODO:if self.SynapsesIn[0].numberOfIncomingSynapses: I += self.SynapsesIn[0].computeCurrent(t, V_mV)
-        !TODO:if self.SynapsesIn[1].numberOfIncomingSynapses: I += self.SynapsesIn[1].computeCurrent(t, V_mV)
+        
+        
+        if (self%SynapsesIn(1)%numberOfIncomingSynapses > 0) current = current + self%SynapsesIn(1)%computeCurrent(t, V_mV)
+        
+        if (self%SynapsesIn(2)%numberOfIncomingSynapses > 0) current = current + self%SynapsesIn(2)%computeCurrent(t, V_mV)
+        
         do i = 1, self%numberChannels 
             current = current + self%Channels(i)%computeCurrent(t, V_mV)
         end do
@@ -201,8 +221,10 @@ module CompartmentClass
         ! '''
         class(Compartment), intent(inout):: self
         integer :: i
-        !TODO:for i in xrange(len(self.SynapsesIn)):
-        !    self.SynapsesIn[i].reset()
+
+        do i = 1, size(self%SynapsesIn)
+            call self%SynapsesIn(i)%reset()
+        end do
         do i = 1, self%numberChannels
             call self%Channels(i)%reset()
         end do

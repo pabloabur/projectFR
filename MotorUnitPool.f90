@@ -1,5 +1,5 @@
 ! '''
-!     Neuromuscular simulator in Python.
+!     Neuromuscular simulator in Fortran.
 !     Copyright (C) 2018  Renato Naville Watanabe
 !                         Pablo Alejandro
 !     This program is free software: you can redistribute it and/or modify
@@ -234,6 +234,8 @@ module MotorUnitPoolClass
                     V((i-1)*self%unit(i)%compNumber+j))
             end do
         end do
+
+        
         matInt = matmul(self%G, V)        
         
         dVdt = (self%iIonic + matInt + self%iInjected &
@@ -256,7 +258,7 @@ module MotorUnitPoolClass
         real(wp), dimension(self%totalNumberOfCompartments) :: newPotential
         real(wp) :: newTime
         
-
+        
         
         vmin = -30.0
         vmax = 120.0      
@@ -284,6 +286,8 @@ module MotorUnitPoolClass
         if (trim(self%hillModel).eq.'No') then 
             call self%NoHillMuscle%atualizeForce(self%Activation%activation_Sat)
         end if
+
+        
         !TODO: self.spindle.atualizeMuscleSpindle(t, self.Muscle.lengthNorm,
                                         !    self.Muscle.velocityNorm, 
                                         !    self.Muscle.accelerationNorm, 
@@ -364,14 +368,15 @@ module MotorUnitPoolClass
         ! '''
         class(MotorUnitPool), intent(inout) :: self
         real(wp), intent(in) :: t
-        integer :: i
-        real(wp) :: newEMG
+        integer :: j
+        real(wp), dimension(self%MUnumber) :: newEMG
 
-        emg = 0.0
-        do i = 1, self%MUnumber
-            newEMG  = self%unit(i)%getEMG(t)
-            emg = emg + newEmg
+        
+        do j = 1, self%MUnumber
+            newEMG(j)  = self%unit(j)%getEMG(t)
         end do    
+        
+        emg = sum(newEMG)
     end function
 
     subroutine getMotorUnitPoolEMG(self)
@@ -380,9 +385,12 @@ module MotorUnitPoolClass
         class(MotorUnitPool), intent(inout) :: self
         integer :: i
         real(wp) :: instant
-
-        do i = 1, size(self%emg)
-            instant =  i * self%conf%timeStep_ms
+        integer :: simDuration
+        
+        simDuration = size(self%emg)
+        
+        do i = 1, simDuration
+            instant =  (i-1) * self%conf%timeStep_ms
             self%emg(i) = self%getMotorUnitPoolInstantEMG(instant)
         end do
     end subroutine

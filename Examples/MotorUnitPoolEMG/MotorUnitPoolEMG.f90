@@ -35,15 +35,15 @@ program MotorUnitPoolEMG
       
     t = [(dt*i, i=1, timeLength)]
     
-    call CPU_TIME(tic)
+    call cpu_time(tic)
     do i = 1, size(t)
         do j = 1, poolSOL%MUnumber
-            poolSOL%iInjected(2*j) = 10.0
+            poolSOL%iInjected(2*j) = 40.0
         end do
         MNv_mV(i) = poolSol%v_mV(30)        
         call poolSOL%atualizeMotorUnitPool(t(i))
     end do
-    call CPU_TIME(toc)
+    call cpu_time(toc)
 
     print '(F15.6, A)', toc - tic, ' seconds'
 

@@ -102,10 +102,14 @@ module NeuralTractClass
             real(wp), intent(in) :: t, FR
             integer, intent(in) :: GammaOrder
             integer :: i
+            real(wp) :: FiringRate
 
+            FiringRate = FR*self%conf%timeStep_ms/1000.0
+            
             do i = 1, self%Number 
-                call self%unit(i)%atualizeNeuralTractUnit(t, FR*self%conf%timeStep_ms/1000.0, GammaOrder)
+                call self%unit(i)%atualizeNeuralTractUnit(t, FiringRate , GammaOrder)
             end do
+            
         end subroutine
 
         subroutine listSpikes(self)
