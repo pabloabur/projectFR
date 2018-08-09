@@ -24,8 +24,8 @@ module MotorUnitPoolClass
     use MotorUnitClass
     use MuscularActivationClass
     use MuscleNoHillClass
-    !TODO: use MuscleHillClass
-    !TODO: use MuscleSpindleClass
+    use MuscleHillClass
+    use MuscleSpindleClass
     implicit none
     private
     integer, parameter :: wp = kind( 1.0d0 )
@@ -49,7 +49,8 @@ module MotorUnitPoolClass
         real(wp), dimension(:), allocatable :: emg
         type(MuscularActivation) :: Activation
         type(MuscleNoHill) :: NoHillMuscle
-        !TODO:type(MuscleHill) :: HillMuscle
+        type(MuscleHill) :: HillMuscle
+        type(MuscleSpindle) :: spindle
         character(len=80) :: hillModel
 
         contains
@@ -198,8 +199,11 @@ module MotorUnitPoolClass
                                                            init_MotorUnitPool%pool, &
                                                            init_MotorUnitPool%MUnumber, &
                                                            MUnumber_S, init_MotorUnitPool%unit)
-        ! TODO: else:
-        !     self.Muscle = MuscleHill(self.conf, self.pool, self.MUnumber, MUnumber_S, self.unit)
+        else
+            init_MotorUnitPool%HillMuscle = MuscleHill(init_MotorUnitPool%conf, &
+                                                   init_MotorUnitPool%pool, &
+                                                   init_MotorUnitPool%MUnumber, &
+                                                   MUnumber_S, init_MotorUnitPool%unit)
         end if
         ! # EMG 
         ! ## EMG along time, in mV.
@@ -208,8 +212,8 @@ module MotorUnitPoolClass
         allocate(init_MotorUnitPool%emg(simDurationSteps))
         init_MotorUnitPool%emg(:) = 0.0
 
-        ! TODO:# Spindle
-        ! self.spindle = MuscleSpindle(self.conf, self.pool)
+        ! Spindle
+        init_MotorUnitPool%spindle = MuscleSpindle(init_MotorUnitPool%conf, init_MotorUnitPool%pool)
 
 
         ! ##
@@ -256,8 +260,8 @@ module MotorUnitPoolClass
         integer :: i
         real(wp) :: vmax, vmin
         real(wp), dimension(self%totalNumberOfCompartments) :: newPotential
-        real(wp) :: newTime
-        
+        real(wp) :: newTime, length, velocity, acceleration
+        real(wp) :: dynGamma, statGamma
         
         
         vmin = -30.0
@@ -285,13 +289,22 @@ module MotorUnitPoolClass
         call self%Activation%atualizeActivationSignal(t)
         if (trim(self%hillModel).eq.'No') then 
             call self%NoHillMuscle%atualizeForce(self%Activation%activation_Sat)
+            length = self%NoHillMuscle%lengthNorm
+            velocity = self%NoHillMuscle%velocityNorm
+            acceleration = self%NoHillMuscle%accelerationNorm
+        else
+            call self%HillMuscle%atualizeForce(self%Activation%activation_Sat)
+            length = self%HillMuscle%lengthNorm
+            velocity = self%HillMuscle%velocityNorm
+            acceleration = self%HillMuscle%accelerationNorm
         end if
 
-        
-        !TODO: self.spindle.atualizeMuscleSpindle(t, self.Muscle.lengthNorm,
-                                        !    self.Muscle.velocityNorm, 
-                                        !    self.Muscle.accelerationNorm, 
-                                        !    31, 33)
+        dynGamma = 31.0
+        statGamma = 33.0
+        call self%spindle%atualizeMuscleSpindle(t, length,&
+                                                velocity, &
+                                                acceleration,& 
+                                                dynGamma, statGamma)
     end subroutine
 
     subroutine listSpikes(self)
