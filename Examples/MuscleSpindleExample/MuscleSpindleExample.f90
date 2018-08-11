@@ -1,15 +1,8 @@
 program MuscleSpindleExample
     use MuscleSpindleClass
-    use MotorUnitPoolClass
-    use NeuralTractClass
     use ConfigurationClass
     use ogpf 
     use randomSeedInitialize
-    use MuscleNoHillClass
-    use CharacterArrayClass
-    use CharacterMatrixClass
-    use QueueClass
-    use SynapsesFactoryModule
     implicit none 
     type(Configuration) :: conf
     real(wp), parameter :: pi = 4 * atan(1.0_wp)    
@@ -22,7 +15,6 @@ program MuscleSpindleExample
     type(gpf) :: gp
     character(len = 80) :: muscle = 'TA'
     character(len = 80) :: filename = 'confMuscleSpindle.rmto'
-    type(CharacterMatrix) :: Synapses
     type(MuscleSpindle):: spindle
     real(wp) :: Amp, f
     real(wp), dimension(:), allocatable :: IaFR, fBag1, fBag2, fChain

@@ -1,4 +1,4 @@
-program NeuralTractUnitExample
+program NeuralTractExample
     use NeuralTractClass
     use ConfigurationClass
     use ogpf 
@@ -18,18 +18,7 @@ program NeuralTractUnitExample
     integer :: i
     real(wp), dimension(timeLength) :: t
     real(wp) :: tic, toc
-    integer :: index = 2
     type(gpf) :: gp
-    real(wp), dimension(:), allocatable :: indices
-    real(wp), dimension(:), allocatable :: ISI
-    real(wp), dimension(:), allocatable :: ISIhist, ISIhistLimits
-    real(wp) :: histogramMax
-    real(wp) :: M, SD, CV, MFR, SD_FR
-    character(80) :: line1
-    character(80) :: param1, param2, param3
-    integer :: il, ierr, j
-    integer :: stop1
-    real(wp) :: param2Real
     character(len = 6) :: pool = 'CMExt'
     character(len = 80) :: filename = 'confNeuralTractExample.rmto'
     character(len=30)::paramTag
@@ -69,4 +58,4 @@ program NeuralTractUnitExample
     call gp%ylabel('Descending command index')
     call gp%plot(spikesInstants, spikesIndices, 'with points pt 5 lc rgb "#0008B0"')
 
-end program NeuralTractUnitExample
+end program NeuralTractExample

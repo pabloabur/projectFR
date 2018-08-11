@@ -259,7 +259,7 @@ module ConfigurationClass
                         else if (trim(param1).eq.(trim(paramTag) // ':' // trim(pool) // '-')) then
                             read(param2,*)param2Real
                             read(param3,*)param3Real
-                            paramVec = [((param3Real-param2Real)/Nnumber*i, i=0, Nnumber)]                                     
+                            paramVec = [((param3Real-param2Real)/(Nnumber-1)*(i-1) + param2Real, i=1, Nnumber)]                                     
                         end if
                     !TODO:    
                     ! else if (self%MUParameterDistribution.eq.'exponential') then           

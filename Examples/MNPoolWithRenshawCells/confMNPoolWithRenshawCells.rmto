@@ -1,12 +1,15 @@
 MUnumber_SOL-S,800,
 MUnumber_SOL-FR,0,
 MUnumber_SOL-FF,0,
+Number_RC_ext,350,
 Number_CMExt,400,
 NumberAxonNodes,0,
 timeStep,0.05,
 simDuration,5000,
 nerveLength_PTN,0.8,
 MNSomaRefPer,5.0,
+RC_extSomaRefPer,1.0,
+thickness:SOL,18.4,
 skinThickness,1.5,
 MUSpatialDistribution,random,
 EMGAttenuationFactor,5,
@@ -26,7 +29,7 @@ stimDistToTerm_PTN,0.2,
 stimStart_PTN,0,
 stimStop_PTN,3000,
 stimIntensity_PTN,0,
-stimFrequency_PTN,10,
+stimFrequency_PTN,0,
 stimPulseDuration_PTN,1,
 stimModulation_PTN,5+0*t,
 stimModulationStart_PTN,200,
@@ -78,6 +81,47 @@ dyn:CMExt->SOL-FF@dendrite|excitatory,None,
 dec:CMExt->SOL-S@dendrite|excitatory,inf,
 dec:CMExt->SOL-FR@dendrite|excitatory,inf,
 dec:CMExt->SOL-FF@dendrite|excitatory,inf,
+Con:RC_ext->SOL-S@soma|inhibitory,4,
+Con:RC_ext->SOL-FR@soma|inhibitory,4,
+Con:RC_ext->SOL-FF@soma|inhibitory,4,
+gmax:RC_ext->SOL-S@soma|inhibitory,0.44,
+gmax:RC_ext->SOL-FR@soma|inhibitory,0.44,
+gmax:RC_ext->SOL-FF@soma|inhibitory,0.44,
+delay:RC_ext->SOL-S@soma|inhibitory,0.3,
+delay:RC_ext->SOL-FR@soma|inhibitory,0.3,
+delay:RC_ext->SOL-FF@soma|inhibitory,0.3,
+dyn:RC_ext->SOL-S@soma|inhibitory,None,
+dyn:RC_ext->SOL-FR@soma|inhibitory,None,
+dyn:RC_ext->SOL-FF@soma|inhibitory,None,
+dec:RC_ext->SOL-S@soma|inhibitory,0.22,
+dec:RC_ext->SOL-FR@soma|inhibitory,0.22,
+dec:RC_ext->SOL-FF@soma|inhibitory,0.22,
+%% RC
+EqPotSyn:RC_ext-|excitatory,70.0,
+EqPotSyn:RC_ext-|inhibitory,-16.0,
+alphaSyn:RC_ext-|excitatory,0.5,
+betaSyn:RC_ext-|excitatory,0.07,
+alphaSyn:RC_ext-|inhibitory,0.5,
+betaSyn:RC_ext-|inhibitory,1.2,
+TmaxSyn:RC_ext-|excitatory,1.0,
+TmaxSyn:RC_ext-|inhibitory,1.0,
+tPeakSyn:RC_ext-|excitatory,3,
+tPeakSyn:RC_ext-|inhibitory,0.4,
+Con:SOL-S>RC_ext-@soma|excitatory,6,
+gmax:SOL-S>RC_ext-@soma|excitatory,0.15,
+delay:SOL-S>RC_ext-@soma|excitatory,0.3,
+dyn:SOL-S>RC_ext-@soma|excitatory,Depressing,
+dec:SOL-S>RC_ext-@soma|excitatory,0.01,
+var:SOL-S>RC_ext-@soma|excitatory,0.05,
+tau:SOL-S>RC_ext-@soma|excitatory,200,
+Con:Noise>RC_ext-@soma|excitatory,100,
+gmax:Noise>RC_ext-@soma|excitatory,0.015,
+delay:Noise>RC_ext-@soma|excitatory,0.3,
+dyn:Noise>RC_ext-@soma|excitatory,None,
+dec:Noise>RC_ext-@soma|excitatory,inf,
+NoiseGammaOrder_RC_ext,10,
+NoiseTarget_RC_ext,FR,
+NoiseFunction_RC_ext,7,
 % Channel conductance
 %% Equilibrium Potential
 EqPot_Kf@soma,-10,
@@ -88,6 +132,10 @@ EqPot_Na@soma,120,
 gmax_Na:SOL-S@soma,30000,
 gmax_Kf:SOL-S@soma,4000,
 gmax_Ks:SOL-S@soma,17000,
+%%% RC
+gmax_Na:RC_ext-@soma,30000,
+gmax_Kf:RC_ext-@soma,1000,
+gmax_Ks:RC_ext-@soma,4000,
 %States
 PulseDur_m,0.6,
 PulseDur_h,0.6,
@@ -103,14 +151,14 @@ beta_h:SOL-S@soma,4,
 beta_n:SOL-S@soma,0.1,
 beta_q:SOL-S@soma,0.025,
 %% RC
-alpha_m:RC-@soma,22,
-alpha_h:RC-@soma,0.5,
-alpha_n:RC-@soma,1.5,
-alpha_q:RC-@soma,1.5,
-beta_m:RC-@soma,13,
-beta_h:RC-@soma,4,
-beta_n:RC-@soma,0.1,
-beta_q:RC-@soma,0.07,
+alpha_m:RC_ext-@soma,22,
+alpha_h:RC_ext-@soma,0.5,
+alpha_n:RC_ext-@soma,1.5,
+alpha_q:RC_ext-@soma,1.5,
+beta_m:RC_ext-@soma,13,
+beta_h:RC_ext-@soma,4,
+beta_n:RC_ext-@soma,0.1,
+beta_q:RC_ext-@soma,0.07,
 % Motoneurons
 cytR,70,
 membCapac,1,
@@ -120,19 +168,24 @@ position:SOL-,0,18
 threshold:SOL-S,12.35,16.45
 d@dendrite:SOL-S,41.5,62.5
 d@soma:SOL-S,77.5,82.5
-d@node:SOL-S,5,5
-d@internode:SOL-S,12.5,12.5
 l@dendrite:SOL-S,5519,6789
 l@soma:SOL-S,77.5,82.5
-l@node:SOL-S,1.5,1.5
-l@internode:SOL-S,1400,1400
 res@dendrite:SOL-S,14350,10650
 res@soma:SOL-S,1150,1050
 EqPot@dendrite,0,
 EqPot@soma,0,
 IPump@dendrite,0,
 IPump@soma,0,
+axonDelayThreshold:SOL-S,18,12.4
+axonDelayThreshold:SOL-FR,12.4,12.2
+axonDelayThreshold:SOL-FF,12.2,12.0
 axonDelayCondVel:SOL-S,44,51
+axonDelayCondVel:SOL-FR,51,52
+axonDelayCondVel:SOL-FF,52,53
+axonDelayRefPeriod_PTN,5,
+axonDelayLeakTimeConstant:SOL-S,10,10
+axonDelayLeakTimeConstant:SOL-FR,10,10
+axonDelayLeakTimeConstant:SOL-FF,10,10
 twitchTimePeak:SOL-S,170.0,132.5
 twitchPeak:SOL-S,0.03,1.9
 bSatSOCDS:SOL-S,0.7,0.5
@@ -147,17 +200,13 @@ EMGAmplitude:SOL-FF,0.25,0.3
 EMGDuration:SOL-S,0.8,0.7
 EMGDuration:SOL-FR,0.7,0.6
 EMGDuration:SOL-FF,0.6,0.5
-axonDelayThreshold:SOL-S,18,12.4
-axonDelayThreshold:SOL-FR,12.4,12.2
-axonDelayThreshold:SOL-FF,12.2,12.0
-axonDelayCondVel:SOL-S,44,51
-axonDelayCondVel:SOL-FR,51,52
-axonDelayCondVel:SOL-FF,52,53
-axonDelayRefPeriod_PTN,5,
-axonDelayLeakTimeConstant:SOL-S,10,10
-axonDelayLeakTimeConstant:SOL-FR,10,10
-axonDelayLeakTimeConstant:SOL-FF,10,10
-thickness:SOL,18.4,
+% Interneurons
+%% RC
+position:RC_ext-,0,18
+threshold:RC_ext-,5,15
+d@soma:RC_ext-,25,25
+l@soma:RC_ext-,242,242
+res@soma:RC_ext-,760,760
 %Muscle Spindles
 freqBag1,60,
 freqBag2,60,

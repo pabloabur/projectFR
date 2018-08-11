@@ -1,6 +1,8 @@
 program MotorUnitPoolWithDescendingCommand
     use MotorUnitPoolClass
     use NeuralTractClass
+    use InterneuronPoolClass
+    use SynapticNoiseClass
     use ConfigurationClass
     use ogpf 
     use randomSeedInitialize
@@ -31,17 +33,21 @@ program MotorUnitPoolWithDescendingCommand
     logical, dimension(10) :: logList
     integer, dimension(10) :: logCount
     type(CharacterMatrix) :: Synapses
-    type(MotorUnitPool), dimension(1), target :: motorUnitPools
-    type(NeuralTract), dimension(1) :: neuralTractPools    
+    type(MotorUnitPool), dimension(:), allocatable, target :: motorUnitPools
+    type(NeuralTract), dimension(:), allocatable :: neuralTractPools    
+    type(InterneuronPool), dimension(:), allocatable, target :: interneuronPools    
+    type(SynapticNoise), dimension(:), allocatable:: synapticNoisePools     
 
     call init_random_seed()
 
     conf = Configuration(filename)
-
+    allocate(neuralTractPools(1))
     neuralTractPools(1) = NeuralTract(conf, pool)
     pool = 'SOL'
+    allocate(motorUnitPools(1))
     motorUnitPools(1) = MotorUnitPool(conf, pool)    
-    call synapseFactory(conf, neuralTractPools, motorUnitPools)
+    allocate(interneuronPools(0))
+    synapticNoisePools = synapseFactory(conf, neuralTractPools, motorUnitPools, interneuronPools)
     
     conf = Configuration(filename)
     

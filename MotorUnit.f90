@@ -27,6 +27,8 @@ module MotorUnitClass
     use ConfigurationClass
     use AxonDelayClass
     use DynamicalArrays
+    use CharacterMatrixClass
+    use SynapsePointerClass
     implicit none
     private
     integer, parameter :: wp = kind( 1.0d0 )
@@ -57,7 +59,10 @@ module MotorUnitClass
         real(wp), dimension(:), allocatable :: nerveStimulus_mA
         real(wp), dimension(:), allocatable :: somaSpikeTrain, lastCompSpikeTrain, terminalSpikeTrain
         real(wp) :: TwitchTc_ms, TwitchAmp_N, bSat, twTet
-        
+        type(CharacterMatrix) :: SynapsesOut
+        integer, dimension(:), allocatable :: indicesOfSynapsesOnTarget
+        type(SynapsePointer), dimension(:), allocatable :: transmitSpikesThroughSynapses
+
         contains
             procedure :: atualizeMotorUnit
             procedure :: atualizeCompartments
@@ -65,6 +70,7 @@ module MotorUnitClass
             procedure :: atualizeDelay
             procedure :: reset
             procedure :: getEMG
+            procedure :: transmitSpikes
 
     end type MotorUnit
 
@@ -485,9 +491,8 @@ module MotorUnitClass
         
         !TODO:
         ! ## Build synapses       
-        ! self.SynapsesOut = []
-        ! self.transmitSpikesThroughSynapses = []
-        ! self.indicesOfSynapsesOnTarget = []         
+        init_MotorUnit%SynapsesOut = CharacterMatrix()
+            
 
 
     end function
@@ -547,7 +552,7 @@ module MotorUnitClass
         self%tSpikes(comp) = t
         if (comp.eq.self%somaIndex) then
             call AddToList(self%somaSpikeTrain, t)
-            !TODO:self.transmitSpikes(t)
+            call self%transmitSpikes(t)
         end if
 
         if (comp.eq.self%lastCompIndex) then
@@ -584,7 +589,7 @@ module MotorUnitClass
                 if (abs(t - self%Delay%antidromicSpikeTrain(self%Delay%indexAntidromicSpike)) < 1e-2) then 
 
                     ! # Considers only MN-RC connections
-                    !TODO: self.transmitSpikes(t)
+                    call self%transmitSpikes(t)
                     
                     ! # Refractory period of MN soma
                     
@@ -609,15 +614,23 @@ module MotorUnitClass
 
     end subroutine
 
-    !TODO:
-    ! def transmitSpikes(self, t):
-    !     '''
-    !     - Inputs:
-    !         + **t**: current instant, in ms.
-    !     '''
-    !     for i in xrange(len(self.indicesOfSynapsesOnTarget)):
-    !         self.transmitSpikesThroughSynapses[i].receiveSpike(t, self.indicesOfSynapsesOnTarget[i])
     
+   subroutine transmitSpikes(self, t)
+            !     '''
+            !     - Inputs:
+            !         + **t**: current instant, in ms.
+            !     '''
+            class(MotorUnit), intent(inout) :: self
+            real(wp), intent(in) :: t     
+            integer :: i
+            
+            if (allocated(self%indicesOfSynapsesOnTarget)) then
+                do i = 1, size(self%indicesOfSynapsesOnTarget)
+                    call self%transmitSpikesThroughSynapses(i)%synapse%receiveSpike(t, self%indicesOfSynapsesOnTarget(i))
+                end do
+            end if
+            
+    end subroutine
 
     real(wp) function getEMG(self, t) result(emg)
         ! '''
@@ -643,7 +656,7 @@ module MotorUnitClass
             else
                 do i = 1, numberOfSpikes
                     newSpike = self%terminalSpikeTrain(i)
-                    if (newSpike < t) then                                             
+                    if (newSpike < t .and. newSpike >= t-9*self%timeCteEMG_ms) then                                             
                         call AddToList(numberOfSpikesUntilt, newSpike)
                     end if
                 end do
@@ -675,7 +688,7 @@ module MotorUnitClass
         class(MotorUnit), intent(inout) :: self     
         integer :: i
 
-        self%tSomaSpike = -1E6
+        self%tSomaSpike = -1e6
         do i = 1, self%compNumber
             self%v_mV(i) = self%Compartments(i)%EqPot_mV
             call self%Compartments(i)%reset()

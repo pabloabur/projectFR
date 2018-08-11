@@ -30,7 +30,7 @@ module CompartmentClass
     implicit none
     private
     integer, parameter :: wp = kind( 1.0d0 )
-    real(wp), parameter :: PI = 4 * atan(1.0_wp)    
+    real(wp), parameter :: pi = 4 * atan(1.0_wp)    
     public :: Compartment
 
     type Compartment
@@ -115,7 +115,7 @@ module CompartmentClass
         paramTag = 'd@' // trim(init_Compartment%compKind)
         paramChar =  init_Compartment%conf%parameterSet(paramTag, pool, index)
         read(paramChar, *)init_Compartment%diameter_mum
-        area_cm2 = init_Compartment%length_mum * PI * init_Compartment%diameter_mum * 1E-8
+        area_cm2 = init_Compartment%length_mum * pi * init_Compartment%diameter_mum * 1e-8
         paramTag = 'res@' // trim(init_Compartment%compKind)
         paramChar = init_Compartment%conf%parameterSet(paramTag, pool, index)
         read(paramChar, *)specifRes_Ohmcm2
