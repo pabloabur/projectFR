@@ -1,7 +1,7 @@
 MUnumber_SOL-S,5,
 MUnumber_SOL-FR,0,
 MUnumber_SOL-FF,0,
-Number_RC_ext,1,
+Number_RC_ext,2,
 Number_CMExt,30,
 Number_Ia-SOL,400,
 Number_Ia-LG,160,
@@ -35,10 +35,10 @@ stimStart_PTN,100,
 stimStop_PTN,300,
 stimIntensity_PTN,20,
 stimFrequency_PTN,60,
-stimPulseDuration_PTN,0.2,
-stimModulation_PTN,5+0*t,
-stimModulationStart_PTN,0,
-stimModulationStop_PTN,0,
+stimPulseDuration_PTN,1,
+stimModulation_PTN,60,
+stimModulationStart_PTN,200,
+stimModulationStop_PTN,300,
 % Synapses
 %% SOL
 EqPotSyn:SOL-S|excitatory,70.0,
@@ -156,7 +156,7 @@ dyn:Noise>RC_ext-@soma|excitatory,None,
 dec:Noise>RC_ext-@soma|excitatory,inf,
 NoiseGammaOrder_RC_ext,10,
 NoiseTarget_RC_ext,FR,
-NoiseFunction_RC_ext,7 + 0*t,
+NoiseFunction_RC_ext,7,
 % Channel conductance
 %% Equilibrium Potential
 EqPot_Kf@soma,-10,
@@ -320,7 +320,7 @@ axonDelayLeakTimeConstant:SOL-FR,10,10
 axonDelayLeakTimeConstant:SOL-FF,10,10
 % Interneurons
 %% RC
-position:RC_ext-,0,0
+position:RC_ext-,0,18
 threshold:RC_ext-,5,15
 d@soma:RC_ext-,25,25
 l@soma:RC_ext-,242,242

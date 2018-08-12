@@ -29,7 +29,7 @@ stimStop_PTN,3000,
 stimPulseDuration_PTN,1,
 stimIntensity_PTN,10,
 stimFrequency_PTN,5,
-stimModulation_PTN,0*t,
+stimModulation_PTN,0,
 stimModulationStart_PTN,0,
 stimModulationStop_PTN,0,
 % Synapses

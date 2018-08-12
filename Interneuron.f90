@@ -168,6 +168,7 @@ module InterneuronClass
             GL(i,i) = -gLeak(i)
         end do
         
+        
 
         ! ## Matrix of the conductance of the motoneuron. Multiplied by the vector self.v_mV,
         ! ## results in the passive currents of each compartment.

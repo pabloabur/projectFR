@@ -86,7 +86,6 @@ program InjectedCurrentRenshawCellPool
     interneuronPools(1)%poolSomaSpikes(:,2), 'with points pt 5 lc rgb "#0008B0"')
 
     call synapticNoisePools(1)%listSpikes()
-    print '(I3)', 1
     call gp%title('synaptic noise spike instants at the terminal')
     call gp%xlabel('t (s))')
     call gp%ylabel('noise index')

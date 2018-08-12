@@ -246,20 +246,20 @@ module ConfigurationClass
                         if (trim(param1).eq.(trim(paramTag) // ':' // trim(pool) // '-S')) then
                             read(param2,*)param2Real
                             read(param3,*)param3Real
-                            paramVec_S = [((param3Real-param2Real)/(MUnumber_S-1)*(i-1)+param2Real, i=1, MUnumber_S)]                                    
+                            paramVec_S = [((param3Real-param2Real)/(MUnumber_S+1)*(i-1)+param2Real, i=1, MUnumber_S)]                                    
                             paramVec(1:MUnumber_S) = paramVec_S                            
                         else if (trim(param1).eq.(trim(paramTag) // ':' // trim(pool) // '-FR')) then
                             read(param2,*)param2Real
                             read(param3,*)param3Real
-                            paramVec_FR = [((param3Real-param2Real)/(MUnumber_FR-1)*(i-1)+param2Real, i=1, MUnumber_FR)]                                    
+                            paramVec_FR = [((param3Real-param2Real)/(MUnumber_FR+1)*(i-1)+param2Real, i=1, MUnumber_FR)]                                    
                         else if (trim(param1).eq.(trim(paramTag) // ':' // trim(pool) // '-FF')) then
                             read(param2,*)param2Real
                             read(param3,*)param3Real
-                            paramVec_FF = [((param3Real-param2Real)/(MUnumber_FF-1)*(i-1)+param2Real, i=1, MUnumber_FF)]                                    
+                            paramVec_FF = [((param3Real-param2Real)/(MUnumber_FF+1)*(i-1)+param2Real, i=1, MUnumber_FF)]                                    
                         else if (trim(param1).eq.(trim(paramTag) // ':' // trim(pool) // '-')) then
                             read(param2,*)param2Real
                             read(param3,*)param3Real
-                            paramVec = [((param3Real-param2Real)/(Nnumber-1)*(i-1) + param2Real, i=1, Nnumber)]                                     
+                            paramVec = [((param3Real-param2Real)/(Nnumber+1)*(i-1) + param2Real, i=1, Nnumber)]                                     
                         end if
                     !TODO:    
                     ! else if (self%MUParameterDistribution.eq.'exponential') then           

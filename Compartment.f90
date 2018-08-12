@@ -26,7 +26,6 @@ module CompartmentClass
     use ConfigurationClass
     use ChannelConductanceClass    
     use SynapseClass
-    !TODO: use SynapseClass
     implicit none
     private
     integer, parameter :: wp = kind( 1.0d0 )
@@ -123,7 +122,7 @@ module CompartmentClass
         paramTag = 'membCapac'
         paramChar = init_Compartment%conf%parameterSet(paramTag, pool, index)
         read(paramChar, *)membraneCapacitance
-        init_Compartment%capacitance_nF = membraneCapacitance * area_cm2 * 1E3
+        init_Compartment%capacitance_nF = membraneCapacitance * area_cm2 * 1e3
         
         ! ## Equilibrium potential, in mV.
         paramTag = 'EqPot@' // trim(init_Compartment%compKind)
@@ -136,7 +135,7 @@ module CompartmentClass
         read(paramChar, *)init_Compartment%IPump_nA
 
         ! ## Leak conductance of the compartment, in \f$\mu\f$S.
-        init_Compartment%gLeak_muS = (1E6 * area_cm2) / specifRes_Ohmcm2
+        init_Compartment%gLeak_muS = (1e6 * area_cm2) / specifRes_Ohmcm2
 
         init_Compartment%numberChannels = 0    
         if (trim(init_Compartment%compKind).eq.'soma') then

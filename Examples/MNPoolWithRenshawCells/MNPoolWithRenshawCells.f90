@@ -85,7 +85,7 @@ program MNWithRenshawCells
     call neuralTractPools(1)%listSpikes()
     call motorUnitPools(1)%listSpikes()
     
-    print '(F15.6)', interneuronPools(1)%G(21,21)
+    
 
     call gp%title('MN spike instants at the soma')
     call gp%xlabel('t (s))')

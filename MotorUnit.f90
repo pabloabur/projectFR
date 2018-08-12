@@ -62,6 +62,7 @@ module MotorUnitClass
         type(CharacterMatrix) :: SynapsesOut
         integer, dimension(:), allocatable :: indicesOfSynapsesOnTarget
         type(SynapsePointer), dimension(:), allocatable :: transmitSpikesThroughSynapses
+        real(wp) :: axonStimModulation
 
         contains
             procedure :: atualizeMotorUnit
@@ -437,10 +438,15 @@ module MotorUnitClass
         if (init_MotorUnit%stimulusStop_ms >= init_MotorUnit%conf%simDuration_ms) then
             init_MotorUnit%stimulusStop_ms = init_MotorUnit%conf%simDuration_ms - 1
         end if
-        ! TODO: exec 'def axonStimModulation(t): return '   +  conf.parameterSet('stimModulation_' + self.nerve, pool, 0)
+        
+        paramTag = 'stimModulation_' // trim(init_MotorUnit%nerve)
+        paramChar = init_MotorUnit%conf%parameterSet(paramTag, pool, index)
+        read(paramChar, *)init_MotorUnit%axonStimModulation
+        
+        
         
         startStep = nint(init_MotorUnit%stimulusStart_ms / init_MotorUnit%conf%timeStep_ms)
-        ! TODO: self.axonStimModulation = axonStimModulation
+        
         ! ## Vector with the nerve stimulus, in mA.
         simDurationSteps = nint(init_MotorUnit%conf%simDuration_ms/init_MotorUnit%conf%timeStep_ms)
 
@@ -453,7 +459,7 @@ module MotorUnitClass
                 (i * init_MotorUnit%conf%timeStep_ms <= init_MotorUnit%stimulusStop_ms)) then
                     if ((i * init_MotorUnit%conf%timeStep_ms > init_MotorUnit%stimulusModulationStart_ms).and.&
                         (i * init_MotorUnit%conf%timeStep_ms < init_MotorUnit%stimulusModulationStop_ms)) then 
-                        stimulusFrequency_Hz = init_MotorUnit%stimulusMeanFrequency_Hz !TODO: + axonStimModulation(i * self.conf.timeStep_ms)
+                        stimulusFrequency_Hz = init_MotorUnit%stimulusMeanFrequency_Hz + init_MotorUnit%axonStimModulation
                     else
                         stimulusFrequency_Hz = init_MotorUnit%stimulusMeanFrequency_Hz
                     end if

@@ -20,7 +20,7 @@ MUParameterDistribution,linear,
 % Inputs
 GammaOrder_CMExt,10,
 DriveTarget_CMExt,ISI,
-DriveFunction_CMExt,12+0*t,
+DriveFunction_CMExt,12,
 %Stimulus
 stimDistToTerm_PTN,0.2,
 stimDistToTerm_PTN,0.2,
@@ -29,7 +29,7 @@ stimStop_PTN,3000,
 stimPulseDuration_PTN,1,
 stimIntensity_PTN,0,
 stimFrequency_PTN,1,
-stimModulation_PTN,0*t,
+stimModulation_PTN,0,
 stimModulationStart_PTN,0,
 stimModulationStop_PTN,0,
 % Synapses

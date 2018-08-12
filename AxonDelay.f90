@@ -196,7 +196,7 @@ module AxonDelayClass
         self%electricCharge_muC = (stimulus * self%conf%timeStep_ms +&
                                    self%electricCharge_muC * &
                                    exp(-self%conf%timeStep_ms /self%leakageTimeConstant_ms))
-
+        
         if ((t - self%axonSpikeTrain) > self%refractoryPeriod_ms) then
             if (self%electricCharge_muC >= self%threshold_muC) then
                 self%electricCharge_muC = 0
