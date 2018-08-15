@@ -23,7 +23,10 @@ gfortran-8 -c ../../NeuralTract.f90
 gfortran-8 -c ../../Interneuron.f90
 gfortran-8 -c ../../InterneuronPool.f90
 gfortran-8 -c ../../SynapticNoise.f90
+gfortran-8 -c ../../AfferentUnit.f90
+gfortran-8 -c ../../AfferentPool.f90
 gfortran-8 -c ../../SynapsesFactory.f90
+gfortran-8 -c ../../MusclePointer.f90
+gfortran-8 -c ../../jointAnkleForceTask.f90
 
-
-gfortran-8 InjectedCurrentRenshawCellPool.f90 -o InjectedCurrentRenshawCellPool -O3 ../../SynapticNoise.f90 ../../MuscleSpindle.f90 ../../MuscleHill.f90 ../../Interneuron.f90 ../../InterneuronPool.f90 ../../SynapsePointer.f90 ../../SynapsesFactory.f90 ../../Synapse.f90 ../../CharacterMatrix.f90 ../../PointProcessGenerator.f90 ../../NeuralTractUnit.f90 ../../NeuralTract.f90  ../../queue.f90 ../../CharacterArray.f90 ../../MuscleNoHill.f90 ../../MuscularActivation.f90 ../../MotorUnitPool.f90 ../../AxonDelay.f90 ../../Compartment.f90 ../../MotorUnit.f90   ../../DynamicalArrays.f90 ../../randomSeedInitialize.f90 ../../ogpf.f90 ../../Configuration.f90 ../../PulseConductanceState.f90 ../../ChannelConductance.f90 
+gfortran-8 InjectedCurrentRenshawCellPool.f90 -o InjectedCurrentRenshawCellPool -O3 ../../MusclePointer.f90 ../../jointAnkleForceTask.f90 ../../AfferentUnit.f90 ../../AfferentPool.f90 ../../SynapticNoise.f90 ../../MuscleSpindle.f90 ../../MuscleHill.f90 ../../Interneuron.f90 ../../InterneuronPool.f90 ../../SynapsePointer.f90 ../../SynapsesFactory.f90 ../../Synapse.f90 ../../CharacterMatrix.f90 ../../PointProcessGenerator.f90 ../../NeuralTractUnit.f90 ../../NeuralTract.f90  ../../queue.f90 ../../CharacterArray.f90 ../../MuscleNoHill.f90 ../../MuscularActivation.f90 ../../MotorUnitPool.f90 ../../AxonDelay.f90 ../../Compartment.f90 ../../MotorUnit.f90   ../../DynamicalArrays.f90 ../../randomSeedInitialize.f90 ../../ogpf.f90 ../../Configuration.f90 ../../PulseConductanceState.f90 ../../ChannelConductance.f90 

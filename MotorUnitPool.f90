@@ -123,6 +123,7 @@ module MotorUnitPoolClass
         allocate(init_MotorUnitPool%unit(init_MotorUnitPool%MUnumber))
         
         do i = 1, init_MotorUnitPool%MUnumber
+            
             if (i <= MUnumber_S) then
                 neuronKind = 'S'
                 init_MotorUnitPool%unit(i) = MotorUnit(init_MotorUnitPool%conf, init_MotorUnitPool%pool,&
@@ -150,6 +151,7 @@ module MotorUnitPoolClass
                                                         + init_MotorUnitPool%unit(i)%compNumber
         end do
 
+
         allocate(init_MotorUnitPool%v_mV(init_MotorUnitPool%totalNumberOfCompartments))
         init_MotorUnitPool%v_mV(:) = 0.0
              
@@ -162,7 +164,7 @@ module MotorUnitPoolClass
         allocate(init_MotorUnitPool%EqCurrent_nA(init_MotorUnitPool%totalNumberOfCompartments))
         
         init_MotorUnitPool%G(:,:) = 0.0
-
+        
         ! # Retrieving data from Motorneuron class
         ! # Vectors or matrices from Motorneuron compartments are copied,
         ! # populating larger vectors or matrices that will be used for computations
@@ -259,8 +261,7 @@ module MotorUnitPoolClass
         real(wp), dimension(self%totalNumberOfCompartments) :: k1, k2, k3, k4
         integer :: i
         real(wp) :: vmax, vmin
-        real(wp), dimension(self%totalNumberOfCompartments) :: newPotential
-        real(wp) :: newTime, length, velocity, acceleration
+        real(wp) :: length, velocity, acceleration
         real(wp) :: dynGamma, statGamma
         
         
@@ -268,9 +269,7 @@ module MotorUnitPoolClass
         vmax = 120.0      
 
         k1 = self%dVdt(t, self%v_mV)        
-        newTime = t + self%conf%timeStepByTwo_ms
-        newPotential = self%v_mV + self%conf%timeStepByTwo_ms * k1
-        k2 = self%dVdt(newTime, newPotential)
+        k2 = self%dVdt(t + self%conf%timeStepByTwo_ms, self%v_mV + self%conf%timeStepByTwo_ms * k1)
         k3 = self%dVdt(t + self%conf%timeStepByTwo_ms, self%v_mV + self%conf%timeStepByTwo_ms * k2)
         k4 = self%dVdt(t + self%conf%timeStep_ms, self%v_mV + self%conf%timeStep_ms * k3)
         

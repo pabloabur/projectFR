@@ -7,6 +7,7 @@ program InjectedCurrentRenshawCellPool
     use randomSeedInitialize
     use SynapsesFactoryModule
     use SynapticNoiseClass
+    use AfferentPoolClass
     implicit none 
     !integer, parameter :: wp = kind(1.0d0)
     type(Configuration) :: conf
@@ -26,6 +27,7 @@ program InjectedCurrentRenshawCellPool
     type(NeuralTract), dimension(:), allocatable :: neuralTractPools    
     type(InterneuronPool), dimension(:), allocatable, target :: interneuronPools    
     type(SynapticNoise), dimension(:), allocatable:: synapticNoisePools    
+    type(AfferentPool), dimension(:), allocatable:: afferentPools    
 
     call init_random_seed()
 
@@ -36,9 +38,9 @@ program InjectedCurrentRenshawCellPool
     group = 'ext'
     allocate(interneuronPools(1))
     interneuronPools(1) = InterneuronPool(conf, pool, group)
-
+    allocate(afferentPools(0))
     synapticNoisePools = synapseFactory(conf, neuralTractPools, &
-                motorUnitPools, interneuronPools)
+                motorUnitPools, interneuronPools, afferentPools)
     
     conf = Configuration(filename)
     

@@ -8,6 +8,7 @@ program MuscleHillExample
     use randomSeedInitialize
     use SynapsesFactoryModule
     use jointAnkleForceTaskClass
+    use AfferentPoolClass
     implicit none 
     !integer, parameter :: wp = kind(1.0d0)
     type(Configuration) :: conf
@@ -27,6 +28,7 @@ program MuscleHillExample
     type(NeuralTract), dimension(:), allocatable :: neuralTractPools    
     type(InterneuronPool), dimension(:), allocatable, target :: interneuronPools    
     type(SynapticNoise), dimension(:), allocatable:: synapticNoisePools   
+    type(AfferentPool), dimension(:), allocatable:: afferentPools    
     type(jointAnkleForceTask) :: ankle
     real(wp) :: angle
     
@@ -34,6 +36,7 @@ program MuscleHillExample
     call init_random_seed()
 
     conf = Configuration(filename)
+    allocate(afferentPools(0))
     allocate(neuralTractPools(1))
     pool = 'CMExt'
     neuralTractPools(1) = NeuralTract(conf, pool)
@@ -43,7 +46,10 @@ program MuscleHillExample
     ankle = jointAnkleForceTask(conf, motorUnitPools)
     allocate(interneuronPools(0))
 
-    synapticNoisePools = synapseFactory(conf, neuralTractPools, motorUnitPools, interneuronPools)
+    synapticNoisePools = synapseFactory(conf, neuralTractPools, &
+                                        motorUnitPools, &
+                                        interneuronPools, &
+                                        afferentPools)
     
     tf = conf%simDuration_ms
     dt = conf%timeStep_ms

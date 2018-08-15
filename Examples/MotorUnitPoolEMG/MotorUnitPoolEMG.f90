@@ -8,6 +8,7 @@ program MotorUnitPoolEMG
     use SynapsesFactoryModule
     use SynapticNoiseClass
     use MuscleNoHillClass
+    use AfferentPoolClass
     implicit none 
     !integer, parameter :: wp = kind(1.0d0)
     type(Configuration) :: conf
@@ -25,6 +26,7 @@ program MotorUnitPoolEMG
     type(NeuralTract), dimension(:), allocatable :: neuralTractPools    
     type(InterneuronPool), dimension(:), allocatable, target :: interneuronPools    
     type(SynapticNoise), dimension(:), allocatable:: synapticNoisePools    
+    type(AfferentPool), dimension(:), allocatable:: afferentPools
 
     
     
@@ -42,6 +44,7 @@ program MotorUnitPoolEMG
     allocate(neuralTractPools(0))
     
     allocate(interneuronPools(0))
+    allocate(afferentPools(0))
     allocate(motorUnitPools(1))
 
     

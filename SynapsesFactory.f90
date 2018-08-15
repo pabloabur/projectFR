@@ -30,13 +30,14 @@ module SynapsesFactoryModule
     use SynapsePointerClass
     use SynapticNoiseClass
     use CharacterMatrixClass
+    use AfferentPoolClass
     implicit none
-    integer, parameter :: wp = kind( 1.0d0 )
+    integer, parameter :: wp = kind(1.0d0)
     private :: wp
     contains
 
         function synapseFactory(conf, neuralTractPools, &
-            motorUnitPools, interneuronPools) result(synapticNoisePools)
+            motorUnitPools, interneuronPools, afferentPools) result(synapticNoisePools)
             ! '''
             ! Constructor
 
@@ -49,6 +50,7 @@ module SynapsesFactoryModule
             ! '''
             class(Configuration), intent(inout) :: conf
             class(NeuralTract), intent(inout) :: neuralTractPools(:)
+            class(AfferentPool), intent(inout) :: afferentPools(:)
             class(MotorUnitPool), intent(inout), target:: motorUnitPools(:)
             class(InterneuronPool), intent(inout), target:: interneuronPools(:)
             type(SynapticNoise), allocatable:: synapticNoisePools(:)
@@ -69,7 +71,7 @@ module SynapsesFactoryModule
             numberOfSynapses = 0
             
             !NeuralTract to MotorUnitPool
-            if (size(neuralTractPools)>0 .and. size(motorUnitPools)>0 ) then
+            if (size(neuralTractPools)>0 .and. size(motorUnitPools)>0) then
                 do poolOut = 1, size(neuralTractPools)
                     do unitOut = 1, size(neuralTractPools(poolOut)%unit)
                         neuralSource = trim(neuralTractPools(poolOut)%pool) // '-'&
@@ -729,6 +731,447 @@ module SynapsesFactoryModule
                 end do
             end if
 
+            !Afferent to MotorUnitPool
+            if (size(afferentPools)>0 .and. size(motorUnitPools)>0) then
+                do poolOut = 1, size(afferentPools)
+                    do unitOut = 1, size(afferentPools(poolOut)%unit)
+                        neuralSource = trim(afferentPools(poolOut)%pool) // '-'&
+                         // afferentPools(poolOut)%unit(unitOut)%neuronKind
+                        afferentPools(poolOut)%unit(unitOut)%SynapsesOut = conf%determineSynapses(neuralSource)
+                        ! #print pools[poolOut].pool
+                        ! #print pools[poolOut].unit[unitOut].SynapsesOut
+                        do synapseIn = 1, size(afferentPools(poolOut)%unit(unitOut)%SynapsesOut%item)
+                            paramTag = 'Con:' // trim(afferentPools(poolOut)%pool) // '-' &
+                                        // trim(afferentPools(poolOut)%unit(unitOut)%neuronKind) // '>' &
+                                        // trim(afferentPools(poolOut)%unit(unitOut)%SynapsesOut%item(synapseIn)%item(1)%string)&
+                                        // '-' &
+                                        // trim(afferentPools(poolOut)%unit(unitOut)%SynapsesOut%item(synapseIn)%item(2)%string)&
+                                        // '@' &
+                                        // trim(afferentPools(poolOut)%unit(unitOut)%SynapsesOut%item(synapseIn)%item(3)%string)&
+                                        // '|' &
+                                        // trim(afferentPools(poolOut)%unit(unitOut)%SynapsesOut%item(synapseIn)%item(4)%string)
+                                paramChar = conf%parameterSet(paramTag,afferentPools(poolOut)%pool, 0)
+                            read(paramChar, *)conn
+                            conn = conn / 100.0
+
+                            paramTag = 'gmax:' // trim(afferentPools(poolOut)%pool) // '-' &
+                                        // trim(afferentPools(poolOut)%unit(unitOut)%neuronKind) // '>' &
+                                        // trim(afferentPools(poolOut)%unit(unitOut)%SynapsesOut%item(synapseIn)%item(1)%string)&
+                                        // '-' &
+                                        // trim(afferentPools(poolOut)%unit(unitOut)%SynapsesOut%item(synapseIn)%item(2)%string)&
+                                        // '@' &
+                                        // trim(afferentPools(poolOut)%unit(unitOut)%SynapsesOut%item(synapseIn)%item(3)%string)&
+                                        // '|' &
+                                        // trim(afferentPools(poolOut)%unit(unitOut)%SynapsesOut%item(synapseIn)%item(4)%string)                            
+                            paramChar = conf%parameterSet(paramTag,afferentPools(poolOut)%pool, 0)
+                            read(paramChar,*)gmax
+
+                            paramTag = 'delay:' // trim(afferentPools(poolOut)%pool) // '-' &
+                                        // trim(afferentPools(poolOut)%unit(unitOut)%neuronKind) // '>' &
+                                        // trim(afferentPools(poolOut)%unit(unitOut)%SynapsesOut%item(synapseIn)%item(1)%string)&
+                                        // '-' &
+                                        // trim(afferentPools(poolOut)%unit(unitOut)%SynapsesOut%item(synapseIn)%item(2)%string)&
+                                        // '@' &
+                                        // trim(afferentPools(poolOut)%unit(unitOut)%SynapsesOut%item(synapseIn)%item(3)%string)&
+                                        // '|' &
+                                        // trim(afferentPools(poolOut)%unit(unitOut)%SynapsesOut%item(synapseIn)%item(4)%string)                            
+                            paramChar = conf%parameterSet(paramTag, afferentPools(poolOut)%pool, 0)
+                            read(paramChar, *)delay
+                            
+                            paramTag = 'dec:' // trim(afferentPools(poolOut)%pool) // '-' &
+                                        // trim(afferentPools(poolOut)%unit(unitOut)%neuronKind) // '>' &
+                                        // trim(afferentPools(poolOut)%unit(unitOut)%SynapsesOut%item(synapseIn)%item(1)%string)&
+                                        // '-' &
+                                        // trim(afferentPools(poolOut)%unit(unitOut)%SynapsesOut%item(synapseIn)%item(2)%string)&
+                                        // '@' &
+                                        // trim(afferentPools(poolOut)%unit(unitOut)%SynapsesOut%item(synapseIn)%item(3)%string)&
+                                        // '|' &
+                                        // trim(afferentPools(poolOut)%unit(unitOut)%SynapsesOut%item(synapseIn)%item(4)%string)
+                            paramChar = conf%parameterSet(paramTag, afferentPools(poolOut)%pool, 0)
+                            if (trim(paramChar)=='inf') then
+                                declineFactor = 1e6
+                            else 
+                                read(paramChar, *)declineFactor
+                            end if
+                            
+                            paramTag = 'dyn:' // trim(afferentPools(poolOut)%pool) // '-' &
+                                        // trim(afferentPools(poolOut)%unit(unitOut)%neuronKind) // '>'&
+                                        // trim(afferentPools(poolOut)%unit(unitOut)%SynapsesOut%item(synapseIn)%item(1)%string)&
+                                        // '-' &
+                                        // trim(afferentPools(poolOut)%unit(unitOut)%SynapsesOut%item(synapseIn)%item(2)%string)&
+                                        // '@' &
+                                        // trim(afferentPools(poolOut)%unit(unitOut)%SynapsesOut%item(synapseIn)%item(3)%string)&
+                                        // '|' &
+                                        // trim(afferentPools(poolOut)%unit(unitOut)%SynapsesOut%item(synapseIn)%item(4)%string)
+                            dyn = conf%parameterSet(paramTag, afferentPools(poolOut)%pool, 0)
+                            
+                            if (trim(dyn).ne.'None') then
+                                paramTag = 'var:' // trim(afferentPools(poolOut)%pool) // '-' &
+                                            // trim(afferentPools(poolOut)%unit(unitOut)%neuronKind) // '>'&
+                                            // trim(afferentPools(poolOut)%unit(unitOut)%&
+                                            SynapsesOut%item(synapseIn)%item(1)%string)&
+                                            // '-' &
+                                            // trim(afferentPools(poolOut)%unit(unitOut)%&
+                                            SynapsesOut%item(synapseIn)%item(2)%string)&
+                                            // '@' &
+                                            // trim(afferentPools(poolOut)%unit(unitOut)%&
+                                            SynapsesOut%item(synapseIn)%item(3)%string)&
+                                            // '|' &
+                                            // trim(afferentPools(poolOut)%unit(unitOut)%&
+                                            SynapsesOut%item(synapseIn)%item(4)%string)
+                                
+                                paramChar = conf%parameterSet(paramTag,afferentPools(poolOut)%pool, 0)
+                                read(paramChar, *)var
+
+                                paramTag = 'tau:' // trim(afferentPools(poolOut)%pool) // '-' &
+                                            // trim(afferentPools(poolOut)%unit(unitOut)%neuronKind) // '>'&
+                                            // trim(afferentPools(poolOut)%unit(unitOut)%&
+                                                SynapsesOut%item(synapseIn)%item(1)%string)&
+                                            // '-' &
+                                            // trim(afferentPools(poolOut)%unit(unitOut)%&
+                                            SynapsesOut%item(synapseIn)%item(2)%string)&
+                                            // '@' &
+                                            // trim(afferentPools(poolOut)%unit(unitOut)%&
+                                            SynapsesOut%item(synapseIn)%item(3)%string)&
+                                            // '|' &
+                                            // trim(afferentPools(poolOut)%unit(unitOut)%&
+                                            SynapsesOut%item(synapseIn)%item(4)%string)
+                                paramChar = conf%parameterSet(paramTag,afferentPools(poolOut)%pool, 0)
+                                read(paramChar, *)tau
+                            else
+                                var = 0.0
+                                tau = 1e6
+                            end if
+                            
+                            do poolIn = 1, size(motorUnitPools)
+                                if (trim(afferentPools(poolOut)%unit(unitOut)%SynapsesOut%item(synapseIn)%item(1)%string)==&
+                                    trim(motorUnitPools(poolIn)%pool)) then
+                                    do unitIn = 1, size(motorUnitPools(poolIn)%unit)
+                                        do compartmentIn = 1, size(motorUnitPools(poolIn)%unit(unitIn)%Compartments)
+                                            if ((trim(afferentPools(poolOut)%unit(unitOut)%&
+                                                    SynapsesOut%item(synapseIn)%item(1)%string)==&
+                                                trim(motorUnitPools(poolIn)%pool)) .and.&
+                                                (trim(afferentPools(poolOut)%unit(unitOut)%&
+                                                    SynapsesOut%item(synapseIn)%item(2)%string)==&
+                                                trim(motorUnitPools(poolIn)%unit(unitIn)%neuronKind)) .and.&
+                                                (trim(afferentPools(poolOut)%unit(unitOut)%&
+                                                    SynapsesOut%item(synapseIn)%item(3)%string)==&
+                                                trim(motorUnitPools(poolIn)%unit(unitIn)%&
+                                                Compartments(compartmentIn)%compKind))) then
+                                                call random_number(randomNumber)
+                                                if (randomNumber <= conn) then
+                                                    do synapseComp = 1, size(motorUnitPools(poolIn)%unit(unitIn)%&
+                                                                            Compartments(compartmentIn)%SynapsesIn)
+                                                        if (motorUnitPools(poolIn)%unit(unitIn)%Compartments(compartmentIn)%&
+                                                            SynapsesIn(synapseComp)%synapseKind ==&
+                                                            afferentPools(poolOut)%unit(unitOut)%&
+                                                            SynapsesOut%item(synapseIn)%item(4)%string) then
+                                                            
+                                                            if (declineFactor<1e5) then
+                                                                neuronsDistance = abs(motorUnitPools(poolIn)%&
+                                                                                unit(unitIn)%position_mm &
+                                                                            - afferentPools(poolOut)%&
+                                                                            unit(unitOut)%position_mm)
+                                                                weight = declineFactor / (declineFactor + neuronsDistance**2)
+                                                                gmax = gmax * weight
+                                                            end if
+                                                            call motorUnitPools(poolIn)%unit(unitIn)%&
+                                                            Compartments(compartmentIn)%SynapsesIn(synapseComp)%&
+                                                            addConductance(gmax, delay, dyn, var, tau)
+                                                            
+                                                            if (allocated(afferentPools(poolOut)%&
+                                                                unit(unitOut)%transmitSpikesThroughSynapses)) then
+                                                                
+                                                                
+                                                                allocate(tempTransmitSpikes(size(afferentPools(poolOut)%&
+                                                                    unit(unitOut)%transmitSpikesThroughSynapses)))
+                                                                
+                                                                do j = 1, size(tempTransmitSpikes)
+                                                                    call tempTransmitSpikes(j)%&
+                                                                        assignSynapse(afferentPools(poolOut)%&
+                                                                        unit(unitOut)%transmitSpikesThroughSynapses(j)%synapse)
+                                                                end do
+                                                                
+                                                                
+                                                                deallocate(afferentPools(poolOut)%&
+                                                                        unit(unitOut)%transmitSpikesThroughSynapses)
+                                                                
+                                                                allocate(afferentPools(poolOut)%&
+                                                                        unit(unitOut)%&
+                                                                        transmitSpikesThroughSynapses(size(tempTransmitSpikes)+1))
+                                                                
+                                                                do j = 1, size(tempTransmitSpikes)
+                                                                    call afferentPools(poolOut)%unit(unitOut)%&
+                                                                    transmitSpikesThroughSynapses(j)%&
+                                                                    assignSynapse(tempTransmitSpikes(j)%synapse)
+                                                                end do
+
+                                                                afferentPools(poolOut)%unit(unitOut)%&
+                                                                        transmitSpikesThroughSynapses(size(tempTransmitSpikes)+1)=&
+                                                                        SynapsePointer()        
+
+                                                                call afferentPools(poolOut)%unit(unitOut)%&
+                                                                transmitSpikesThroughSynapses(size(tempTransmitSpikes)+1)%&
+                                                                assignSynapse(motorUnitPools(poolIn)%unit(unitIn)%&
+                                                                Compartments(compartmentIn)%SynapsesIn(synapseComp))  
+                                                                
+                                                                deallocate(tempTransmitSpikes)
+                                                            else 
+                                                                allocate(afferentPools(poolOut)%&
+                                                                        unit(unitOut)%&
+                                                                        transmitSpikesThroughSynapses(1))
+                                                                afferentPools(poolOut)%unit(unitOut)%&
+                                                                        transmitSpikesThroughSynapses(1)=&
+                                                                        SynapsePointer()        
+
+                                                                call afferentPools(poolOut)%unit(unitOut)%&
+                                                                        transmitSpikesThroughSynapses(1)%&
+                                                                        assignSynapse(motorUnitPools(poolIn)%unit(unitIn)%&
+                                                                        Compartments(compartmentIn)%&
+                                                                        SynapsesIn(synapseComp))
+                                                            end if            
+                                                            
+                                                            newIndex = size(motorUnitPools(poolIn)%&
+                                                                unit(unitIn)%Compartments(compartmentIn)%&
+                                                                SynapsesIn(synapseComp)%gmax_muS)
+                                                            
+                                                            call integerAddToList(afferentPools(poolOut)%&
+                                                            unit(unitOut)%indicesOfSynapsesOnTarget,newIndex)
+                                                            
+                                                            numberOfSynapses = numberOfSynapses + 1
+                                                        end if
+                                                    end do
+                                                end if
+                                            end if
+                                        end do
+                                    end do
+                                end if
+                            end do
+                        end do
+                    end do
+                end do
+            end if  
+
+            !Afferent to InterNeuronPool
+            if (size(afferentPools)>0 .and. size(interneuronPools)>0) then
+                do poolOut = 1, size(afferentPools)
+                    do unitOut = 1, size(afferentPools(poolOut)%unit)
+                        neuralSource = trim(afferentPools(poolOut)%pool) // '-'&
+                         // afferentPools(poolOut)%unit(unitOut)%neuronKind
+                        afferentPools(poolOut)%unit(unitOut)%SynapsesOut = conf%determineSynapses(neuralSource)
+                        ! #print pools[poolOut].pool
+                        ! #print pools[poolOut].unit[unitOut].SynapsesOut
+                        do synapseIn = 1, size(afferentPools(poolOut)%unit(unitOut)%SynapsesOut%item)
+                            paramTag = 'Con:' // trim(afferentPools(poolOut)%pool) // '-' &
+                                        // trim(afferentPools(poolOut)%unit(unitOut)%neuronKind) // '>' &
+                                        // trim(afferentPools(poolOut)%unit(unitOut)%SynapsesOut%item(synapseIn)%item(1)%string)&
+                                        // '-' &
+                                        // trim(afferentPools(poolOut)%unit(unitOut)%SynapsesOut%item(synapseIn)%item(2)%string)&
+                                        // '@' &
+                                        // trim(afferentPools(poolOut)%unit(unitOut)%SynapsesOut%item(synapseIn)%item(3)%string)&
+                                        // '|' &
+                                        // trim(afferentPools(poolOut)%unit(unitOut)%SynapsesOut%item(synapseIn)%item(4)%string)
+                                paramChar = conf%parameterSet(paramTag,afferentPools(poolOut)%pool, 0)
+                            read(paramChar, *)conn
+                            conn = conn / 100.0
+
+                            paramTag = 'gmax:' // trim(afferentPools(poolOut)%pool) // '-' &
+                                        // trim(afferentPools(poolOut)%unit(unitOut)%neuronKind) // '>' &
+                                        // trim(afferentPools(poolOut)%unit(unitOut)%SynapsesOut%item(synapseIn)%item(1)%string)&
+                                        // '-' &
+                                        // trim(afferentPools(poolOut)%unit(unitOut)%SynapsesOut%item(synapseIn)%item(2)%string)&
+                                        // '@' &
+                                        // trim(afferentPools(poolOut)%unit(unitOut)%SynapsesOut%item(synapseIn)%item(3)%string)&
+                                        // '|' &
+                                        // trim(afferentPools(poolOut)%unit(unitOut)%SynapsesOut%item(synapseIn)%item(4)%string)                            
+                            paramChar = conf%parameterSet(paramTag,afferentPools(poolOut)%pool, 0)
+                            read(paramChar,*)gmax
+
+                            paramTag = 'delay:' // trim(afferentPools(poolOut)%pool) // '-' &
+                                        // trim(afferentPools(poolOut)%unit(unitOut)%neuronKind) // '>' &
+                                        // trim(afferentPools(poolOut)%unit(unitOut)%SynapsesOut%item(synapseIn)%item(1)%string)&
+                                        // '-' &
+                                        // trim(afferentPools(poolOut)%unit(unitOut)%SynapsesOut%item(synapseIn)%item(2)%string)&
+                                        // '@' &
+                                        // trim(afferentPools(poolOut)%unit(unitOut)%SynapsesOut%item(synapseIn)%item(3)%string)&
+                                        // '|' &
+                                        // trim(afferentPools(poolOut)%unit(unitOut)%SynapsesOut%item(synapseIn)%item(4)%string)                            
+                            paramChar = conf%parameterSet(paramTag, afferentPools(poolOut)%pool, 0)
+                            read(paramChar, *)delay
+                            
+                            paramTag = 'dec:' // trim(afferentPools(poolOut)%pool) // '-' &
+                                        // trim(afferentPools(poolOut)%unit(unitOut)%neuronKind) // '>' &
+                                        // trim(afferentPools(poolOut)%unit(unitOut)%SynapsesOut%item(synapseIn)%item(1)%string)&
+                                        // '-' &
+                                        // trim(afferentPools(poolOut)%unit(unitOut)%SynapsesOut%item(synapseIn)%item(2)%string)&
+                                        // '@' &
+                                        // trim(afferentPools(poolOut)%unit(unitOut)%SynapsesOut%item(synapseIn)%item(3)%string)&
+                                        // '|' &
+                                        // trim(afferentPools(poolOut)%unit(unitOut)%SynapsesOut%item(synapseIn)%item(4)%string)
+                            paramChar = conf%parameterSet(paramTag, afferentPools(poolOut)%pool, 0)
+                            if (trim(paramChar)=='inf') then
+                                declineFactor = 1e6
+                            else 
+                                read(paramChar, *)declineFactor
+                            end if
+                            
+                            paramTag = 'dyn:' // trim(afferentPools(poolOut)%pool) // '-' &
+                                        // trim(afferentPools(poolOut)%unit(unitOut)%neuronKind) // '>'&
+                                        // trim(afferentPools(poolOut)%unit(unitOut)%SynapsesOut%item(synapseIn)%item(1)%string)&
+                                        // '-' &
+                                        // trim(afferentPools(poolOut)%unit(unitOut)%SynapsesOut%item(synapseIn)%item(2)%string)&
+                                        // '@' &
+                                        // trim(afferentPools(poolOut)%unit(unitOut)%SynapsesOut%item(synapseIn)%item(3)%string)&
+                                        // '|' &
+                                        // trim(afferentPools(poolOut)%unit(unitOut)%SynapsesOut%item(synapseIn)%item(4)%string)
+                            dyn = conf%parameterSet(paramTag, afferentPools(poolOut)%pool, 0)
+                            
+                            if (trim(dyn).ne.'None') then
+                                paramTag = 'var:' // trim(afferentPools(poolOut)%pool) // '-' &
+                                            // trim(afferentPools(poolOut)%unit(unitOut)%neuronKind) // '>'&
+                                            // trim(afferentPools(poolOut)%unit(unitOut)%&
+                                            SynapsesOut%item(synapseIn)%item(1)%string)&
+                                            // '-' &
+                                            // trim(afferentPools(poolOut)%unit(unitOut)%&
+                                            SynapsesOut%item(synapseIn)%item(2)%string)&
+                                            // '@' &
+                                            // trim(afferentPools(poolOut)%unit(unitOut)%&
+                                            SynapsesOut%item(synapseIn)%item(3)%string)&
+                                            // '|' &
+                                            // trim(afferentPools(poolOut)%unit(unitOut)%&
+                                            SynapsesOut%item(synapseIn)%item(4)%string)
+                                
+                                paramChar = conf%parameterSet(paramTag,afferentPools(poolOut)%pool, 0)
+                                read(paramChar, *)var
+
+                                paramTag = 'tau:' // trim(afferentPools(poolOut)%pool) // '-' &
+                                            // trim(afferentPools(poolOut)%unit(unitOut)%neuronKind) // '>'&
+                                            // trim(afferentPools(poolOut)%unit(unitOut)%&
+                                                SynapsesOut%item(synapseIn)%item(1)%string)&
+                                            // '-' &
+                                            // trim(afferentPools(poolOut)%unit(unitOut)%&
+                                            SynapsesOut%item(synapseIn)%item(2)%string)&
+                                            // '@' &
+                                            // trim(afferentPools(poolOut)%unit(unitOut)%&
+                                            SynapsesOut%item(synapseIn)%item(3)%string)&
+                                            // '|' &
+                                            // trim(afferentPools(poolOut)%unit(unitOut)%&
+                                            SynapsesOut%item(synapseIn)%item(4)%string)
+                                paramChar = conf%parameterSet(paramTag,afferentPools(poolOut)%pool, 0)
+                                read(paramChar, *)tau
+                            else
+                                var = 0.0
+                                tau = 1e6
+                            end if
+                            
+                            do poolIn = 1, size(interneuronPools)
+                                if (trim(afferentPools(poolOut)%unit(unitOut)%SynapsesOut%item(synapseIn)%item(1)%string)==&
+                                    trim(interneuronPools(poolIn)%pool)) then
+                                    do unitIn = 1, size(interneuronPools(poolIn)%unit)
+                                        do compartmentIn = 1, size(interneuronPools(poolIn)%unit(unitIn)%Compartments)
+                                            if ((trim(afferentPools(poolOut)%unit(unitOut)%&
+                                                    SynapsesOut%item(synapseIn)%item(1)%string)==&
+                                                trim(interneuronPools(poolIn)%pool)) .and.&
+                                                (trim(afferentPools(poolOut)%unit(unitOut)%&
+                                                    SynapsesOut%item(synapseIn)%item(2)%string)==&
+                                                trim(interneuronPools(poolIn)%unit(unitIn)%neuronKind)) .and.&
+                                                (trim(afferentPools(poolOut)%unit(unitOut)%&
+                                                    SynapsesOut%item(synapseIn)%item(3)%string)==&
+                                                trim(interneuronPools(poolIn)%unit(unitIn)%&
+                                                Compartments(compartmentIn)%compKind))) then
+                                                call random_number(randomNumber)
+                                                if (randomNumber <= conn) then
+                                                    do synapseComp = 1, size(interneuronPools(poolIn)%unit(unitIn)%&
+                                                                            Compartments(compartmentIn)%SynapsesIn)
+                                                        if (interneuronPools(poolIn)%unit(unitIn)%Compartments(compartmentIn)%&
+                                                            SynapsesIn(synapseComp)%synapseKind ==&
+                                                            afferentPools(poolOut)%unit(unitOut)%&
+                                                            SynapsesOut%item(synapseIn)%item(4)%string) then
+                                                            
+                                                            if (declineFactor<1e5) then
+                                                                neuronsDistance = abs(interneuronPools(poolIn)%&
+                                                                                unit(unitIn)%position_mm &
+                                                                            - afferentPools(poolOut)%&
+                                                                            unit(unitOut)%position_mm)
+                                                                weight = declineFactor / (declineFactor + neuronsDistance**2)
+                                                                gmax = gmax * weight
+                                                            end if
+                                                            call interneuronPools(poolIn)%unit(unitIn)%&
+                                                            Compartments(compartmentIn)%SynapsesIn(synapseComp)%&
+                                                            addConductance(gmax, delay, dyn, var, tau)
+                                                            
+                                                            if (allocated(afferentPools(poolOut)%&
+                                                                unit(unitOut)%transmitSpikesThroughSynapses)) then
+                                                                
+                                                                
+                                                                allocate(tempTransmitSpikes(size(afferentPools(poolOut)%&
+                                                                    unit(unitOut)%transmitSpikesThroughSynapses)))
+                                                                
+                                                                do j = 1, size(tempTransmitSpikes)
+                                                                    call tempTransmitSpikes(j)%&
+                                                                        assignSynapse(afferentPools(poolOut)%&
+                                                                        unit(unitOut)%transmitSpikesThroughSynapses(j)%synapse)
+                                                                end do
+                                                                
+                                                                
+                                                                deallocate(afferentPools(poolOut)%&
+                                                                        unit(unitOut)%transmitSpikesThroughSynapses)
+                                                                
+                                                                allocate(afferentPools(poolOut)%&
+                                                                        unit(unitOut)%&
+                                                                        transmitSpikesThroughSynapses(size(tempTransmitSpikes)+1))
+                                                                
+                                                                do j = 1, size(tempTransmitSpikes)
+                                                                    call afferentPools(poolOut)%unit(unitOut)%&
+                                                                    transmitSpikesThroughSynapses(j)%&
+                                                                    assignSynapse(tempTransmitSpikes(j)%synapse)
+                                                                end do
+
+                                                                afferentPools(poolOut)%unit(unitOut)%&
+                                                                        transmitSpikesThroughSynapses(size(tempTransmitSpikes)+1)=&
+                                                                        SynapsePointer()        
+
+                                                                call afferentPools(poolOut)%unit(unitOut)%&
+                                                                transmitSpikesThroughSynapses(size(tempTransmitSpikes)+1)%&
+                                                                assignSynapse(interneuronPools(poolIn)%unit(unitIn)%&
+                                                                Compartments(compartmentIn)%SynapsesIn(synapseComp))  
+                                                                
+                                                                deallocate(tempTransmitSpikes)
+                                                            else 
+                                                                allocate(afferentPools(poolOut)%&
+                                                                        unit(unitOut)%&
+                                                                        transmitSpikesThroughSynapses(1))
+                                                                afferentPools(poolOut)%unit(unitOut)%&
+                                                                        transmitSpikesThroughSynapses(1)=&
+                                                                        SynapsePointer()        
+
+                                                                call afferentPools(poolOut)%unit(unitOut)%&
+                                                                        transmitSpikesThroughSynapses(1)%&
+                                                                        assignSynapse(interneuronPools(poolIn)%unit(unitIn)%&
+                                                                        Compartments(compartmentIn)%&
+                                                                        SynapsesIn(synapseComp))
+                                                            end if            
+                                                            
+                                                            newIndex = size(interneuronPools(poolIn)%&
+                                                                unit(unitIn)%Compartments(compartmentIn)%&
+                                                                SynapsesIn(synapseComp)%gmax_muS)
+                                                            
+                                                            call integerAddToList(afferentPools(poolOut)%&
+                                                            unit(unitOut)%indicesOfSynapsesOnTarget,newIndex)
+                                                            
+                                                            numberOfSynapses = numberOfSynapses + 1
+                                                        end if
+                                                    end do
+                                                end if
+                                            end if
+                                        end do
+                                    end do
+                                end if
+                            end do
+                        end do
+                    end do
+                end do
+            end if  
 
             print '(A, I10, A)', 'All the ', numberOfSynapses,  ' synapses were built'
 
@@ -942,10 +1385,7 @@ module SynapsesFactoryModule
 
         end function
 
-end module SynapsesFactoryModule
-
-
-    
+end module SynapsesFactoryModule 
 
 
     

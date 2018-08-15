@@ -31,8 +31,8 @@ module MotorUnitClass
     use SynapsePointerClass
     implicit none
     private
-    integer, parameter :: wp = kind( 1.0d0 )
-    real(wp), parameter :: PI = 4 * atan(1.0_wp)    
+    integer, parameter :: wp = kind(1.0d0)
+    real(wp), parameter :: pi = 4 * atan(1.0_wp)    
     public :: MotorUnit
 
     type MotorUnit
@@ -124,6 +124,10 @@ module MotorUnitClass
         real(wp) :: stimulusFrequency_Hz, stimulusPeriod_ms
         character(len = 80) :: activationModel
         
+        
+        
+        init_MotorUnit%index = index         
+        
         ! ## Configuration object with the simulation parameters.
         init_MotorUnit%conf = conf
 
@@ -146,13 +150,13 @@ module MotorUnitClass
         NumberOfAxonNodes = int(paramReal)
         
         ! ## Integer corresponding to the motor unit order in the pool, according to the Henneman's principle (size principle).
-        init_MotorUnit%index = index             
+                
 
         ! ## Anatomical position of the neuron in the spinal cord, in mm.
         paramTag = 'position'
         paramChar =  init_MotorUnit%conf%parameterSet(paramTag, pool, index)
         read(paramChar, *)init_MotorUnit%position_mm 
-
+          
         ! ## Value of the membrane potential, in mV, that is considered a spike.
         paramTag = 'threshold'
         paramChar =  init_MotorUnit%conf%parameterSet(paramTag, init_MotorUnit%pool, init_MotorUnit%index)
@@ -165,7 +169,7 @@ module MotorUnitClass
             call random_number(randomNumber)
             radius = (muscleThickness/2.0) * randomNumber
             call random_number(randomNumber)
-            angle = 2.0 * PI * randomNumber
+            angle = 2.0 * pi * randomNumber
         end if
         
         x = radius * sin(angle)
@@ -202,6 +206,10 @@ module MotorUnitClass
         ! ## Number of compartments.
         init_MotorUnit%compNumber = 2+NumberOfAxonNodes
         
+        
+        if (allocated(init_MotorUnit%Compartments)) then
+            deallocate(init_MotorUnit%Compartments)    
+        end if
         allocate(init_MotorUnit%Compartments(init_MotorUnit%compNumber))
         
         compKind = 'dendrite'
@@ -336,11 +344,11 @@ module MotorUnitClass
             ! \f} 
             ! '''
             if (i.eq.1) then
-                GC(i,i:i+1) = (/-gCoupling_muS(i), gCoupling_muS(i)/)
+                GC(i,i:i+1) = [-gCoupling_muS(i), gCoupling_muS(i)]
             else if (i.eq.init_MotorUnit%compNumber) then
-               GC(i,i-1:i) = (/gCoupling_muS(i-1), -gCoupling_muS(i-1)/)
+               GC(i,i-1:i) = [gCoupling_muS(i-1), -gCoupling_muS(i-1)]
             else
-               GC(i,i-1:i+1) = (/gCoupling_muS(i-1),-gCoupling_muS(i-1)-gCoupling_muS(i), gCoupling_muS(i)/)
+               GC(i,i-1:i+1) = [gCoupling_muS(i-1),-gCoupling_muS(i-1)-gCoupling_muS(i), gCoupling_muS(i)]
             end if
         end do        
         
@@ -712,31 +720,80 @@ module MotorUnitClass
         deallocate(self%terminalSpikeTrain)
     end subroutine
 
-    !TODO: def createStimulus(self):
-    !     '''
+    subroutine createStimulus(self)
+        ! '''
 
-    !     '''
-    !     self.stimulusMeanFrequency_Hz = float(self.conf.parameterSet('stimFrequency_' + self.nerve, self.pool, 0))
-    !     self.stimulusPulseDuration_ms = float(self.conf.parameterSet('stimPulseDuration_' + self.nerve, self.pool, 0))
-    !     self.stimulusIntensity_mA = float(self.conf.parameterSet('stimIntensity_' + self.nerve, self.pool, 0))
-    !     self.stimulusStart_ms = float(self.conf.parameterSet('stimStart_' + self.nerve, self.pool, 0))
-    !     self.stimulusStop_ms = float(self.conf.parameterSet('stimStop_' + self.nerve, self.pool, 0))
-    !     self.stimulusModulationStart_ms = float(self.conf.parameterSet('stimModulationStart_' + self.nerve, self.pool, 0))
-    !     self.stimulusModulationStop_ms = float(self.conf.parameterSet('stimModulationStop_' + self.nerve, self.pool, 0))
+        ! '''
+        class(MotorUnit), intent(inout) :: self
+        character(len = 80) :: paramtag, paramChar
+        integer :: startStep, simDurationSteps, stimPulseDurationSteps, numberOfSteps, i
+        real(wp) :: stimulusFrequency_Hz, stimulusPeriod_ms
+        
 
-    !     startStep = int(np.rint(self.stimulusStart_ms / self.conf.timeStep_ms))
-    !     for i in xrange(len(self.nerveStimulus_mA)):
-    !         if (i * self.conf.timeStep_ms >= self.stimulusStart_ms and  i * self.conf.timeStep_ms <= self.stimulusStop_ms):
-    !             if (i * self.conf.timeStep_ms > self.stimulusModulationStart_ms and  i * self.conf.timeStep_ms < self.stimulusModulationStop_ms):
-    !                 stimulusFrequency_Hz = self.stimulusMeanFrequency_Hz + self.axonStimModulation(i * self.conf.timeStep_ms)
-    !             else:
-    !                 stimulusFrequency_Hz = self.stimulusMeanFrequency_Hz
-    !             if stimulusFrequency_Hz > 0:
-    !                 stimulusPeriod_ms = 1000.0 / stimulusFrequency_Hz
-    !                 numberOfSteps = int(np.rint(stimulusPeriod_ms / self.conf.timeStep_ms))
-    !                 if ((i - startStep) % numberOfSteps == 0):
-    !                     self.nerveStimulus_mA[i:int(np.rint(i+1.0 / self.conf.timeStep_ms))] = self.stimulusIntensity_mA
+        paramTag = 'stimFrequency_' // trim(self%nerve)
+        paramChar = self%conf%parameterSet(paramTag, self%pool, self%index)
+        read(paramChar, *)self%stimulusMeanFrequency_Hz
+        
+        paramTag = 'stimPulseDuration_' // trim(self%nerve)
+        paramChar = self%conf%parameterSet(paramTag, self%pool, self%index)
+        read(paramChar, *)self%stimulusPulseDuration_ms
+        
+        paramTag = 'stimIntensity_' // trim(self%nerve)
+        paramChar = self%conf%parameterSet(paramTag, self%pool, self%index)
+        read(paramChar, *)self%stimulusIntensity_mA
+        
+        paramTag = 'stimStart_' // trim(self%nerve)
+        paramChar = self%conf%parameterSet(paramTag, self%pool, self%index)
+        read(paramChar, *)self%stimulusStart_ms
+        
+        paramTag = 'stimStop_' // trim(self%nerve)
+        paramChar = self%conf%parameterSet(paramTag, self%pool, self%index)
+        read(paramChar, *)self%stimulusStop_ms
+        
+        paramTag = 'stimModulationStart_' // trim(self%nerve)
+        paramChar = self%conf%parameterSet(paramTag, self%pool, self%index)
+        read(paramChar, *)self%stimulusModulationStart_ms
+        
+        paramTag = 'stimModulationStop_' // trim(self%nerve)
+        paramChar = self%conf%parameterSet(paramTag, self%pool, self%index)
+        read(paramChar, *)self%stimulusModulationStop_ms
+        if (self%stimulusStop_ms >= self%conf%simDuration_ms) then
+            self%stimulusStop_ms = self%conf%simDuration_ms - 1
+        end if
+        
+        paramTag = 'stimModulation_' // trim(self%nerve)
+        paramChar = self%conf%parameterSet(paramTag, self%pool, self%index)
+        read(paramChar, *)self%axonStimModulation
+        
+        
+        
+        startStep = nint(self%stimulusStart_ms / self%conf%timeStep_ms)
+        
+        ! ## Vector with the nerve stimulus, in mA.
+        simDurationSteps = nint(self%conf%simDuration_ms/self%conf%timeStep_ms)
 
+        self%nerveStimulus_mA(:) = 0.0
+        
+        stimPulseDurationSteps = nint(self%stimulusPulseDuration_ms/self%conf%timeStep_ms)
+        do i = 1, simDurationSteps
+            if ((i * self%conf%timeStep_ms >= self%stimulusStart_ms).and.&
+                (i * self%conf%timeStep_ms <= self%stimulusStop_ms)) then
+                    if ((i * self%conf%timeStep_ms > self%stimulusModulationStart_ms).and.&
+                        (i * self%conf%timeStep_ms < self%stimulusModulationStop_ms)) then 
+                        stimulusFrequency_Hz = self%stimulusMeanFrequency_Hz + self%axonStimModulation
+                    else
+                        stimulusFrequency_Hz = self%stimulusMeanFrequency_Hz
+                    end if
+                    if (stimulusFrequency_Hz > 0.0) then
+                        stimulusPeriod_ms = 1000.0 / stimulusFrequency_Hz
+                        numberOfSteps = nint(stimulusPeriod_ms / self%conf%timeStep_ms)
+                        if (mod(i - startStep,numberOfSteps) == 0) then 
+                            self%nerveStimulus_mA(i:i+stimPulseDurationSteps) = self%stimulusIntensity_mA
+                        end if
+                    end if
+            end if
+        end do
+    end subroutine
     
 end module MotorUnitClass
     

@@ -30,7 +30,9 @@ program AntidromicStimulationofMNandRC
     use CharacterArrayClass
     use CharacterMatrixClass
     use QueueClass
+    use AfferentPoolClass
     use SynapsesFactoryModule
+    
     implicit none 
     !integer, parameter :: wp = kind(1.0d0)
     type(Configuration) :: conf
@@ -50,6 +52,7 @@ program AntidromicStimulationofMNandRC
     type(NeuralTract), dimension(:), allocatable :: neuralTractPools    
     type(InterneuronPool), dimension(:), allocatable, target :: interneuronPools    
     type(SynapticNoise), dimension(:), allocatable:: synapticNoisePools     
+    type(AfferentPool), dimension(:), allocatable:: afferentPools     
 
     call init_random_seed()
 
@@ -62,8 +65,11 @@ program AntidromicStimulationofMNandRC
     group = 'ext'    
     allocate(interneuronPools(1))
     interneuronPools(1) = InterneuronPool(conf, pool, group)
-
-    synapticNoisePools = synapseFactory(conf, neuralTractPools, motorUnitPools, interneuronPools)
+    allocate(afferentPools(0))
+    synapticNoisePools = synapseFactory(conf, neuralTractPools, &
+                                        motorUnitPools, &
+                                        interneuronPools, &
+                                        afferentPools)
     
     conf = Configuration(filename)
     

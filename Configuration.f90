@@ -168,9 +168,10 @@ module ConfigurationClass
                 integer :: MUnumber_S, MUnumber_FR, MUnumber_FF, Nnumber
                 real(wp), dimension(:), allocatable :: paramVec_S, paramVec_FR, paramVec_FF, paramVec
                 character(len=50), intent(in) ::paramTag
-                logical :: distribute
+                logical :: distribute, wholePool
                 
                 distribute = .true.
+                wholePool = .false.
                 MUnumber_S = 0
                 MUnumber_FR = 0
                 MUnumber_FF = 0
@@ -238,8 +239,7 @@ module ConfigurationClass
                         end if            
                     end do
                     
-                    
-                    if (trim(param1).eq.trim(paramTag)) then                        
+                    if (trim(param1).eq.trim(paramTag)) then 
                         requestedParamater = param2
                         distribute = .false.
                     else if (trim(self%MUParameterDistribution).eq.'linear') then                         
@@ -260,6 +260,7 @@ module ConfigurationClass
                             read(param2,*)param2Real
                             read(param3,*)param3Real
                             paramVec = [((param3Real-param2Real)/(Nnumber+1)*(i-1) + param2Real, i=1, Nnumber)]                                     
+                            wholePool = .true.
                         end if
                     !TODO:    
                     ! else if (self%MUParameterDistribution.eq.'exponential') then           
@@ -283,12 +284,16 @@ module ConfigurationClass
                    
                 
                 if (trim(self%MUParameterDistribution).eq.'linear'.and.distribute) then
-                    if (MUnumber_FR.gt.0) paramVec(MUnumber_S+1:MUnumber_S+MUnumber_FR) = paramVec_FR
-                    if (MUnumber_FF.gt.0) paramVec(MUnumber_S+MUnumber_FR:MUnumber_S+MUnumber_FR+MUnumber_FF) = paramVec_FF
+                    if (MUnumber_FR > 0 .and..not.wholePool) then
+                        paramVec(MUnumber_S+1:MUnumber_S+MUnumber_FR) = paramVec_FR
+                    end if
+                    if (MUnumber_FF > 0 .and..not.wholePool) then 
+                        paramVec(MUnumber_S+MUnumber_FR+1:MUnumber_S+MUnumber_FR+MUnumber_FF) = paramVec_FF
+                    end if
                     write(requestedParamater, '(F15.6)')paramVec(index)
                 !TODO:
                 ! elif self.MUParameterDistribution == 'exponential':           
-                !     if paramVec_S.size > 0:
+                !     if paramVec_S/.size > 0:
                 !         indexUnits = np.linspace(0,Nnumber, Nnumber)
                 !         if paramTag == 'twitchPeak':
                 !             paramVec = paramVec_S[0]*np.exp(1.0/Nnumber*np.log(paramVec_FF[1]/paramVec_S[0]) * np.linspace(0,Nnumber,Nnumber))   
