@@ -32,7 +32,7 @@ module NeuralTractClass
 
     type NeuralTract
         type(NeuralTractUnit), dimension(:), allocatable :: unit
-        type(Configuration) :: conf
+        type(Configuration), pointer :: conf
         character(len = 6) :: poolKind, pool
         integer :: Number
         real(wp) , dimension(:,:), allocatable :: poolTerminalSpikes
@@ -61,13 +61,13 @@ module NeuralTractClass
             ! '''
             
             character(len = 6), intent(in) :: pool
-            class(Configuration), intent(in) :: conf
+            class(Configuration), intent(in), target :: conf
             character(len=80) :: paramTag, paramChar
             real(wp) :: paramReal
             integer :: i
             
             
-            init_NeuralTract%conf = conf
+            init_NeuralTract%conf => conf
             ! ## Indicates that is a neural tract.
             init_NeuralTract%poolKind = 'NT'
             ! ## String with the name of the Neural tract.

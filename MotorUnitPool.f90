@@ -35,7 +35,7 @@ module MotorUnitPoolClass
     type MotorUnitPool
         real(wp) :: t
         character(len = 2) :: poolKind
-        type(Configuration) :: conf
+        type(Configuration), pointer :: conf
         character(len = 6) :: pool
         integer :: MUnumber, totalNumberOfCompartments
         real(wp) :: muscleThickness_mm
@@ -75,7 +75,7 @@ module MotorUnitPoolClass
         !     + **conf**: Configuration object with the simulation parameters.
         !     + **pool**: string with Motor unit pool to which the motor unit belongs.
         ! '''
-        class(Configuration), intent(in) :: conf        
+        class(Configuration), intent(in), target :: conf        
         character(len = 6), intent(in):: pool
         character(len = 80) :: paramTag, paramChar
         integer :: MUnumber_S, MUnumber_FR, MUnumber_FF
@@ -92,7 +92,7 @@ module MotorUnitPoolClass
         init_MotorUnitPool%poolKind = 'MU'
 
         ! ## Configuration object with the simulation parameters.
-        init_MotorUnitPool%conf = conf
+        init_MotorUnitPool%conf => conf
 
         ! ## String with Motor unit pool to which the motor unit belongs.
         init_MotorUnitPool%pool = pool

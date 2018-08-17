@@ -31,7 +31,7 @@ module AxonDelayClass
     public :: AxonDelay
 
     type AxonDelay
-        type(Configuration) :: conf
+        type(Configuration), pointer :: conf
         integer :: index
         real(wp) :: length_m, velocity_m_s, latencyStimulusSpinal_ms
         real(wp) :: latencySpinalTerminal_ms, latencyStimulusTerminal_ms
@@ -76,14 +76,14 @@ module AxonDelayClass
         !     + **index**: integer corresponding to the motor unit order in the pool, according to 
         !     the Henneman's principle (size principle).
         ! '''
-        class(Configuration), intent(in) :: conf        
+        class(Configuration), intent(in), target :: conf        
         character(len = 3), intent(in) :: nerve 
         character(len = 6), intent(in) :: pool
         real(wp), intent(in) :: length, stimulusPositiontoTerminal
         integer, intent(in) :: index
         character(len=80) :: paramTag, paramChar
 
-        init_AxonDelay%conf = conf
+        init_AxonDelay%conf => conf
 
         ! ## Integer corresponding to the motor unit order in the pool, according to 
         ! ## the Henneman's principle (size principle).
@@ -108,8 +108,8 @@ module AxonDelayClass
             init_AxonDelay%velocity_m_s*1000.0/init_AxonDelay%conf%timeStep_ms) * init_AxonDelay%conf%timeStep_ms
 
         ! ## Float with instant, in ms, of the last spike in the terminal. 
-        init_AxonDelay%terminalSpikeTrain = -1E6
-        init_AxonDelay%axonSpikeTrain = -1E6
+        init_AxonDelay%terminalSpikeTrain = -1e6
+        init_AxonDelay%axonSpikeTrain = -1e6
         
         init_AxonDelay%indexOrthodromicSpike = 1
         init_AxonDelay%indexAntidromicSpike = 1
@@ -198,6 +198,7 @@ module AxonDelayClass
                                    exp(-self%conf%timeStep_ms /self%leakageTimeConstant_ms))
         
         if ((t - self%axonSpikeTrain) > self%refractoryPeriod_ms) then
+            !print '(F15.6)', self%electricCharge_muC
             if (self%electricCharge_muC >= self%threshold_muC) then
                 self%electricCharge_muC = 0
                 call self%addTerminalSpike(t, self%latencyStimulusTerminal_ms)
@@ -238,11 +239,11 @@ module AxonDelayClass
         ! '''
         class(AxonDelay), intent(inout) :: self
         self%electricCharge_muC = 0
-        self%terminalSpikeTrain = -1E6
-        self%axonSpikeTrain = -1E6
+        self%terminalSpikeTrain = -1e6
+        self%axonSpikeTrain = -1e6
 
-        deallocate(self%orthodromicSpikeTrain)
-        deallocate(self%antidromicSpikeTrain)
+        if (allocated(self%orthodromicSpikeTrain)) deallocate(self%orthodromicSpikeTrain)
+        if (allocated(self%antidromicSpikeTrain)) deallocate(self%antidromicSpikeTrain)
         self%indexOrthodromicSpike = 1
         self%indexAntidromicSpike = 1
     end subroutine       

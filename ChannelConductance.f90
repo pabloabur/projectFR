@@ -30,7 +30,7 @@ module ChannelConductanceClass
     public :: ChannelConductance
 
     type ChannelConductance
-        type(Configuration) :: conf
+        type(Configuration), pointer :: conf
         character(len = 2) :: neuronKind
         character(len = 6) :: channelKind
         real(wp) :: EqPot_mV, gmax_muS
@@ -77,7 +77,7 @@ module ChannelConductanceClass
         !     + **index**: the index of the unit that this state belongs.          
         ! '''
         character(len = 2), intent(in) ::  neuronKind
-        class(Configuration), intent(in) :: conf
+        class(Configuration), intent(in), target :: conf
         real(wp) :: compArea
         character(len = 6), intent(in) :: channelKind, pool
         character(len = 9), intent(in) :: compKind
@@ -86,7 +86,7 @@ module ChannelConductanceClass
         real(wp) :: channelDensity
         character(len = 2) :: stateType
         
-        init_ChannelConductance%conf = conf
+        init_ChannelConductance%conf => conf
         ! ## string with the type of the ionic channel. For now it 
         ! ## can be *Na* (Sodium), *Ks* (slow Potassium), *Kf* (fast Potassium) or 
         ! ## *Ca* (Calcium).

@@ -152,7 +152,7 @@ module QueueClass
         subroutine clear(self)
             class(Queue), intent(inout) :: self
             
-            deallocate(self%item)
+            if (allocated(self%item)) deallocate(self%item)
             self%endQueue = 0            
         end subroutine
 end module QueueClass

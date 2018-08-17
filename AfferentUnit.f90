@@ -37,7 +37,7 @@ module AfferentUnitClass
     public :: AfferentUnit
 
     type AfferentUnit
-        type(Configuration) :: conf
+        type(Configuration), pointer :: conf
         character(len = 6) :: pool, muscle, neuronKind
         integer :: index, compNumber, lastCompIndex
         real(wp) :: timeStep_ms, timeStepByTwo_ms, timeStepBySix_ms
@@ -95,7 +95,7 @@ module AfferentUnitClass
             !     + **index**: integer corresponding to the motor unit order in
             !     the pool, according to the Henneman's principle (size principle).
             ! '''
-            class(Configuration), intent(in) :: conf
+            class(Configuration), intent(in), target :: conf
             character(len = 6), intent(in) :: pool
             character(len = 6), intent(in) :: muscle
             integer, intent(in) :: index
@@ -112,7 +112,7 @@ module AfferentUnitClass
             
             init_AfferentUnit%position_mm = 0.0
             ! ## Configuration object with the simulation parameters.
-            init_AfferentUnit%conf = conf
+            init_AfferentUnit%conf => conf
 
             init_AfferentUnit%timeStep_ms = init_AfferentUnit%conf%timeStep_ms
             init_AfferentUnit%timeStepByTwo_ms = init_AfferentUnit%conf%timeStepByTwo_ms
@@ -124,9 +124,9 @@ module AfferentUnitClass
             ! # Neural compartments
 
             init_AfferentUnit%pool = pool
-
+            paramTag2 = trim(pool) // '-' // trim(muscle)
             paramTag = 'NumberAxonNodes'
-            paramChar = init_AfferentUnit%conf%parameterSet(paramTag, pool, index)
+            paramChar = init_AfferentUnit%conf%parameterSet(paramTag, paramTag2, index)
             read(paramChar, *)paramReal
             NumberOfAxonNodes = nint(paramReal)
 
@@ -168,7 +168,7 @@ module AfferentUnitClass
             allocate(gCoupling_muS(init_AfferentUnit%compNumber))
             
             paramTag = 'cytR'
-            paramChar =  init_AfferentUnit%conf%parameterSet(paramTag, pool, index)
+            paramChar =  init_AfferentUnit%conf%parameterSet(paramTag, paramTag2, index)
             read(paramChar, *)cytR
 
             do i = 1, init_AfferentUnit%compNumber - 1
@@ -249,7 +249,7 @@ module AfferentUnitClass
             
             ! ## Refractory period, in ms, of the motoneuron.
             paramTag = 'AFRefPer'
-            paramChar = init_AfferentUnit%conf%parameterSet(paramTag, pool, index)
+            paramChar = init_AfferentUnit%conf%parameterSet(paramTag, paramTag2, index)
             read(paramChar, *)init_AfferentUnit%AFRefPer_ms
             
             ! # delay
@@ -271,13 +271,13 @@ module AfferentUnitClass
             end if
             
             paramTag = 'nerveLength_' // trim(init_AfferentUnit%nerve)
-            paramChar = init_AfferentUnit%conf%parameterSet(paramTag, pool, index)
+            paramChar = init_AfferentUnit%conf%parameterSet(paramTag, paramTag2, index)
             read(paramChar, *)init_AfferentUnit%nerveLength
 
             ! ## Distance, in m, of the stimulus position to the terminal. 
             
             paramTag = 'stimDistToTerm_' // trim(init_AfferentUnit%nerve)
-            paramChar = init_AfferentUnit%conf%parameterSet(paramTag, pool, index)
+            paramChar = init_AfferentUnit%conf%parameterSet(paramTag, paramTag2, index)
             read(paramChar, *)distanceToTerminal 
             
             init_AfferentUnit%stimulusPositiontoTerminal = init_AfferentUnit%nerveLength - distanceToTerminal  
@@ -302,35 +302,35 @@ module AfferentUnitClass
             end if
             ! # Nerve stimulus function    
             paramTag = 'stimFrequency_' // trim(init_AfferentUnit%nerve)
-            paramChar = init_AfferentUnit%conf%parameterSet(paramTag, pool, index)
+            paramChar = init_AfferentUnit%conf%parameterSet(paramTag, paramTag2, index)
             read(paramChar, *)init_AfferentUnit%stimulusMeanFrequency_Hz
             
             paramTag = 'stimPulseDuration_' // trim(init_AfferentUnit%nerve)
-            paramChar = init_AfferentUnit%conf%parameterSet(paramTag, pool, index)
+            paramChar = init_AfferentUnit%conf%parameterSet(paramTag, paramTag2, index)
             read(paramChar, *)init_AfferentUnit%stimulusPulseDuration_ms
 
             paramTag = 'stimIntensity_' // trim(init_AfferentUnit%nerve)
-            paramChar = init_AfferentUnit%conf%parameterSet(paramTag, pool, index)
+            paramChar = init_AfferentUnit%conf%parameterSet(paramTag, paramTag2, index)
             read(paramChar, *)init_AfferentUnit%stimulusIntensity_mA
 
             paramTag = 'stimStart_' // trim(init_AfferentUnit%nerve)
-            paramChar = init_AfferentUnit%conf%parameterSet(paramTag, pool, index)
+            paramChar = init_AfferentUnit%conf%parameterSet(paramTag, paramTag2, index)
             read(paramChar, *)init_AfferentUnit%stimulusStart_ms
             
             paramtag = 'stimStop_' // trim(init_AfferentUnit%nerve)
-            paramChar = init_AfferentUnit%conf%parameterSet(paramTag, pool, index)
+            paramChar = init_AfferentUnit%conf%parameterSet(paramTag, paramTag2, index)
             read(paramChar, *)init_AfferentUnit%stimulusStop_ms
             
             paramTag = 'stimModulationStart_' // trim(init_AfferentUnit%nerve)
-            paramChar = init_AfferentUnit%conf%parameterSet(paramTag, pool, index)
+            paramChar = init_AfferentUnit%conf%parameterSet(paramTag, paramTag2, index)
             read(paramChar, *)init_AfferentUnit%stimulusModulationStart_ms
 
             paramTag = 'stimModulationStop_' // trim(init_AfferentUnit%nerve)
-            paramChar = init_AfferentUnit%conf%parameterSet(paramTag, pool, index)
+            paramChar = init_AfferentUnit%conf%parameterSet(paramTag, paramTag2, index)
             read(paramChar, *)init_AfferentUnit%stimulusModulationStop_ms
 
             paramTag = 'stimModulation_' // trim(init_AfferentUnit%nerve)
-            paramChar = init_AfferentUnit%conf%parameterSet(paramTag, pool, index)
+            paramChar = init_AfferentUnit%conf%parameterSet(paramTag, paramTag2, index)
             read(paramChar, *)init_AfferentUnit%axonStimModulation
             ! ## Vector with the nerve stimulus, in mA.
             simDuration = nint(init_AfferentUnit%conf%simDuration_ms/init_AfferentUnit%conf%timeStep_ms)
@@ -349,7 +349,7 @@ module AfferentUnitClass
             end if
             
             paramTag = 'GammaOrder_' // trim(init_AfferentUnit%pool) // '-' // trim(init_AfferentUnit%muscle)
-            paramChar = init_AfferentUnit%conf%parameterSet(paramTag, pool, 0)
+            paramChar = init_AfferentUnit%conf%parameterSet(paramTag, paramTag2, 0)
             read(paramChar, *)paramReal
             
             init_AfferentUnit%GammaOrder = nint(paramReal)
@@ -408,7 +408,7 @@ module AfferentUnitClass
             vmin = -30.0
             vmax = 120.0      
 
-             k1 = self%dVdt(t, self%v_mV)        
+            k1 = self%dVdt(t, self%v_mV)        
             k2 = self%dVdt(t + self%conf%timeStepByTwo_ms, self%v_mV + self%conf%timeStepByTwo_ms * k1)
             k3 = self%dVdt(t + self%conf%timeStepByTwo_ms, self%v_mV + self%conf%timeStepByTwo_ms * k2)
             k4 = self%dVdt(t + self%conf%timeStep_ms, self%v_mV + self%conf%timeStep_ms * k3)
@@ -570,6 +570,7 @@ module AfferentUnitClass
             
             
             
+            
             startStep = nint(self%stimulusStart_ms / self%conf%timeStep_ms)
             
             ! ## Vector with the nerve stimulus, in mA.
@@ -589,13 +590,16 @@ module AfferentUnitClass
                         end if
                         if (stimulusFrequency_Hz > 0.0) then
                             stimulusPeriod_ms = 1000.0 / stimulusFrequency_Hz
+
                             numberOfSteps = nint(stimulusPeriod_ms / self%conf%timeStep_ms)
-                            if (mod(i - startStep,numberOfSteps) == 0) then 
+                            
+                            if (mod(i - startStep,numberOfSteps) == 0) then                                 
                                 self%nerveStimulus_mA(i:i+stimPulseDurationSteps) = self%stimulusIntensity_mA
                             end if
                         end if
                 end if
             end do
+            
         end subroutine
 
         subroutine reset(self)
@@ -610,10 +614,12 @@ module AfferentUnitClass
                 self%v_mV(i) = self%Compartments(i)%EqPot_mV
             end do
             call self%Delay%reset()
-            self%tSpikes(:) = 0.0
-            deallocate(self%lastCompSpikeTrain)
+            if (self%compNumber>0) then
+                self%tSpikes(:) = 0.0
+            end if
+            if (allocated(self%lastCompSpikeTrain)) deallocate(self%lastCompSpikeTrain)
             ! ## Vector with the instants of spikes at the terminal.
-            deallocate(self%terminalSpikeTrain)
+            if (allocated(self%terminalSpikeTrain)) deallocate(self%terminalSpikeTrain)
         end subroutine
 
 

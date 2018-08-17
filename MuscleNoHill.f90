@@ -28,7 +28,7 @@ module MuscleNoHillClass
     public :: MuscleNoHill
 
     type :: MuscleNoHill
-        type(Configuration) :: conf
+        type(Configuration), pointer :: conf
         character(len = 6) :: pool
         integer :: MUnumber, MUtypeInumber
         real(wp), dimension(:), allocatable :: twTet, twitchAmp_N, maximumActivationForce
@@ -53,14 +53,14 @@ module MuscleNoHillClass
     contains
 
         type(MuscleNoHill) function init_MuscleNoHill(conf, pool, MUnumber, MUtypeInumber, unit)
-            class(Configuration), intent(in) :: conf
+            class(Configuration), intent(in), target :: conf
             character(len = 6), intent(in) :: pool
             integer, intent(in) :: MUnumber, MUtypeInumber
             class(MotorUnit), dimension(MUnumber), intent(in) :: unit
             integer :: i
             character(len = 80) :: paramChar, paramTag
 
-            init_MuscleNoHill%conf = conf
+            init_MuscleNoHill%conf => conf
             init_MuscleNoHill%pool = pool
             init_MuscleNoHill%MUnumber = MUnumber
             init_MuscleNoHill%MUtypeInumber = MUtypeInumber

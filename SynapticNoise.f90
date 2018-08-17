@@ -27,7 +27,7 @@ module SynapticNoiseClass
     public :: SynapticNoise
 
     type SynapticNoise
-        type(Configuration) :: conf
+        type(Configuration), pointer :: conf
         character(len = 6) :: poolKind, pool
         integer :: Number, GammaOrder, timeIndex
         type(NeuralTractUnit), dimension(:), allocatable :: unit
@@ -56,13 +56,13 @@ module SynapticNoiseClass
 
             !     + **pool**: string with the name of the pool.
             ! '''
-            class(Configuration), intent(in) :: conf
+            class(Configuration), intent(in), target :: conf
             character(len = 6), intent(in) :: pool
             character(len = 80) :: paramTag, paramChar
             real(wp) :: paramReal
             integer :: i
             
-            init_SynapticNoise%conf = conf
+            init_SynapticNoise%conf => conf
             init_SynapticNoise%poolKind = 'SN'
 
             ! ## String with the name of the pool.

@@ -31,7 +31,7 @@ module PulseConductanceStateClass
 
 
     type PulseConductanceState
-        type(Configuration) :: conf
+        type(Configuration), pointer :: conf
         character(len = 2) :: stateKind
         real(wp) :: value
         logical :: state
@@ -74,7 +74,7 @@ module PulseConductanceStateClass
             !     + **index**: the index of the unit that this state belongs.                    
             ! ''' 
             character(len = 2), intent(in) :: stateKind, neuronKind
-            class(Configuration), intent(in) :: conf
+            class(Configuration), intent(in), target :: conf
             character(len = 6), intent(in) :: pool
             character(len = 9), intent(in) :: compKind
             integer, intent(in) :: index
@@ -85,7 +85,7 @@ module PulseConductanceStateClass
             
             init_PulseConductanceState%state = .false.
             
-            init_PulseConductanceState%conf = conf
+            init_PulseConductanceState%conf => conf
 
             paramTag = 'beta_' // trim(stateKind) // ':' // trim(pool) // '-' // trim(neuronKind) // '@' // trim(compKind)
             paramChar = init_PulseConductanceState%conf%parameterSet(paramTag, pool, index)

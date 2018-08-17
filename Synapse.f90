@@ -38,7 +38,7 @@ module SynapseClass
         character(len = 10) :: synapseKind
         character(len = 2) :: neuronKind
         integer ::index
-        type(Configuration) :: conf
+        type(Configuration), pointer :: conf
         real(wp) :: timeStep_ms
         real(wp), dimension(:), allocatable :: gmax_muS, delay_ms, variation, timeConstant_ms
         type(CharacterArray) :: dynamics
@@ -95,7 +95,7 @@ module SynapseClass
 
             !     + **neuronKind**: 
             ! '''
-            class(Configuration), intent(in) :: conf    
+            class(Configuration), intent(in), target :: conf    
             character(len = 6), intent(in) :: pool
             integer, intent(in) :: index
             character(len = 9), intent(in) :: compartment
@@ -108,7 +108,7 @@ module SynapseClass
             init_Synapse%synapseKind = synapseKind
             init_Synapse%neuronKind = neuronKind
             init_Synapse%index = index
-            init_Synapse%conf = conf
+            init_Synapse%conf => conf
 
             init_Synapse%timeStep_ms = init_Synapse%conf%timeStep_ms
 
@@ -451,14 +451,16 @@ module SynapseClass
             
             call self%inQueue%clear()
             call self%outQueue%clear()
-            self%tBeginOfPulse(:) = -1e6
-            self%tEndOfPulse(:) = -1e6
-            self%tLastPulse(:) = -1e6
-            self%conductanceState(:) = .false.
-            self%ri(:) = 0.0
-            self%ti(:) = 0.0
-            self%dynamicGmax(:) = 0.0
-            self%synContrib = self%gmax_muS / self%gMaxTot_muS
+            if (self%numberOfIncomingSynapses>0) then
+                self%tBeginOfPulse(:) = -1e6
+                self%tEndOfPulse(:) = -1e6
+                self%tLastPulse(:) = -1e6
+                self%conductanceState(:) = .false.
+                self%ri(:) = 0.0
+                self%ti(:) = 0.0
+                self%dynamicGmax(:) = 0.0
+                self%synContrib = self%gmax_muS / self%gMaxTot_muS
+            end if
         end subroutine
 
 end module SynapseClass

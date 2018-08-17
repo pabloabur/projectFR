@@ -30,7 +30,7 @@ module MuscleSpindleClass
     public :: MuscleSpindle
 
     type MuscleSpindle
-        type(Configuration):: conf
+        type(Configuration), pointer:: conf
         character(len = 6) :: muscle
         real(wp) :: beta0Bag1, beta0Bag2, beta0Chain
         real(wp) :: beta1Bag1, beta2Bag2, beta2Chain
@@ -82,12 +82,12 @@ module MuscleSpindleClass
 
         !     + **muscle**: string with the muscle to which the muscle spindle belongs.              
         ! '''
-        class(Configuration), intent(in) :: conf
+        class(Configuration), intent(in), target :: conf
         character(len = 6), intent(in) :: muscle
         character(len = 80) :: paramChar, paramTag
 
         ! ## Configuration object with the simulation parameters.
-        init_MuscleSpindle%conf = conf
+        init_MuscleSpindle%conf => conf
 
         init_MuscleSpindle%muscle = muscle
         

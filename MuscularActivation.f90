@@ -28,7 +28,7 @@ module MuscularActivationClass
     public :: MuscularActivation
 
     type MuscularActivation
-        type(Configuration) :: conf
+        type(Configuration), pointer :: conf
         character(len = 6) :: pool
         integer :: MUnumber
         character(len = 80) :: activationModel
@@ -49,7 +49,7 @@ module MuscularActivationClass
     contains
 
         type(MuscularActivation) function init_MuscularActivation(conf, pool, MUnumber, unit)
-            class(Configuration), intent(in) :: conf        
+            class(Configuration), intent(in), target :: conf        
             character(len = 6), intent(in) :: pool
             integer, intent(in) :: MUnumber
             class(MotorUnit), dimension(MUnumber),  intent(in), target:: unit
@@ -57,7 +57,7 @@ module MuscularActivationClass
             integer :: i
              
 
-            init_MuscularActivation%conf = conf
+            init_MuscularActivation%conf => conf
             init_MuscularActivation%pool = pool
             init_MuscularActivation%MUnumber = MUnumber
             !allocate(init_MuscularActivation%unit(init_MuscularActivation%MUnumber))

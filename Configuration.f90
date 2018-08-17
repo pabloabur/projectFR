@@ -65,10 +65,13 @@ module ConfigurationClass
         real(wp) :: timeStepByTwo_ms, timeStepBySix_ms
         real(wp) :: EMGAttenuation_mm1, EMGWidening_mm1, EMGNoiseEMG
         character(len = 80) :: MUParameterDistribution
+        type(CharacterMatrix) :: confMatrix
         
         contains
             procedure :: parameterSet
             procedure :: determineSynapses
+            procedure :: changeConfigurationParameter
+
     end type Configuration
 
     interface Configuration
@@ -92,9 +95,10 @@ module ConfigurationClass
                 integer :: ierr, il, j, stop1, i
                 character(len = 80) :: line
                 character(len = 80) :: param1, param2, param3
+                type(CharacterArray) :: newLine
 
                 init_Configuration%filename = filename
-
+                init_Configuration%confMatrix = CharacterMatrix()
                 open(1,file = init_Configuration%filename, status='old',iostat=ierr)
                 
                 do while (ierr.eq.0)
@@ -131,8 +135,13 @@ module ConfigurationClass
                     init_Configuration%timeStepByTwo_ms = init_Configuration%timeStep_ms / 2.0 
                     !## The variable  timeStep divided by six, for computational efficiency.
                     init_Configuration%timeStepBySix_ms = init_Configuration%timeStep_ms / 6.0
+                    newLine = CharacterArray()
+                    call newLine%AddToList(param1)
+                    call newLine%AddToList(param2)
+                    call newLine%AddToList(param3)
+                    call init_Configuration%confMatrix%append(newLine)
                 end do
-
+                
                 close(unit = 1)
                 
             
@@ -161,7 +170,7 @@ module ConfigurationClass
                 class(Configuration), intent(inout) :: self
                 character(len=6), intent(in) :: pool
                 integer, intent(in) :: index
-                integer :: ierr, il, j, stop1, i
+                integer :: ierr, il, j, stop1, i, k
                 character(len = 80) :: line
                 character(len = 80) :: param1, param2, param3
                 real(wp) :: param2Real, param3Real
@@ -175,31 +184,15 @@ module ConfigurationClass
                 MUnumber_S = 0
                 MUnumber_FR = 0
                 MUnumber_FF = 0
-                Nnumber = 0
+                Nnumber = 0              
                 
-                
-                
-                open(unit=1,file = self%filename, status='unknown',iostat=ierr)
-                
-                do while (ierr.eq.0)
-                    read(1, '(A)', iostat=ierr)line
+                do k = 1, size(self%confMatrix%item)
+                    param1 = self%confMatrix%item(k)%item(1)%string
+                    param2 = self%confMatrix%item(k)%item(2)%string
+                    param3 = self%confMatrix%item(k)%item(3)%string
+
                     
-                    il=len_trim(line)
-                    j = 1
-                    do i = 1, il
-                        if (line(i:i) == ',') then
-                            if (j.eq.1) then
-                                param1 = line(1:i-1)
-                                j = j + 1
-                                stop1 = i
-                            else if (j.eq.2) then
-                                param2 = line(stop1+1:i-1)
-                                param3 = line(i+1:il)
-                            end if 
-                        end if            
-                    end do
-                    
-                    if (pool.eq.'SOL'.or.pool.eq.'MG'.or.pool.eq.'LG'.or.pool.eq.'TA') then
+                    if (pool=='SOL'.or.pool=='MG'.or.pool=='LG'.or.pool=='TA') then
                         if (param1.eq.('MUnumber_' // trim(pool) // '-S')) then
                             read(param2(1:len_trim(param2)), *)MUnumber_S
                         else if (param1.eq.('MUnumber_' // trim(pool) // '-FR')) then
@@ -209,37 +202,27 @@ module ConfigurationClass
                         end if
                         Nnumber = MUnumber_S + MUnumber_FR + MUnumber_FF 
                     else 
-                        if (trim(param1).eq.('Number_' // trim(pool))) read(param2(1:len_trim(param2)), *)Nnumber
+                        if (trim(param1).eq.('Number_' // trim(pool))) then 
+                            read(param2(1:len_trim(param2)), *)Nnumber
+                        end if
                     end if
                 end do
-
+                
                 
                 allocate(paramVec(Nnumber)) 
                 if (MUnumber_S.gt.0) allocate(paramVec_S(MUnumber_S))
                 if (MUnumber_FR.gt.0) allocate(paramVec_FR(MUnumber_FR))  
                 if (MUnumber_FF.gt.0) allocate(paramVec_FF(MUnumber_FF))
-                close(unit = 1)                  
                 
-                open(unit = 1,file = self%filename, status='old',iostat=ierr)
                 
-                do while (ierr.eq.0)
-                    read(1, '(A)', iostat=ierr) line
-                    il=len_trim(line)
-                    j = 1
-                    do i = 1, il
-                        if (line(i:i) == ',') then
-                            if (j.eq.1) then
-                                param1 = line(1:i-1)
-                                j = j + 1
-                                stop1 = i
-                            else if (j.eq.2) then
-                                param2 = line(stop1+1:i-1)
-                                param3 = line(i+1:il)
-                            end if 
-                        end if            
-                    end do
+                
+                
+                do k = 1, size(self%confMatrix%item)
+                    param1 = self%confMatrix%item(k)%item(1)%string
+                    param2 = self%confMatrix%item(k)%item(2)%string
+                    param3 = self%confMatrix%item(k)%item(3)%string
                     
-                    if (trim(param1).eq.trim(paramTag)) then 
+                    if (trim(param1)==trim(paramTag)) then 
                         requestedParamater = param2
                         distribute = .false.
                     else if (trim(self%MUParameterDistribution).eq.'linear') then                         
@@ -280,7 +263,8 @@ module ConfigurationClass
                 
                 
                 
-                close(unit = 1)
+                
+                
                    
                 
                 if (trim(self%MUParameterDistribution).eq.'linear'.and.distribute) then
@@ -327,30 +311,19 @@ module ConfigurationClass
                 class(Configuration), intent(inout) :: self
                 character(len=80), intent(in) :: neuralSource
                 character(len=80) :: line, param1, param2, param3, paramTag, param
-                integer :: ierr, il, j, i, stop1, pos, posUnitKind, posComp, posKind
+                integer :: ierr, il, j, i, stop1, pos, posUnitKind, posComp, posKind, k
                 real(wp) :: paramReal
                 type(CharacterArray) :: newSynapse 
                 
 
                 Synapses = CharacterMatrix()
-                open(unit=1,file = self%filename, status='unknown',iostat=ierr)
+                
                 paramTag = 'Con:' // trim(neuralSource)
-                do while (ierr.eq.0)
-                    read(1, '(A)', iostat=ierr)line
-                    il=len_trim(line)
-                    j = 1
-                    do i = 1, il
-                        if (line(i:i) == ',') then
-                            if (j.eq.1) then
-                                param1 = line(1:i-1)
-                                j = j + 1
-                                stop1 = i
-                            else if (j.eq.2) then
-                                param2 = line(stop1+1:i-1)
-                                param3 = line(i+1:il)
-                            end if
-                        end if            
-                    end do
+                do k = 1, size(self%confMatrix%item)
+                    param1 = self%confMatrix%item(k)%item(1)%string
+                    param2 = self%confMatrix%item(k)%item(2)%string
+                    param3 = self%confMatrix%item(k)%item(3)%string
+
                     il = len_trim(param1)
                     pos = 0
                     do i = 1, il
@@ -387,17 +360,27 @@ module ConfigurationClass
                     end if               
                 end do
                
-                close(unit = 1)                  
+                
             end function
             
-            ! TODO:
-            ! def changeConfigurationParameter(self, parameter, value1, value2):
-            ! '''
-            ! '''
-            ! for i in xrange(0, len(self.confArray)):
-            !     if self.confArray[i][0] == parameter:
-            !         self.confArray[i][1] = value1
-            !         self.confArray[i][2] = value2
+            
+            subroutine changeConfigurationParameter(self, paramTag, value1, value2)
+                ! '''
+                ! '''
+                class(Configuration), intent(inout) :: self
+                character(len = 80), intent(in) :: paramTag
+                character(len = 80), intent(in) :: value1, value2 
+                integer :: i
+
+                do i = 1, size(self%confMatrix%item)
+                    if (self%confMatrix%item(i)%item(1)%string == paramTag) then
+                        self%confMatrix%item(i)%item(2)%string = trim(value1)
+                        self%confMatrix%item(i)%item(3)%string = trim(value2)
+                    end if
+                end do
+                
+
+            end subroutine
 
 end module
 

@@ -36,7 +36,7 @@ module MotorUnitClass
     public :: MotorUnit
 
     type MotorUnit
-        type(Configuration) :: conf
+        type(Configuration), pointer :: conf
         character(len = 2) ::  neuronKind
         character(len = 6) :: pool  
         character(len = 80) :: MUSpatialDistribution
@@ -72,6 +72,7 @@ module MotorUnitClass
             procedure :: reset
             procedure :: getEMG
             procedure :: transmitSpikes
+            procedure :: createStimulus
 
     end type MotorUnit
 
@@ -102,7 +103,7 @@ module MotorUnitClass
         !     
         !     + **skinThickness** : float, skin Thickness, in mm   
         ! '''
-        class(Configuration), intent(in) :: conf    
+        class(Configuration), intent(in), target :: conf    
         character(len = 6), intent(in) :: pool
         integer, intent(in) :: index
         character(len = 2), intent(in) ::  neuronKind
@@ -129,7 +130,7 @@ module MotorUnitClass
         init_MotorUnit%index = index         
         
         ! ## Configuration object with the simulation parameters.
-        init_MotorUnit%conf = conf
+        init_MotorUnit%conf => conf
 
         ! ## String with the type of the motor unit. It can be
         ! ## *S* (slow), *FR* (fast and resistant) and
@@ -701,7 +702,7 @@ module MotorUnitClass
     subroutine reset(self)
         class(MotorUnit), intent(inout) :: self     
         integer :: i
-
+        
         self%tSomaSpike = -1e6
         do i = 1, self%compNumber
             self%v_mV(i) = self%Compartments(i)%EqPot_mV
@@ -709,15 +710,16 @@ module MotorUnitClass
         end do
         
         call self%Delay%reset()
+        
         self%tSpikes(:) = 0.0
         self%iIonic(:) = 0.0
         self%iInjected(:) = 0.0
 
-        deallocate(self%somaSpikeTrain)
+        if (allocated(self%somaSpikeTrain)) deallocate(self%somaSpikeTrain)
         ! ## Vector with the instants of spikes at the last compartment.
-        deallocate(self%lastCompSpikeTrain)
+        if (allocated(self%lastCompSpikeTrain)) deallocate(self%lastCompSpikeTrain)
         ! ## Vector with the instants of spikes at the terminal.
-        deallocate(self%terminalSpikeTrain)
+        if (allocated(self%terminalSpikeTrain)) deallocate(self%terminalSpikeTrain)
     end subroutine
 
     subroutine createStimulus(self)

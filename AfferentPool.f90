@@ -33,7 +33,7 @@ module AfferentPoolClass
 
     type AfferentPool
         character(len = 2) :: poolKind
-        type(Configuration) :: conf
+        type(Configuration), pointer :: conf
         character(len = 6) :: pool, muscle
         integer :: AFnumber
         type(AfferentUnit), dimension(:), allocatable :: unit
@@ -61,7 +61,7 @@ module AfferentPoolClass
 
             !     + **pool**: string with Motor unit pool to which the motor unit belongs.
             ! '''   
-            class(Configuration), intent(in) :: conf
+            class(Configuration), intent(in), target :: conf
             character(len = 6), intent(in) :: pool
             character(len = 6), intent(in) :: muscle
             character(len=80) :: paramTag, paramChar
@@ -72,7 +72,7 @@ module AfferentPoolClass
             init_AfferentPool%poolKind = 'AF'
 
             ! ## Configuration object with the simulation parameters.
-            init_AfferentPool%conf = conf
+            init_AfferentPool%conf => conf
             ! ## String with Motor unit pool to which the motor unit belongs.
             init_AfferentPool%pool = pool
             
@@ -163,6 +163,9 @@ module AfferentPoolClass
 
             
             
+            
+            if (allocated(self%poolLastCompSpikes)) deallocate(self%poolLastCompSpikes)
+            if (allocated(self%poolTerminalSpikes)) deallocate(self%poolTerminalSpikes)
             allocate(self%poolLastCompSpikes(numberOfSpikesLastComp,2))
             allocate(self%poolTerminalSpikes(numberOfSpikesTerminal,2))                
 

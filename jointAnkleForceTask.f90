@@ -29,7 +29,7 @@ module jointAnkleForceTaskClass
     public :: jointAnkleForceTask
 
     type jointAnkleForceTask
-        type(Configuration) :: conf
+        type(Configuration), pointer :: conf
         type(MusclePointer), dimension(:), allocatable :: muscles
         real(wp), dimension(:), allocatable :: ankleAngle_rad, ankleTorque_Nm
 
@@ -48,11 +48,11 @@ module jointAnkleForceTaskClass
     contains
 
         type(jointAnkleForceTask) function   init_jointAnkleForceTask(conf, pools)
-            class(Configuration), intent(in) :: conf
+            class(Configuration), intent(in), target :: conf
             class(MotorUnitPool), intent(in) :: pools(:)
             integer :: numberOfPools, i, timeLength
 
-            init_jointAnkleForceTask%conf = conf
+            init_jointAnkleForceTask%conf => conf
             
             numberOfPools = size(pools)
             allocate(init_jointAnkleForceTask%muscles(numberOfPools))
@@ -64,7 +64,7 @@ module jointAnkleForceTaskClass
                 end if
             end do
             ! ##
-            timeLength = int(conf%simDuration_ms/conf%timeStep_ms)
+            timeLength = nint(conf%simDuration_ms/conf%timeStep_ms)
             allocate(init_jointAnkleForceTask%ankleAngle_rad(timeLength))
             init_jointAnkleForceTask%ankleAngle_rad(:) = 0.0
             allocate(init_jointAnkleForceTask%ankleTorque_Nm(timeLength))
@@ -144,9 +144,10 @@ module jointAnkleForceTaskClass
                         self%ankleAngle_rad(nint(t / self%conf%timeStep_ms) - 2)) / &
                         (self%conf%timeStep_ms**2)
         
-        torque = torque - 1100*velocity  - 320*self%ankleAngle_rad(nint(t / self%conf%timeStep_ms))
+        torque = torque - 0*1100*velocity  - 0*320*self%ankleAngle_rad(nint(t / self%conf%timeStep_ms)) &
+                + 0*0.007*acceleration
         
-        self%ankleTorque_Nm(int(t / self%conf%timeStep_ms)) = torque
+        self%ankleTorque_Nm(nint(t / self%conf%timeStep_ms)) = torque
     end subroutine
 
     subroutine reset(self)

@@ -36,7 +36,7 @@ module InterneuronClass
     public :: Interneuron
 
     type Interneuron
-        type(Configuration) :: conf    
+        type(Configuration), pointer :: conf    
         character(len = 6) :: pool
         character(len = 2) :: neuronKind
         real(wp) :: tSomaSpike
@@ -85,7 +85,7 @@ module InterneuronClass
 
         ! ## Configuration object with the simulation parameters.
 
-        class(Configuration), intent(in) :: conf    
+        class(Configuration), intent(in), target :: conf    
         character(len = 6), intent(in) :: pool
         integer, intent(in) :: index
         character(len=80) :: paramTag, paramChar
@@ -94,7 +94,7 @@ module InterneuronClass
         real(wp), dimension(:), allocatable :: gLeak, capacitance_nF, EqPot
         real(wp), dimension(:,:), allocatable :: GL
 
-        init_Interneuron%conf = conf
+        init_Interneuron%conf => conf
 
         init_Interneuron%pool = pool
         

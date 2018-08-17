@@ -24,7 +24,7 @@ StateType,pulse,
 % Inputs
 %Stimulus
 stimDistToTerm_PTN,0.2,
-stimStart_PTN,0,
+stimStart_PTN,5,
 stimStop_PTN,3000,
 stimPulseDuration_PTN,1,
 stimIntensity_PTN,10,

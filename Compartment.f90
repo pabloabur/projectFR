@@ -37,7 +37,7 @@ module CompartmentClass
         type(ChannelConductance), dimension(:), allocatable :: Channels ! ## List of ChannelConductance objects in the Compartment.
         character(len = 2)::  neuronKind
         integer :: index, numberChannels
-        type(Configuration) :: conf
+        type(Configuration), pointer :: conf
         real(wp) :: length_mum, diameter_mum, capacitance_nF
         real(wp) :: EqPot_mV, IPump_nA, gLeak_muS
         type(Synapse), dimension(2) :: SynapsesIn
@@ -74,7 +74,7 @@ module CompartmentClass
         !     and *FF* (fast and fatigable).
         ! '''
         character(len = 9), intent(in) :: compKind
-        class(Configuration), intent(in) :: conf
+        class(Configuration), intent(in), target :: conf
         character(len = 6), intent(in) :: pool
         integer, intent(in) :: index
         character(len = 2), intent(in) ::  neuronKind
@@ -84,7 +84,7 @@ module CompartmentClass
         character(len = 10) :: synapseKind
 
         
-        init_Compartment%conf = conf
+        init_Compartment%conf => conf
         ! ## String with the type of the motor unit. It can be *S* (slow), *FR* (fast and resistant), 
         ! ## and *FF* (fast and fatigable).
         init_Compartment%neuronKind = neuronKind

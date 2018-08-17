@@ -29,7 +29,7 @@ module MuscleHillClass
 
 
     type MuscleHill
-        type(Configuration) :: conf
+        type(Configuration), pointer :: conf
         character(len = 6) :: pool
         integer :: MUnumber, MUtypeInumber, timeIndex
         real(wp), dimension(:), allocatable :: twTet, twitchAmp_N
@@ -81,7 +81,7 @@ module MuscleHillClass
     contains
 
         type(MuscleHill) function init_MuscleHill(conf, pool, MUnumber, MUtypeInumber, unit)
-            class(Configuration), intent(in) :: conf
+            class(Configuration), intent(in), target :: conf
             character(len = 6), intent(in) :: pool
             integer, intent(in) :: MUnumber, MUtypeInumber
             class(MotorUnit), dimension(MUnumber), intent(in) :: unit
@@ -91,7 +91,7 @@ module MuscleHillClass
 
 
             ! ##
-            init_MuscleHill%conf = conf
+            init_MuscleHill%conf => conf
             ! ##
             init_MuscleHill%pool = pool
             ! ##
