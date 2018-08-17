@@ -35,6 +35,7 @@ program ForceVariability
     real(wp) , dimension(200):: Amp, phase
     real(wp), dimension(:,:,:), allocatable :: forceSOL, forceMG, forceLG, torque
     integer :: m, l
+    character(len = 80) :: value1, value2
 
     call init_random_seed()
 
@@ -70,23 +71,29 @@ program ForceVariability
     
     do m = 1, size(condVelS)
         paramTag = 'axonDelayCondVel:MG-S' 
-        call conf%changeConfigurationParameter(paramTag, condVelS(m), condVelFR(m))
+        write(value1, '(F15.6)')condVelS(m)
+        write(value2, '(F15.6)')condVelFR(m)
+        call conf%changeConfigurationParameter(paramTag, value1 , value2)
         paramTag = 'axonDelayCondVel:SOL-S'
-        call conf%changeConfigurationParameter(paramTag, condVelS(m), condVelFR(m))
+        call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'axonDelayCondVel:LG-S'
-        call conf%changeConfigurationParameter(paramTag, condVelS(m), condVelFR(m))
+        call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'axonDelayCondVel:MG-FR'
-        call conf%changeConfigurationParameter(paramTag, condVelFR(m), condVelFF1(m))
+        write(value1, '(F15.6)')condVelFR(m)
+        write(value2, '(F15.6)')condVelFF1(m)
+        call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'axonDelayCondVel:SOL-FR'
-        call conf%changeConfigurationParameter(paramTag, condVelFR(m), condVelFF1(m))
+        call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'axonDelayCondVel:LG-FR'
-        call conf%changeConfigurationParameter(paramTag, condVelFR(m), condVelFF1(m))
+        call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'axonDelayCondVel:MG-FF'
-        call conf%changeConfigurationParameter(paramTag, condVelFF1(m), condVelFF2(m))
+        write(value1, '(F15.6)')condVelFF1(m)
+        write(value2, '(F15.6)')condVelFF2(m)
+        call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'axonDelayCondVel:SOL-FF'
-        call conf%changeConfigurationParameter(paramTag, condVelFF1(m), condVelFF2(m))
+        call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'axonDelayCondVel:LG-FF'
-        call conf%changeConfigurationParameter(paramTag, condVelFF1(m), condVelFF2(m))
+        call conf%changeConfigurationParameter(paramTag, value1, value2)
 
 
         pool = 'CMExt'

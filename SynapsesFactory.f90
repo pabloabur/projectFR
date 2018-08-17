@@ -89,7 +89,7 @@ module SynapsesFactoryModule
                                         // trim(neuralTractPools(poolOut)%unit(unitOut)%SynapsesOut%item(synapseIn)%item(3)%string)&
                                         // '|' &
                                         // trim(neuralTractPools(poolOut)%unit(unitOut)%SynapsesOut%item(synapseIn)%item(4)%string)
-                                paramChar = conf%parameterSet(paramTag,neuralTractPools(poolOut)%pool, 0)
+                            paramChar = conf%parameterSet(paramTag,neuralTractPools(poolOut)%pool, 0)
                             read(paramChar, *)conn
                             conn = conn / 100.0
 

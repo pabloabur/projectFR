@@ -193,12 +193,12 @@ module AxonDelayClass
         class(AxonDelay), intent(inout) :: self
         real(wp), intent(in) :: t, stimulus
 
-        self%electricCharge_muC = (stimulus * self%conf%timeStep_ms +&
+        
+        if ((t - self%axonSpikeTrain) > self%refractoryPeriod_ms) then
+            self%electricCharge_muC = (stimulus * self%conf%timeStep_ms +&
                                    self%electricCharge_muC * &
                                    exp(-self%conf%timeStep_ms /self%leakageTimeConstant_ms))
         
-        if ((t - self%axonSpikeTrain) > self%refractoryPeriod_ms) then
-            !print '(F15.6)', self%electricCharge_muC
             if (self%electricCharge_muC >= self%threshold_muC) then
                 self%electricCharge_muC = 0
                 call self%addTerminalSpike(t, self%latencyStimulusTerminal_ms)

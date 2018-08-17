@@ -142,7 +142,7 @@ module MotorUnitClass
         ! # Neural compartments
         ! ## The instant of the last spike of the Motor unit
         ! ## at the Soma compartment.
-        init_MotorUnit%tSomaSpike = -1E10
+        init_MotorUnit%tSomaSpike = -1e10
 
         
         paramTag = 'NumberAxonNodes'
@@ -671,7 +671,7 @@ module MotorUnitClass
             else
                 do i = 1, numberOfSpikes
                     newSpike = self%terminalSpikeTrain(i)
-                    if (newSpike < t .and. newSpike >= t-9*self%timeCteEMG_ms) then                                             
+                    if (newSpike < t .and. newSpike >= t-20*self%timeCteEMG_ms) then                                             
                         call AddToList(numberOfSpikesUntilt, newSpike)
                     end if
                 end do

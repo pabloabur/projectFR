@@ -36,10 +36,11 @@ program HReflexMWave
     real(wp), dimension(:,:), allocatable :: emg
     character(len = 80) :: value1, value2
     real(wp) :: spindleFR
+    character(len = 3) :: fileNumber
 
-    Nsim = 25
+    Nsim = 35
     FirstStim = 9.0
-    LastStim = 19
+    LastStim = 25
     
     call init_random_seed()
 
@@ -122,6 +123,15 @@ program HReflexMWave
         call motorUnitPools(1)%listSpikes()
         call afferentPools(1)%listSpikes()
         call afferentPools(2)%listSpikes()
+        write(fileNumber, '(I2)')j
+        filename = 'spikes'// fileNumber //'.txt'
+        open(1, file=filename, status = 'replace') 
+        
+        do i = 1, size(motorUnitPools(1)%poolTerminalSpikes, 1)            
+            write(1, '(F15.6, 1X, F15.1)') motorUnitPools(1)%poolTerminalSpikes(i,1),&
+                        motorUnitPools(1)%poolTerminalSpikes(i,2)
+        end do
+        close(1)
         
         call motorUnitPools(1)%reset()
         call afferentPools(1)%reset()
@@ -130,25 +140,26 @@ program HReflexMWave
    
     call gp%title('EMG')
     call gp%xlabel('t (ms))')
-    call gp%ylabel('angle (degree)')
-    call gp%plot(t, emg(:,25),  'with line lw 2 lc rgb "#0008B0"')
+    call gp%ylabel('emg (mV)')
+    call gp%plot(t, emg(:,10),  'with line lw 2 lc rgb "#0008B0"')
         
     call gp%title('Hp')
-    call gp%xlabel('t (ms))')
-    call gp%ylabel('angle (degree)')
+    call gp%xlabel('Stimulus intensity (mA)')
+    call gp%ylabel('EMG peak (mV)')
     call gp%plot(Stim, Hp, 'with line lw 2 lc rgb "#0008B0"')
     
     call gp%title('Mp')
-    call gp%xlabel('t (ms))')
-    call gp%ylabel('angle (degree)')
+    call gp%xlabel('Stimulus intensity (mA)')
+    call gp%ylabel('EMG peak (mV)')
     call gp%plot(Stim, Mp, 'with line lw 2 lc rgb "#0008B0"')
 
-    call gp%title('Mp')
-    call gp%xlabel('t (ms))')
-    call gp%ylabel('angle (degree)')
-    call gp%plot(Stim, Mp, 'with line lw 2 lc rgb "blue"', x2 = Stim, y2 = Mp, ls2='with line lw 2 lc rgb "red"')
+    call gp%title('Mp-Hp')
+    call gp%xlabel('Stimulus intensity (mA)')
+    call gp%ylabel('EMG peak (mV)')
+    call gp%plot(x1=Stim, y1=Mp, ls1='with line lw 2 lc rgb "blue"', &
+                 x2 = Stim, y2 = Hp, ls2='with line lw 2 lc rgb "red"')
 
-    
-    
+    print '(F15.6)', maxval(Hp)/maxval(Mp)   
+
     
 end program HReflexMWave
