@@ -20,11 +20,11 @@ program ForceVariability
     real(wp), dimension(:), allocatable :: t
     real(wp) :: tic, toc
     type(gpf) :: gp
-    real(wp), dimension(9) :: FR, 
+    real(wp), dimension(9) :: FR
     integer, dimension(9) :: GammaOrder 
     real(wp), dimension(5) :: condVelS, condVelFR, condVelFF1, condVelFF2
     character(len = 80) :: pool, muscle, paramTag
-    character(len = 80) :: filename = 'confImpedanceAnkle.rmto'
+    character(len = 80) :: filename = 'confForceVariability.rmto'
     type(MotorUnitPool), dimension(:), allocatable, target :: motorUnitPools
     type(NeuralTract), dimension(:), allocatable :: neuralTractPools    
     type(InterneuronPool), dimension(:), allocatable, target :: interneuronPools    
@@ -34,8 +34,8 @@ program ForceVariability
     real(wp) :: angle
     real(wp) , dimension(200):: Amp, phase
     real(wp), dimension(:,:,:), allocatable :: forceSOL, forceMG, forceLG, torque
-    integer :: m, l
-    character(len = 80) :: value1, value2
+    integer :: m, l, k
+    character(len = 80) :: value1, value2, fileNumber, velNumber
 
     call init_random_seed()
 
@@ -43,7 +43,7 @@ program ForceVariability
 
     tf = conf%simDuration_ms
     dt = conf%timeStep_ms
-    timeLength = int(tf/dt)
+    timeLength = nint(tf/dt)
 
     allocate(t(timeLength))
     
@@ -54,11 +54,12 @@ program ForceVariability
 
     GammaOrder = [7, 5, 4,4,4,3,2,2,1]
 
-    condVelS = [((88-22)*(i)/5, i=1, 5)]
-    condVelFR = [((102-25.5)*(i)/5, i=1, 5)]
-    condVelFF1 = [((104-26)*(i)/5, i=1, 5)]  
-    condVelFF2 = [((106-26.5)*(i)/5, i=1, 5)]
+    condVelS = [((88-22)*(i-1)/4+22, i=1, 5)]
+    condVelFR = [((102-25.5)*(i-1)/4+25.5, i=1, 5)]
+    condVelFF1 = [((104-26)*(i-1)/4+26, i=1, 5)]
+    condVelFF2 = [((106-26.5)*(i-1)/4+26.5, i=1, 5)]
 
+    
     allocate(forceSOL(timeLength, size(FR), size(condVelS)))
     allocate(forceMG(timeLength, size(FR), size(condVelS)))
     allocate(forceLG(timeLength, size(FR), size(condVelS)))
@@ -69,16 +70,21 @@ program ForceVariability
     allocate(motorUnitPools(3))
     allocate(interneuronPools(0))
     
+    
+
+
     do m = 1, size(condVelS)
         paramTag = 'axonDelayCondVel:MG-S' 
         write(value1, '(F15.6)')condVelS(m)
         write(value2, '(F15.6)')condVelFR(m)
-        call conf%changeConfigurationParameter(paramTag, value1 , value2)
+        call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'axonDelayCondVel:SOL-S'
+
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'axonDelayCondVel:LG-S'
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'axonDelayCondVel:MG-FR'
+        
         write(value1, '(F15.6)')condVelFR(m)
         write(value2, '(F15.6)')condVelFF1(m)
         call conf%changeConfigurationParameter(paramTag, value1, value2)
@@ -87,6 +93,7 @@ program ForceVariability
         paramTag = 'axonDelayCondVel:LG-FR'
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'axonDelayCondVel:MG-FF'
+        
         write(value1, '(F15.6)')condVelFF1(m)
         write(value2, '(F15.6)')condVelFF2(m)
         call conf%changeConfigurationParameter(paramTag, value1, value2)
@@ -94,8 +101,8 @@ program ForceVariability
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'axonDelayCondVel:LG-FF'
         call conf%changeConfigurationParameter(paramTag, value1, value2)
-
-
+        
+        
         pool = 'CMExt'
         neuralTractPools(1) = NeuralTract(conf, pool)
         pool = 'SOL'
@@ -103,7 +110,7 @@ program ForceVariability
         pool = 'MG'
         motorUnitPools(2) = MotorUnitPool(conf, pool)    
         pool = 'LG'
-        motorUnitPools(3) = MotorUnitPool(conf, pool)    
+        motorUnitPools(3) = MotorUnitPool(conf, pool)
         ankle = jointAnkleForceTask(conf, motorUnitPools)
         synapticNoisePools = synapseFactory(conf, neuralTractPools, &
                                             motorUnitPools, &
@@ -112,11 +119,11 @@ program ForceVariability
         
         do l = 1, size(FR)
             call cpu_time(tic)
-            do i = 2, size(t)
+            do i = 1, size(t)
                 angle = 0.0
                 call ankle%atualizeAnkle(t(i), angle)      
                 do j = 1, size(neuralTractPools)
-                    call neuralTractPools(j)%atualizePool(t(i), FR, GammaOrder)
+                    call neuralTractPools(j)%atualizePool(t(i), FR(l), GammaOrder(l))
                 end do
                 do j = 1, 3
                     call motorUnitPools(j)%atualizeMotorUnitPool(t(i))
@@ -126,75 +133,96 @@ program ForceVariability
             call cpu_time(toc)
 
             print '(F15.6, A)', toc - tic, ' seconds'
+            
+            ! do j = 1, 3
+            !     call motorUnitPools(j)%listSpikes()
+            ! end do
+            
+            do i = 1, timeLength
+                forceSOL(i,l, m) = motorUnitPools(1)%NoHillMuscle%force(i)
+                forceMG(i,l, m) = motorUnitPools(2)%NoHillMuscle%force(i)
+                forceLG(i,l, m) = motorUnitPools(3)%NoHillMuscle%force(i)
+                torque(i,l, m) = ankle%ankleTorque_Nm(i)
+            end do
 
-            forceSOL[:,l, m] = motorUnitPools(1)%NoHillMuscle%force
-            forceMG[:,l, m] = motorUnitPools(2)%NoHillMuscle%force
-            forceLG[:,l, m] = motorUnitPools(3)%NoHillMuscle%force
-            torque[:,l, m] = ankle%ankleTorque_Nm
-
-            call gp%title('Ankle torque')
+            write(fileNumber, '(F15.2)')FR(l)
+            call gp%title('Ankle torque' // fileNumber)
             call gp%xlabel('t (ms))')
             call gp%ylabel('torque (N.m)')
             call gp%plot(t, ankle%ankleTorque_Nm, 'with line lw 2 lc rgb "#0008B0"')
 
+            call gp%title('force SOLeus' // fileNumber)
+            call gp%xlabel('t (ms))')
+            call gp%ylabel('torque (N.m)')
+            call gp%plot(t, motorUnitPools(1)%NoHillMuscle%force, 'with line lw 2 lc rgb "#0008B0"')
+
+            ! write(velNumber, '(I2)')m
+            ! filename = 'spikesSOL_FR'// fileNumber //'vel' // velNumber // '.txt'
+            ! open(1, file=filename, status = 'replace') 
+            ! do i = 1, size(t)        
+            !     write(1, '(F15.6, 1X)') (motorUnitPools(1)%poolTerminalSpikes, j=1,size(condVelS))
+            ! end do
+            ! close(1)
+
+            ! filename = 'spikesMG_FR'// fileNumber //'vel' // velNumber // '.txt'
+            ! open(1, file=filename, status = 'replace') 
+            ! do i = 1, size(t)        
+            !     write(1, '(F15.6, 1X)') (motorUnitPools(2)%poolTerminalSpikes, j=1,size(condVelS))
+            ! end do
+            ! close(1)
+
+            ! filename = 'spikesLG_FR'// fileNumber //'vel' // velNumber // '.txt'
+            ! open(1, file=filename, status = 'replace') 
+            ! do i = 1, size(t)        
+            !     write(1, '(F15.6, 1X)') (motorUnitPools(3)%poolTerminalSpikes, j=1,size(condVelS))
+            ! end do
+            ! close(1)
+            
 
             do j = 1, size(neuralTractPools)
-                    call neuralTractPools(j)%reset()
-            end do
+                call neuralTractPools(j)%reset()
+            end do            
             do j = 1, 3
                 call motorUnitPools(j)%reset()
-            end do
+            end do            
             call ankle%reset()
         end do
+        deallocate(synapticNoisePools)
+        if (allocated(motorUnitPools)) deallocate(motorUnitPools)
+        allocate(motorUnitPools(3))
+        if (allocated(neuralTractPools)) deallocate(neuralTractPools)
+        allocate(neuralTractPools(1))
     end do
-    call neuralTractPools(1)%listSpikes()
-    call motorUnitPools(1)%listSpikes()
-    call motorUnitPools(1)%getMotorUnitPoolEMG()
-    
-    call gp%title('MN spike instants at the soma')
-    call gp%xlabel('t (s))')
-    call gp%ylabel('Motoneuron index')
-    call gp%plot(motorUnitPools(1)%poolSomaSpikes(:,1), motorUnitPools(1)%poolSomaSpikes(:,2), 'with points pt 5 lc rgb "#0008B0"')
+    do l = 1, size(FR)
+        write(fileNumber, '(F15.2)')FR(j)
+        filename = 'forceSOL_FR'// fileNumber //'.txt'
+        open(1, file=filename, status = 'replace') 
+        do i = 1, size(t)        
+            write(1, '(F15.6, 1X)') (forceSOL(i,l,j), j=1,size(condVelS))
+        end do
+        close(1)
 
-    call gp%title('MN spike instants at the terminal')
-    call gp%xlabel('t (s))')
-    call gp%ylabel('Motoneuron index')
-    call gp%plot(motorUnitPools(1)%poolTerminalSpikes(:,1), &
-    motorUnitPools(1)%poolTerminalSpikes(:,2), 'with points pt 5 lc rgb "#0008B0"')
+        filename = 'forceMG_FR'// fileNumber //'.txt'
+        open(1, file=filename, status = 'replace') 
+        do i = 1, size(t)        
+            write(1, '(F15.6, 1X)') (forceMG(i,l,j), j=1,size(condVelS))
+        end do
+        close(1)
 
-    ! call gp%title('Descending command spike instants at the terminal')
-    ! call gp%xlabel('t (s))')
-    ! call gp%ylabel('Descending command index')
-    ! call gp%plot(neuralTractPools(1)%poolTerminalSpikes(:,1), &
-    ! neuralTractPools(1)%poolTerminalSpikes(:,2), 'with points pt 5 lc rgb "#0008B0"')
+        filename = 'forceLG_FR'// fileNumber //'.txt'
+        open(1, file=filename, status = 'replace') 
+        do i = 1, size(t)        
+            write(1, '(F15.6, 1X)') (forceLG(i,l,j), j=1,size(condVelS))
+        end do
+        close(1)
 
-    ! call gp%title('afferents spike instants at the terminal')
-    ! call gp%xlabel('t (s))')
-    ! call gp%ylabel('Ia index')
-    ! call gp%plot(afferentPools(1)%poolTerminalSpikes(:,1), &
-    ! afferentPools(1)%poolTerminalSpikes(:,2), 'with points pt 5 lc rgb "#0008B0"')
-
-
-    ! call gp%title('Muscle force')
-    ! call gp%xlabel('t (ms))')
-    ! call gp%ylabel('Force (N)')
-    ! call gp%plot(t, motorUnitPools(1)%HillMuscle%force, 'with line lw 2 lc rgb "#0008B0"')
-
-    ! call gp%title('Muscle length')
-    ! call gp%xlabel('t (ms))')
-    ! call gp%ylabel('length (m)')
-    ! call gp%plot(t, motorUnitPools(1)%HillMuscle%length_m, 'with line lw 2 lc rgb "#0008B0"')
-
-    ! call gp%title('Muscle velocity')
-    ! call gp%xlabel('t (ms))')
-    ! call gp%ylabel('velocity (m/ms)')
-    ! call gp%plot(t, motorUnitPools(1)%HillMuscle%velocity_m_ms, 'with line lw 2 lc rgb "#0008B0"')
-
-    
-    call gp%title('Ankle angle')
-    call gp%xlabel('t (ms))')
-    call gp%ylabel('angle (degree)')
-    call gp%plot(t, ankle%ankleAngle_rad*180/pi, 'with line lw 2 lc rgb "#0008B0"')
+        filename = 'torque_FR'// fileNumber //'.txt'
+        open(1, file=filename, status = 'replace') 
+        do i = 1, size(t)        
+            write(1, '(F15.6, 1X)') (torque(i,l,j), j=1,size(condVelS))
+        end do
+        close(1)
+    end do
     
     
     

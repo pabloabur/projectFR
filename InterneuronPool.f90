@@ -20,10 +20,12 @@
 ! '''
 module InterneuronPoolClass
     use ConfigurationClass
+    use mkl_spblas
+    use DynamicalArrays
     use InterneuronClass
     implicit none
     private
-    integer, parameter :: wp = kind( 1.0d0 )
+    integer, parameter :: wp = kind(1.0d0)
     real(wp), parameter :: pi = 4 * atan(1.0_wp)    
     public :: InterneuronPool
 
@@ -37,6 +39,12 @@ module InterneuronPoolClass
         real(wp), dimension(:), allocatable :: v_mV, iInjected, capacitanceInv
         real(wp), dimension(:), allocatable :: iIonic, EqCurrent_nA
         real(wp), dimension(:,:), allocatable :: G
+        type(sparse_matrix_t) :: GSp
+        type(matrix_descr) :: spDescr
+        integer :: spIndexing, spRows, spCols, spNumberOfElements, spOperation
+        integer, dimension(:), allocatable :: spRowStart, spRowEnd, spColIdx
+        real(wp), dimension(:), allocatable :: spValues
+        real(wp) :: spAlpha, spBeta
 
         contains
             procedure :: dVdt
@@ -66,7 +74,7 @@ module InterneuronPoolClass
             character(len = 4), intent(in) :: group
             character(len = 80) :: paramTag, paramChar
             real(wp) :: paramReal
-            integer :: i
+            integer :: i, j, stat
 
             ! ## Indicates that is Motor Unit pool.
             init_InterNeuronPool%poolKind = 'IN'
@@ -113,6 +121,8 @@ module InterneuronPoolClass
             allocate(init_InterNeuronPool%iIonic(init_InterNeuronPool%totalNumberOfCompartments))
             allocate(init_InterNeuronPool%EqCurrent_nA(init_InterNeuronPool%totalNumberOfCompartments))
 
+            
+
             init_InterNeuronPool%iInjected(:) = 0.0
             init_InterNeuronPool%iIonic(:) = 0.0
             ! # Retrieving data from Interneuron class
@@ -129,6 +139,48 @@ module InterneuronPoolClass
                                                     i*init_InterNeuronPool%unit(i)%compNumber) &
                                                     = init_InterNeuronPool%unit(i)%EqCurrent_nA
             end do
+
+            !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            init_InterNeuronPool%spIndexing = 1
+            init_InterNeuronPool%spRows = init_InterNeuronPool%totalNumberOfCompartments
+            init_InterNeuronPool%spCols = init_InterNeuronPool%totalNumberOfCompartments
+            init_InterNeuronPool%spNumberOfElements = 0
+            allocate(init_InterNeuronPool%spRowStart(init_InterNeuronPool%spRows))
+            allocate(init_InterNeuronPool%spRowEnd(init_InterNeuronPool%spRows))
+            init_InterNeuronPool%spRowStart(:) = 0
+            do i = 1, init_InterNeuronPool%totalNumberOfCompartments
+                do j = 1, init_InterNeuronPool%totalNumberOfCompartments
+                    if (abs(init_InterNeuronPool%G(i,j))>1e-10) then
+                        init_InterNeuronPool%spNumberOfElements = init_InterNeuronPool%spNumberOfElements + 1
+                        if (init_InterNeuronPool%spRowStart(i) == 0) then
+                            init_InterNeuronPool%spRowStart(i) = init_InterNeuronPool%spNumberOfElements
+                        end if                    
+                        call AddToList(init_InterNeuronPool%spValues, init_InterNeuronPool%G(i,j))
+                        call integerAddToList(init_InterNeuronPool%spColIdx, j)
+                    end if                
+
+                end do
+                init_InterNeuronPool%spRowEnd(i) = init_InterNeuronPool%spNumberOfElements+1
+            end do
+            
+
+            
+            ! Create a Sparse Matrix for performance purposes (init_MotorUnitPool%GSp)
+            stat = mkl_sparse_d_create_csr(init_InterNeuronPool%GSp, &
+                                        init_InterNeuronPool%spIndexing, &
+                                        init_InterNeuronPool%spRows, &
+                                        init_InterNeuronPool%spCols, &
+                                        init_InterNeuronPool%spRowStart, &
+                                        init_InterNeuronPool%spRowEnd, &
+                                        init_InterNeuronPool%spColIdx, &
+                                        init_InterNeuronPool%spValues)
+
+            ! Values for the matrix-vector operation matInt = GV
+            init_InterNeuronPool%spDescr%type = SPARSE_MATRIX_TYPE_GENERAL !constant from mkl_spblas file
+            init_InterNeuronPool%spAlpha = 1.0 
+            init_InterNeuronPool%spOperation = SPARSE_OPERATION_NON_TRANSPOSE !constant from mkl_spblas file
+            init_InterNeuronPool%spBeta = 0.0    
+            !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
             print '(A)', 'Interneuron Pool of ' // trim(pool) // ' ' // trim(group) // ' built'
 
@@ -176,7 +228,7 @@ module InterneuronPoolClass
             real(wp), intent(in) :: t
             real(wp), intent(in) :: V(self%totalNumberOfCompartments)
             real(wp), dimension(self%totalNumberOfCompartments) :: dVdt
-            integer :: i, j
+            integer :: i, j, stat
             real(wp), dimension(self%totalNumberOfCompartments) :: matInt
             
             do i = 1, self%Nnumber
@@ -186,7 +238,15 @@ module InterneuronPoolClass
                 end do
             end do
 
-            matInt = matmul(self%G, V)
+            stat = mkl_sparse_d_mv(self%spOperation, &
+                               self%spAlpha, &
+                               self%GSp, &
+                               self%spDescr, &
+                               V, &
+                               self%spBeta, &
+                               matInt)
+
+            !matInt = matmul(self%G, V)
             
             
 

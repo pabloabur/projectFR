@@ -144,5 +144,7 @@ module NeuralTractClass
             do i = 1, self%Number
                 call self%unit(i)%reset()    
             end do
+
+            if (allocated(self%poolTerminalSpikes)) deallocate(self%poolTerminalSpikes)
         end subroutine
 end module NeuralTractClass

@@ -118,28 +118,44 @@ module ConfigurationClass
                         end if            
                     end do
                     !## Time step of the numerical solution of the differential equation.
-                    if (param1.eq.'timeStep') read(param2(1:len_trim(param2)), *)init_Configuration%timeStep_ms
-                    !## Total length of the simulation in ms.    
-                    if (param1.eq.'simDuration') read(param2(1:len_trim(param2)), *)init_Configuration%simDuration_ms
-                    !## skin thickness, in mm.
-                    if (param1.eq.'skinThickness') read(param2(1:len_trim(param2)), *)init_Configuration%skinThickness_mm
-                    !## EMG attenuation factor, in 1/mm.  
-                    if (param1.eq.'EMGAttenuationFactor') read(param2(1:len_trim(param2)), *)init_Configuration%EMGAttenuation_mm1
-                    !## EMG widening factor, in 1/mm.
-                    if (param1.eq.'EMGWideningFactor') read(param2(1:len_trim(param2)), *)init_Configuration%EMGWidening_mm1
-                    !## EMG widening factor.
-                    if (param1.eq.'EMGNoiseEMG') read(param2(1:len_trim(param2)), *)init_Configuration%EMGNoiseEMG
-                    !## Distribution of the parameters along the motor units.                
-                    if (param1.eq.'MUParameterDistribution') init_Configuration%MUParameterDistribution = param2
-                    !## The variable  timeStep divided by two, for computational efficiency.
-                    init_Configuration%timeStepByTwo_ms = init_Configuration%timeStep_ms / 2.0 
-                    !## The variable  timeStep divided by six, for computational efficiency.
-                    init_Configuration%timeStepBySix_ms = init_Configuration%timeStep_ms / 6.0
-                    newLine = CharacterArray()
-                    call newLine%AddToList(param1)
-                    call newLine%AddToList(param2)
-                    call newLine%AddToList(param3)
-                    call init_Configuration%confMatrix%append(newLine)
+                    if (j == 2) then
+                        if (param1=='timeStep') then
+                            read(param2(1:len_trim(param2)), *)init_Configuration%timeStep_ms
+                        end if
+                        !## Total length of the simulation in ms.    
+                        if (param1=='simDuration') then 
+                            read(param2(1:len_trim(param2)), *)init_Configuration%simDuration_ms
+                        end if
+                        !## skin thickness, in mm.
+                        if (param1=='skinThickness') then 
+                            read(param2(1:len_trim(param2)), *)init_Configuration%skinThickness_mm
+                        end if
+                        !## EMG attenuation factor, in 1/mm.  
+                        if (param1=='EMGAttenuationFactor') then 
+                            read(param2(1:len_trim(param2)), *)init_Configuration%EMGAttenuation_mm1
+                        end if
+                        !## EMG widening factor, in 1/mm.
+                        if (param1=='EMGWideningFactor') then
+                            read(param2(1:len_trim(param2)), *)init_Configuration%EMGWidening_mm1
+                        end if
+                        !## EMG widening factor.
+                        if (param1=='EMGNoiseEMG') then
+                            read(param2(1:len_trim(param2)), *)init_Configuration%EMGNoiseEMG
+                        end if
+                        !## Distribution of the parameters along the motor units.                
+                        if (param1=='MUParameterDistribution') then 
+                            init_Configuration%MUParameterDistribution = param2
+                        end if
+                        !## The variable  timeStep divided by two, for computational efficiency.
+                        init_Configuration%timeStepByTwo_ms = init_Configuration%timeStep_ms / 2.0 
+                        !## The variable  timeStep divided by six, for computational efficiency.
+                        init_Configuration%timeStepBySix_ms = init_Configuration%timeStep_ms / 6.0
+                        newLine = CharacterArray()
+                        call newLine%AddToList(param1)
+                        call newLine%AddToList(param2)
+                        call newLine%AddToList(param3)
+                        call init_Configuration%confMatrix%append(newLine)
+                    end if
                 end do
                 
                 close(unit = 1)
@@ -178,6 +194,7 @@ module ConfigurationClass
                 real(wp), dimension(:), allocatable :: paramVec_S, paramVec_FR, paramVec_FF, paramVec
                 character(len=50), intent(in) ::paramTag
                 logical :: distribute, wholePool
+                real(wp), dimension(:), allocatable :: indexUnits
                 
                 distribute = .true.
                 wholePool = .false.
@@ -190,7 +207,7 @@ module ConfigurationClass
                     param1 = self%confMatrix%item(k)%item(1)%string
                     param2 = self%confMatrix%item(k)%item(2)%string
                     param3 = self%confMatrix%item(k)%item(3)%string
-
+                    
                     
                     if (pool=='SOL'.or.pool=='MG'.or.pool=='LG'.or.pool=='TA') then
                         if (param1.eq.('MUnumber_' // trim(pool) // '-S')) then
@@ -207,35 +224,35 @@ module ConfigurationClass
                         end if
                     end if
                 end do
-                
-                
+                              
                 allocate(paramVec(Nnumber)) 
-                if (MUnumber_S.gt.0) allocate(paramVec_S(MUnumber_S))
-                if (MUnumber_FR.gt.0) allocate(paramVec_FR(MUnumber_FR))  
-                if (MUnumber_FF.gt.0) allocate(paramVec_FF(MUnumber_FF))
-                
-                
-                
+                if (allocated(paramVec_S)) deallocate(paramVec_S)
+                if (allocated(paramVec_FR)) deallocate(paramVec_FR)
+                if (allocated(paramVec_FF)) deallocate(paramVec_FF)
                 
                 do k = 1, size(self%confMatrix%item)
                     param1 = self%confMatrix%item(k)%item(1)%string
                     param2 = self%confMatrix%item(k)%item(2)%string
                     param3 = self%confMatrix%item(k)%item(3)%string
                     
+                    
                     if (trim(param1)==trim(paramTag)) then 
                         requestedParamater = param2
                         distribute = .false.
-                    else if (trim(self%MUParameterDistribution).eq.'linear') then                         
+                    else if (trim(self%MUParameterDistribution)=='linear') then     
                         if (trim(param1).eq.(trim(paramTag) // ':' // trim(pool) // '-S')) then
+                            if (MUnumber_S>0) allocate(paramVec_S(MUnumber_S))
                             read(param2,*)param2Real
                             read(param3,*)param3Real
                             paramVec_S = [((param3Real-param2Real)/(MUnumber_S+1)*(i-1)+param2Real, i=1, MUnumber_S)]                                    
                             paramVec(1:MUnumber_S) = paramVec_S                            
                         else if (trim(param1).eq.(trim(paramTag) // ':' // trim(pool) // '-FR')) then
+                            if (MUnumber_FR>0) allocate(paramVec_FR(MUnumber_FR))  
                             read(param2,*)param2Real
                             read(param3,*)param3Real
                             paramVec_FR = [((param3Real-param2Real)/(MUnumber_FR+1)*(i-1)+param2Real, i=1, MUnumber_FR)]                                    
                         else if (trim(param1).eq.(trim(paramTag) // ':' // trim(pool) // '-FF')) then
+                            if (MUnumber_FF>0) allocate(paramVec_FF(MUnumber_FF))
                             read(param2,*)param2Real
                             read(param3,*)param3Real
                             paramVec_FF = [((param3Real-param2Real)/(MUnumber_FF+1)*(i-1)+param2Real, i=1, MUnumber_FF)]                                    
@@ -245,27 +262,36 @@ module ConfigurationClass
                             paramVec = [((param3Real-param2Real)/(Nnumber+1)*(i-1) + param2Real, i=1, Nnumber)]                                     
                             wholePool = .true.
                         end if
-                    !TODO:    
-                    ! else if (self%MUParameterDistribution.eq.'exponential') then           
-                    !     if self.confArray[i][0] == paramTag + ':' + pool + '-S':
-                    !         paramVec_S = np.array([float(self.confArray[i][1]), float(self.confArray[i][2])])
-                    !     elif self.confArray[i][0] == paramTag + ':' + pool + '-FR':
-                    !         paramVec_FR = np.array([float(self.confArray[i][1]), float(self.confArray[i][2])])
-                    !     elif self.confArray[i][0] == paramTag + ':' + pool + '-FF':
-                    !         paramVec_FF = np.array([float(self.confArray[i][1]), float(self.confArray[i][2])])
-                    !     elif self.confArray[i][0] == paramTag + ':' + pool + '-':
-                    !         try:
-                    !             paramVec = float(self.confArray[i][1])*np.exp(1.0/Nnumber*np.log(float(self.confArray[i][2])/float(self.confArray[i][1])) * np.linspace(0,Nnumber,Nnumber))
-                    !         except ZeroDivisionError:
-                    !         paramVec = np.exp(1.0/Nnumber*np.log(float(self.confArray[i][2]) + 1) * np.linspace(0,Nnumber,Nnumber)) - 1
+                    else if (self%MUParameterDistribution == 'exponential') then                         
+                        indexUnits = [(i-1, i = 1, Nnumber)]
+                        if (trim(param1).eq.(trim(paramTag) // ':' // trim(pool) // '-S')) then
+                            allocate(paramVec_S(2))
+                            read(param2,*)param2Real
+                            read(param3,*)param3Real
+                            paramVec_S = [param2Real, param3Real]
+                        else if (trim(param1).eq.(trim(paramTag) // ':' // trim(pool) // '-FR')) then
+                            allocate(paramVec_FR(2))
+                            read(param2,*)param2Real
+                            read(param3,*)param3Real
+                            paramVec_FR = [param2Real, param3Real]
+                        else if (trim(param1).eq.(trim(paramTag) // ':' // trim(pool) // '-FF')) then
+                            allocate(paramVec_FF(2))
+                            read(param2,*)param2Real
+                            read(param3,*)param3Real
+                            paramVec_FF = [param2Real, param3Real]
+                        else if (trim(param1).eq.(trim(paramTag) // ':' // trim(pool) // '-')) then
+                            read(param2,*)param2Real
+                            read(param3,*)param3Real
+                            distribute = .false.
+                            if (abs(param2Real)>1e-10) then
+                                paramVec = param2Real*exp(1.0/Nnumber*log(param3Real/param2Real) * indexUnits)
+                            else 
+                                paramVec = exp(1.0/Nnumber*log(param3Real + 1.0) * indexUnits) - 1.0
+                            end if
+                            write(requestedParamater, '(F15.6)')paramVec(index)
+                        end if
                     end if
                 end do
-                
-                
-                
-                
-                
-                   
                 
                 if (trim(self%MUParameterDistribution).eq.'linear'.and.distribute) then
                     if (MUnumber_FR > 0 .and..not.wholePool) then
@@ -275,27 +301,26 @@ module ConfigurationClass
                         paramVec(MUnumber_S+MUnumber_FR+1:MUnumber_S+MUnumber_FR+MUnumber_FF) = paramVec_FF
                     end if
                     write(requestedParamater, '(F15.6)')paramVec(index)
-                !TODO:
-                ! elif self.MUParameterDistribution == 'exponential':           
-                !     if paramVec_S/.size > 0:
-                !         indexUnits = np.linspace(0,Nnumber, Nnumber)
-                !         if paramTag == 'twitchPeak':
-                !             paramVec = paramVec_S[0]*np.exp(1.0/Nnumber*np.log(paramVec_FF[1]/paramVec_S[0]) * np.linspace(0,Nnumber,Nnumber))   
-                !         else:
-                !             paramVec = ((paramVec_S[0] - (paramVec_S[1]+paramVec_FR[0])/2.0) * np.exp(-5.0*indexUnits/MUnumber_S)
-                !                 + ((paramVec_S[1]+paramVec_FR[0])/2.0 - paramVec_FF[1]) 
-                !                 * (1 - np.exp(1.0/MUnumber_FF*np.log(((paramVec_FR[1]+paramVec_FF[0])/2.0 - (paramVec_S[1] + paramVec_FR[0])/2.0)/(paramVec_FF[1]- (paramVec_S[1]+paramVec_FR[0])/2.0)) * (Nnumber - indexUnits)))
-                !                 + paramVec_FF[1]) 
+                else if (self%MUParameterDistribution == 'exponential' .and.distribute) then
+                    if (allocated(paramVec_S)) then                        
+                        if (paramTag == 'twitchPeak' .or. paramTag == 'bSatSOCDS') then
+                            paramVec = paramVec_S(1)*exp(1.0/Nnumber*log(paramVec_FF(2)/paramVec_S(1)) * indexUnits)   
+                        else
+                            paramVec = ((paramVec_S(1) - (paramVec_S(2)+paramVec_FR(1))/2.0) * exp(-5.0*indexUnits/MUnumber_S)&
+                                + ((paramVec_S(2)+paramVec_FR(1))/2.0 - paramVec_FF(2)) &
+                                * (1 - exp(1.0/MUnumber_FF*log(((paramVec_FR(2)+paramVec_FF(1))/2.0 - &
+                                (paramVec_S(2) + paramVec_FR(1))/2.0)/(paramVec_FF(2)- &
+                                (paramVec_S(2)+paramVec_FR(1))/2.0)) * (Nnumber - indexUnits)))&
+                                + paramVec_FF(2)) 
+                        end if
+                        write(requestedParamater, '(F15.6)')paramVec(index)
+                    end if
                 end if
 
                 if (allocated(paramVec)) deallocate(paramVec)
                 if (allocated(paramVec_S)) deallocate(paramVec_S)
                 if (allocated(paramVec_FF)) deallocate(paramVec_FF)
                 if (allocated(paramVec_FR)) deallocate(paramVec_FR)
-                
-        
-                
-
             end function parameterSet
             
             type(CharacterMatrix) function determineSynapses(self, neuralSource) result(Synapses)
@@ -371,13 +396,15 @@ module ConfigurationClass
                 character(len = 80), intent(in) :: paramTag
                 character(len = 80), intent(in) :: value1, value2 
                 integer :: i
-
+                
+                
                 do i = 1, size(self%confMatrix%item)
                     if (self%confMatrix%item(i)%item(1)%string == paramTag) then
                         self%confMatrix%item(i)%item(2)%string = trim(value1)
                         self%confMatrix%item(i)%item(3)%string = trim(value2)
                     end if
                 end do
+                
                 
 
             end subroutine

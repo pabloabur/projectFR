@@ -218,13 +218,13 @@ module SynapseClass
 
             if (.not.allocated(self%tEndOfPulse)) then
                 allocate(self%tBeginOfPulse(size(self%gmax_muS)))
-                self%tBeginOfPulse(:) = -1e6
+                self%tBeginOfPulse(:) = -1e8
                 
                 allocate(self%tEndOfPulse(size(self%gmax_muS)))
-                self%tEndOfPulse(:) = -1e6
+                self%tEndOfPulse(:) = -1e8
                 
                 allocate(self%tLastPulse(size(self%gmax_muS)))
-                self%tLastPulse(:) = -1e6
+                self%tLastPulse(:) = -1e8
 
                 allocate(self%conductanceState(size(self%gmax_muS)))
                 self%conductanceState(:) = .false.
@@ -281,9 +281,8 @@ module SynapseClass
             
             if (allocated(idxBeginPulse)) deallocate(idxBeginPulse)
             continueFlag = .true.
-            do while (allocated(self%inQueue%item).and.continueFlag)
-
-                if (abs(t - self%tBeginOfPulse(self%inQueue%item(1)))< 1e-2) then 
+            do while (self%inQueue%endQueue>0.and.continueFlag)
+                if (t >= self%tBeginOfPulse(self%inQueue%item(1))) then 
                     newPulse = self%inQueue%popleft()
                     call integerAddToList(idxBeginPulse, newPulse)
                 else
@@ -293,8 +292,8 @@ module SynapseClass
 
             if (allocated(idxEndPulse)) deallocate(idxEndPulse)
             continueFlag = .true.
-            do while (allocated(self%outQueue%item).and.continueFlag)
-                if  (abs(t - self%tEndOfPulse(self%outQueue%item(1))) < 1e-2) then
+            do while (self%outQueue%endQueue>0.and.continueFlag)
+                if  (t >= self%tEndOfPulse(self%outQueue%item(1))) then
                     newPulse = self%outQueue%popleft()
                     call integerAddToList(idxEndPulse, newPulse)        
                 else
@@ -458,9 +457,15 @@ module SynapseClass
                 self%conductanceState(:) = .false.
                 self%ri(:) = 0.0
                 self%ti(:) = 0.0
-                self%dynamicGmax(:) = 0.0
+                self%dynamicGmax(:) = self%gmax_muS
                 self%synContrib = self%gmax_muS / self%gMaxTot_muS
             end if
+
+            self%Non = 0.0
+            self%Ron = 0.0
+            self%Roff = 0.0
+            self%t0 = 0.0           
+
         end subroutine
 
 end module SynapseClass

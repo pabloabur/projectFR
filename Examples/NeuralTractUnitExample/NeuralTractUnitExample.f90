@@ -5,9 +5,9 @@ program NeuralTractUnitExample
     implicit none 
     !integer, parameter :: wp = kind(1.0d0)
     type(NeuralTractUnit) :: NT_unit
-    real(wp), parameter :: ISI_ms = 12.0
-    real(wp), parameter :: FR_Hz = 1000.0/ISI_ms
-    integer, parameter :: GammaOrder = 10
+    real(wp), parameter :: ISI_ms = 4.0
+    real(wp), parameter :: FR_Hz = 1000/ISI_ms
+    integer, parameter :: GammaOrder = 1
     real(wp), parameter :: PI = 4 * atan(1.0_wp)    
     !use, intrinsic :: iso_fortran_env, only : wp => real64
     real(wp), parameter :: dt = 0.05

@@ -213,13 +213,20 @@ module MuscleHillClass
             read(paramChar, *)init_MuscleHill%optimalTendonLength
 
             ! ##  
-            init_MuscleHill%lengthNorm = 0.0
+            init_MuscleHill%lengthNorm = init_MuscleHill%length_m(1)/init_MuscleHill%optimalLength_m
             ! ##  
             init_MuscleHill%velocityNorm = 0.0
             ! ##  
             init_MuscleHill%accelerationNorm = 0.0
+
+            init_MuscleHill%pennationAngle_rad(1) = init_MuscleHill%computePennationAngle()
+
+            init_MuscleHill%tendonLength_m(1) = init_MuscleHill%musculoTendonLength_m(1) - &
+                                                init_MuscleHill%length_m(1) * &
+                                                cos(init_MuscleHill%pennationAngle_rad(1))
+            
             ! ##  
-            init_MuscleHill%tendonLengthNorm = 0.0
+            init_MuscleHill%tendonLengthNorm = init_MuscleHill%tendonLength_m(1)/init_MuscleHill%optimalTendonLength
             ! ##
             init_MuscleHill%forceNorm = 0.0
             ! ##
@@ -374,7 +381,8 @@ module MuscleHillClass
             class(MuscleHill), intent(inout) :: self
             real(wp), dimension(self%MUnumber) :: activation_Sat
 
-            call self%atualizeActivation(activation_Sat)
+            call self%atualizeLenghtsAndVelocity()   
+
             self%lengthNorm = self%length_m(self%timeIndex) / self%optimalLength_m
             self%velocityNorm = self%velocity_m_ms(self%timeIndex) / self%optimalLength_m
             self%accelerationNorm = self%acceleration_m_ms2(self%timeIndex) / self%optimalLength_m
@@ -383,13 +391,13 @@ module MuscleHillClass
                                                 self%length_m(self%timeIndex) * cos(self%pennationAngle_rad(self%timeIndex))
             self%tendonLengthNorm = self%tendonLength_m(self%timeIndex) / self%optimalTendonLength
 
+            call self%atualizeActivation(activation_Sat)
+            
             call self%atualizeMuscleForce()
-            call self%atualizeTendonForce()
-
+            call self%atualizeTendonForce()            
+            
             self%force(self%timeIndex) = self%forceNorm * self%maximumForce_N
-            self%tendonForce_N(self%timeIndex) = self%tendonForceNorm * self%maximumForce_N
-
-            call self%atualizeLenghtsAndVelocity()        
+            self%tendonForce_N(self%timeIndex) = self%tendonForceNorm * self%maximumForce_N                  
             
             self%timeIndex = self%timeIndex + 1
         end subroutine
@@ -466,12 +474,15 @@ module MuscleHillClass
             ! ''' 
             class(MuscleHill), intent(inout) :: self    
 
+            if (self%timeIndex>1) then
+                self%acceleration_m_ms2(self%timeIndex) =  (self%tendonForce_N(self%timeIndex-1) - &
+                    self%force(self%timeIndex-1) * cos(self%pennationAngle_rad(self%timeIndex-1))) /& 
+                    (self%mass * cos(self%pennationAngle_rad(self%timeIndex-1))) / 1000000.0
+            else
+                self%acceleration_m_ms2(self%timeIndex) = 0.0
+            end if
 
-            self%acceleration_m_ms2(self%timeIndex+1) =  (self%tendonForce_N(self%timeIndex) - &
-                self%force(self%timeIndex) * cos(self%pennationAngle_rad(self%timeIndex))) /& 
-                (self%mass * cos(self%pennationAngle_rad(self%timeIndex))) / 1000000.0
-
-            acceleration = self%acceleration_m_ms2(self%timeIndex+1)
+            acceleration = self%acceleration_m_ms2(self%timeIndex)
         end function
 
 
@@ -481,7 +492,7 @@ module MuscleHillClass
             class(MuscleHill), intent(inout) :: self
             real(wp), dimension(2) :: derivative    
 
-            derivative =  [self%velocity_m_ms(self%timeIndex), self%computeAcceleration()]
+            derivative =  [self%velocity_m_ms(self%timeIndex-1), self%computeAcceleration()]
         end function
 
 
@@ -544,12 +555,13 @@ module MuscleHillClass
             class(MuscleHill), intent(inout) :: self
             real(wp), dimension(2) :: derivLdt
 
-            derivLdt = self%dLdt()
             
             
-            self%length_m(self%timeIndex + 1) = self%length_m(self%timeIndex) + self%conf%timeStep_ms * derivLdt(1)
-
-            self%velocity_m_ms(self%timeIndex + 1) = self%velocity_m_ms(self%timeIndex) + self%conf%timeStep_ms * derivLdt(2)
+            if (self%timeIndex>1) then
+                derivLdt = self%dLdt()
+                self%length_m(self%timeIndex) = self%length_m(self%timeIndex-1) + self%conf%timeStep_ms * derivLdt(1)
+                self%velocity_m_ms(self%timeIndex) = self%velocity_m_ms(self%timeIndex-1) + self%conf%timeStep_ms * derivLdt(2)
+            end if
         end subroutine
 
         subroutine atualizeMusculoTendonLength(self, ankleAngle)

@@ -101,7 +101,7 @@ module NeuralTractUnitClass
             
             
             if (allocated(self%spikesGenerator%points)) then
-                if (abs(t - self%spikesGenerator%points(size(self%spikesGenerator%points))) < 1e-2) then
+                if (abs(t - self%spikesGenerator%points(size(self%spikesGenerator%points))) < 1e-5) then
                     call self%transmitSpikes(t)
                 end if
             end if

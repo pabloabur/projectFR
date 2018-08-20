@@ -206,5 +206,6 @@ module PulseConductanceStateClass
             
             self%value = 0.0
             self%endOfPulse_ms = self%PulseDur_ms
+            self%state = .false.
         end subroutine
 end module PulseConductanceStateClass

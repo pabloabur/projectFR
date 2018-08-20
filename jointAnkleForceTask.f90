@@ -25,7 +25,7 @@ module jointAnkleForceTaskClass
     implicit none
     private
     integer, parameter :: wp = kind( 1.0d0 )
-    real(wp), parameter :: PI = 4 * atan(1.0_wp)    
+    real(wp), parameter :: pi = 4 * atan(1.0_wp)    
     public :: jointAnkleForceTask
 
     type jointAnkleForceTask
@@ -70,6 +70,7 @@ module jointAnkleForceTaskClass
             allocate(init_jointAnkleForceTask%ankleTorque_Nm(timeLength))
             init_jointAnkleForceTask%ankleTorque_Nm(:) = 0.0
 
+            
             print '(A)', 'Ankle joint for Force Task built'
 
         end function 
@@ -100,6 +101,8 @@ module jointAnkleForceTaskClass
                     call self%muscles(i)%muscle%HillMuscle%atualizeMomentArm(ankleAngle)
                 end do
             end if
+
+            
         end subroutine
 
         subroutine atualizeAngle(self, t, ankleAngle)
@@ -107,8 +110,11 @@ module jointAnkleForceTaskClass
             ! '''
             class(jointAnkleForceTask), intent(inout) :: self
             real(wp), intent(in) ::t, ankleAngle
+            integer :: timeIndex
+
+            timeIndex = nint(t/self%conf%timeStep_ms)+1
             
-            self%ankleAngle_rad(nint(t / self%conf%timeStep_ms)) = ankleAngle
+            self%ankleAngle_rad(timeIndex) = ankleAngle
         end subroutine
 
     subroutine computeTorque(self, t)
@@ -118,36 +124,48 @@ module jointAnkleForceTaskClass
         real(wp), intent(in) ::t
         real(wp) :: torque, velocity, acceleration
         integer :: i
+        integer :: timeIndex
+
+        timeIndex = nint(t/self%conf%timeStep_ms)+1
             
         torque = 0.0
 
         if (self%muscles(1)%muscle%hillModel == 'No') then
             do i = 1, size(self%muscles)
                 torque = torque + &
-                self%muscles(i)%muscle%NoHillMuscle%force(nint(t / self%conf%timeStep_ms)) * &
-                self%muscles(i)%muscle%NoHillMuscle%momentArm_m(nint(t / self%conf%timeStep_ms))
+                self%muscles(i)%muscle%NoHillMuscle%force(timeIndex) * &
+                self%muscles(i)%muscle%NoHillMuscle%momentArm_m(timeIndex)
             end do
         else
             do i = 1, size(self%muscles)
                 torque = torque + &
-                self%muscles(i)%muscle%HillMuscle%force(nint(t / self%conf%timeStep_ms)) * &
-                self%muscles(i)%muscle%HillMuscle%momentArm_m(nint(t / self%conf%timeStep_ms))
+                self%muscles(i)%muscle%HillMuscle%force(timeIndex) * &
+                self%muscles(i)%muscle%HillMuscle%momentArm_m(timeIndex)
             end do
         end if
 
-        velocity = (self%ankleAngle_rad(nint(t / self%conf%timeStep_ms)) - &
-                    self%ankleAngle_rad(nint(t / self%conf%timeStep_ms) - 1)) /&
-                    self%conf%timeStep_ms
+        if (timeIndex>1) then
+            velocity = (self%ankleAngle_rad(timeIndex) - &
+                        self%ankleAngle_rad(timeIndex - 1)) /&
+                        self%conf%timeStep_ms
+        else
+            velocity = 0.0
+        end if
 
-        acceleration = (self%ankleAngle_rad(nint(t / self%conf%timeStep_ms)) - & 
-                        2*self%ankleAngle_rad(nint(t / self%conf%timeStep_ms) - 1) + &
-                        self%ankleAngle_rad(nint(t / self%conf%timeStep_ms) - 2)) / &
-                        (self%conf%timeStep_ms**2)
+        if (timeIndex>2) then
+            acceleration = (self%ankleAngle_rad(timeIndex) - & 
+                            2*self%ankleAngle_rad(timeIndex - 1) + &
+                            self%ankleAngle_rad(timeIndex - 2)) / &
+                            (self%conf%timeStep_ms**2)
+        else
+            acceleration = 0.0 
+        end if
         
-        torque = torque - 0*1100*velocity  - 0*320*self%ankleAngle_rad(nint(t / self%conf%timeStep_ms)) &
+        torque = torque - 0*1100*velocity  - 0*320*self%ankleAngle_rad(timeIndex) &
                 + 0*0.007*acceleration
         
-        self%ankleTorque_Nm(nint(t / self%conf%timeStep_ms)) = torque
+        self%ankleTorque_Nm(timeIndex) = torque
+
     end subroutine
 
     subroutine reset(self)

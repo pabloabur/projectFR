@@ -18,29 +18,6 @@
 !     Contact: renato.watanabe@ufabc.edu.br
 ! '''
 
-module StringClass
-    implicit none
-    private
-    public :: String
-
-    type String
-        character(len = 80) :: string
-
-       contains     
-    end type String
-
-    interface String
-        module procedure init_String
-    end interface String
-    
-    contains
-
-        type (String) function init_String(newString)
-            character(len = 80), intent(in) :: newString 
-            init_String%string = trim(newString)
-        end function
-
-end module StringClass
 
 module CharacterArrayClass
     use StringClass
@@ -69,7 +46,7 @@ module CharacterArrayClass
 
         subroutine AddToList(self, newString)
             class(CharacterArray), intent(inout) :: self
-            character(len = 80), intent(in) :: newString
+            character(*), intent(in) :: newString
             type(CharacterArray) :: clist
             integer :: isize, i
 

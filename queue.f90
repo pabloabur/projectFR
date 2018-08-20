@@ -115,10 +115,8 @@ module QueueClass
                 self%item(1:index-1) = tempList1(:)
                 self%item(index:self%endQueue-1) = tempList2
                 self%endQueue = self%endQueue - 1
+                if (self%endQueue == 0) call self%clear()
             end if
-
-
-
         end subroutine
 
         subroutine extend(self, newItens)
@@ -143,7 +141,9 @@ module QueueClass
                 self%item(self%endQueue+1:self%endQueue+sizeNewList) = newItens
                 self%endQueue = self%endQueue + sizeNewList
             else
+                if (allocated(self%item)) deallocate(self%item)
                 allocate(self%item(sizeNewList))
+
                 self%item = newItens
                 self%endQueue = sizeNewList
             end if

@@ -67,8 +67,8 @@ program MotorUnitPoolWithDescendingCommand
       
     t = [(dt*(i-1), i=1, timeLength)]
     
-    FR = 1000.0/12.0
-    GammaOrder = 10
+    FR = 185.0
+    GammaOrder = 2
 
     call cpu_time(tic)
     do i = 1, size(t)        

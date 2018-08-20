@@ -192,9 +192,9 @@ EMGAmplitude:SOL-FF,0.082,0.1
 EMGDuration:SOL-S,0.8,0.7
 EMGDuration:SOL-FR,0.7,0.6
 EMGDuration:SOL-FF,0.6,0.5
-axonDelayThreshold:SOL-S,23,14.4
-axonDelayThreshold:SOL-FR,14.4,14.2
-axonDelayThreshold:SOL-FF,14.2,14.0
+axonDelayThreshold:SOL-S,18,12.4
+axonDelayThreshold:SOL-FR,12.4,12.2
+axonDelayThreshold:SOL-FF,12.2,12.0
 axonDelayCondVel:SOL-S,44,51
 axonDelayCondVel:SOL-FR,51,52
 axonDelayCondVel:SOL-FF,52,53

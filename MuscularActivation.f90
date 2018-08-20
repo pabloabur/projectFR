@@ -20,7 +20,9 @@
 
 module MuscularActivationClass
     use ConfigurationClass
+    use DynamicalArrays
     use MotorUnitClass
+    use mkl_spblas
     implicit none
     private
     integer, parameter :: wp = kind( 1.0d0 )
@@ -36,6 +38,12 @@ module MuscularActivationClass
         real(wp), dimension(:), allocatable :: an, activation_nonSat, bSat, activation_Sat
         real(wp), dimension(:), allocatable :: diracDeltaValue
         type(MotorUnit), pointer:: unit(:)
+        integer :: spIndexing, spRows, spCols, spNumberOfElements, spOperation
+        integer, dimension(:), allocatable :: spRowStart, spRowEnd, spColIdx
+        real(wp), dimension(:), allocatable :: spValues
+        type(sparse_matrix_t) :: ActMatrixSp
+        type(matrix_descr) :: spDescr
+        real(wp) :: spAlpha, spBeta
         
         contains
             procedure :: atualizeActivationSignal
@@ -54,7 +62,7 @@ module MuscularActivationClass
             integer, intent(in) :: MUnumber
             class(MotorUnit), dimension(MUnumber),  intent(in), target:: unit
             character(len = 80) :: paramTag
-            integer :: i
+            integer :: i, j, stat
              
 
             init_MuscularActivation%conf => conf
@@ -107,8 +115,47 @@ module MuscularActivationClass
                                        init_MuscularActivation%unit(i)%TwitchTc_ms)/)
                 end do
                 
+                !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                init_MuscularActivation%spIndexing = 1
+                init_MuscularActivation%spRows = size(init_MuscularActivation%ActMatrix, 1)
+                init_MuscularActivation%spCols = size(init_MuscularActivation%ActMatrix, 2)
+                init_MuscularActivation%spNumberOfElements = 0
+                allocate(init_MuscularActivation%spRowStart(init_MuscularActivation%spRows))
+                allocate(init_MuscularActivation%spRowEnd(init_MuscularActivation%spRows))
+                init_MuscularActivation%spRowStart(:) = 0
+                do i = 1, init_MuscularActivation%spRows
+                    do j = 1, init_MuscularActivation%spCols
+                        if (abs(init_MuscularActivation%ActMatrix(i,j))>1e-10) then
+                            init_MuscularActivation%spNumberOfElements = init_MuscularActivation%spNumberOfElements + 1
+                            if (init_MuscularActivation%spRowStart(i) == 0) then
+                                init_MuscularActivation%spRowStart(i) = init_MuscularActivation%spNumberOfElements
+                            end if                    
+                            call AddToList(init_MuscularActivation%spValues, init_MuscularActivation%ActMatrix(i,j))
+                            call integerAddToList(init_MuscularActivation%spColIdx, j)
+                        end if                
+                    end do
+                    init_MuscularActivation%spRowEnd(i) = init_MuscularActivation%spNumberOfElements + 1
+                end do
                 
+
                 
+                ! Create a Sparse Matrix for performance purposes (init_MotorUnitPool%GSp)
+                stat = mkl_sparse_d_create_csr(init_MuscularActivation%ActMatrixSp, &
+                                               init_MuscularActivation%spIndexing, &
+                                               init_MuscularActivation%spRows, &
+                                               init_MuscularActivation%spCols, &
+                                               init_MuscularActivation%spRowStart, &
+                                               init_MuscularActivation%spRowEnd, &
+                                               init_MuscularActivation%spColIdx, &
+                                               init_MuscularActivation%spValues)
+
+                ! Values for the matrix-vector operation matInt = GV
+                init_MuscularActivation%spDescr%type = SPARSE_MATRIX_TYPE_GENERAL
+                init_MuscularActivation%spAlpha = 1.0 
+                init_MuscularActivation%spOperation = SPARSE_OPERATION_NON_TRANSPOSE 
+                init_MuscularActivation%spBeta = 0.0    
+                !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                    
                 ! ## Is a vector formed as:
                 ! ## \f{equation}{
                 ! ##    \resizebox{0.95\hsize}{!}{$Av(n) = \left[\begin{array}{ccccccccccc}a_1(n-1)&a_1(n-2)&e_1(n-1)&...&a_i(n-i)&a_i(n-2)&e_i(n-1)&...&a__{N_{MU}}(n-1)&a__{N_{MU}}(n-2)&e_{N_{MU}}(n-1)\end{array}\right]^T$}                    
@@ -150,7 +197,7 @@ module MuscularActivationClass
             class(MuscularActivation), intent(inout) :: self
             real(wp), intent(in) :: t
             !class(MotorUnit), intent(in), dimension(self%MUnumber)  :: unit
-            integer :: i, sizeTrain
+            integer :: i, sizeTrain, stat
 
             
 
@@ -168,8 +215,16 @@ module MuscularActivationClass
                     self%an(3*(i-1)+3) =  0.0
                 end if
             end do            
-               
-            self%activation_nonSat = matmul(self%ActMatrix, self%an)
+
+            stat = mkl_sparse_d_mv(self%spOperation, &
+                                   self%spAlpha, &
+                                   self%ActMatrixSp, &
+                                   self%spDescr, &
+                                   self%an, &
+                                   self%spBeta, &
+                                   self%activation_nonSat)
+
+            ! self%activation_nonSat = matmul(self%ActMatrix, self%an)
             
             ! \f{equation}{
             ! a_{sat} = \frac{1-e^{-b.a_{nSat}}}{1+e^{-b.a_{nSat}}}

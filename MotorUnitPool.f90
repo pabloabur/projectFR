@@ -21,15 +21,17 @@ module MotorUnitPoolClass
     ! units that controls a single  muscle.
     ! '''
     use ConfigurationClass
+    use DynamicalArrays
     use MotorUnitClass
     use MuscularActivationClass
     use MuscleNoHillClass
     use MuscleHillClass
     use MuscleSpindleClass
+    use mkl_spblas
     implicit none
     private
     integer, parameter :: wp = kind( 1.0d0 )
-    real(wp), parameter :: PI = 4 * atan(1.0_wp)    
+    real(wp), parameter :: pi = 4 * atan(1.0_wp)    
     public :: MotorUnitPool
 
     type MotorUnitPool
@@ -52,6 +54,13 @@ module MotorUnitPoolClass
         type(MuscleHill) :: HillMuscle
         type(MuscleSpindle) :: spindle
         character(len=80) :: hillModel
+        type(sparse_matrix_t) :: GSp
+        type(matrix_descr) :: spDescr
+        integer :: spIndexing, spRows, spCols, spNumberOfElements, spOperation
+        integer, dimension(:), allocatable :: spRowStart, spRowEnd, spColIdx
+        real(wp), dimension(:), allocatable :: spValues
+        real(wp) :: spAlpha, spBeta
+
 
         contains
             procedure :: dVdt
@@ -80,12 +89,12 @@ module MotorUnitPoolClass
         character(len = 80) :: paramTag, paramChar
         integer :: MUnumber_S, MUnumber_FR, MUnumber_FF
         real(wp) :: paramReal
-        integer :: i
+        integer :: i, j
         character(len = 2) ::  neuronKind
-        integer :: simDurationSteps
+        integer :: simDurationSteps, lastIndex, stat
 
 
-
+        
         init_MotorUnitPool%t = 0.0
 
         ! ## Indicates that is Motor Unit pool.
@@ -168,6 +177,7 @@ module MotorUnitPoolClass
         ! # Retrieving data from Motorneuron class
         ! # Vectors or matrices from Motorneuron compartments are copied,
         ! # populating larger vectors or matrices that will be used for computations
+        
         do i = 1, init_MotorUnitPool%MUnumber
             init_MotorUnitPool%v_mV((i-1)*init_MotorUnitPool%unit(i)%compNumber+1:&
                                     (i)*init_MotorUnitPool%unit(i)%compNumber)&
@@ -186,6 +196,47 @@ module MotorUnitPoolClass
                                             = init_MotorUnitPool%unit(i)%EqCurrent_nA
         end do
         
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        init_MotorUnitPool%spIndexing = 1
+        init_MotorUnitPool%spRows = init_MotorUnitPool%totalNumberOfCompartments
+        init_MotorUnitPool%spCols = init_MotorUnitPool%totalNumberOfCompartments
+        init_MotorUnitPool%spNumberOfElements = 0
+        allocate(init_MotorUnitPool%spRowStart(init_MotorUnitPool%spRows))
+        allocate(init_MotorUnitPool%spRowEnd(init_MotorUnitPool%spRows))
+        init_MotorUnitPool%spRowStart(:) = 0
+        do i = 1, init_MotorUnitPool%totalNumberOfCompartments
+            do j = 1, init_MotorUnitPool%totalNumberOfCompartments
+                if (abs(init_MotorUnitPool%G(i,j))>1e-10) then
+                    init_MotorUnitPool%spNumberOfElements = init_MotorUnitPool%spNumberOfElements + 1
+                    if (init_MotorUnitPool%spRowStart(i) == 0) then
+                        init_MotorUnitPool%spRowStart(i) = init_MotorUnitPool%spNumberOfElements
+                    end if                    
+                    call AddToList(init_MotorUnitPool%spValues, init_MotorUnitPool%G(i,j))
+                    call integerAddToList(init_MotorUnitPool%spColIdx, j)
+                end if                
+
+            end do
+            init_MotorUnitPool%spRowEnd(i) = init_MotorUnitPool%spNumberOfElements+1
+        end do
+        
+
+        
+        ! Create a Sparse Matrix for performance purposes (init_MotorUnitPool%GSp)
+        stat = mkl_sparse_d_create_csr(init_MotorUnitPool%GSp, &
+                                       init_MotorUnitPool%spIndexing, &
+                                       init_MotorUnitPool%spRows, &
+                                       init_MotorUnitPool%spCols, &
+                                       init_MotorUnitPool%spRowStart, &
+                                       init_MotorUnitPool%spRowEnd, &
+                                       init_MotorUnitPool%spColIdx, &
+                                       init_MotorUnitPool%spValues)
+
+        ! Values for the matrix-vector operation matInt = GV
+        init_MotorUnitPool%spDescr%type = SPARSE_MATRIX_TYPE_GENERAL
+        init_MotorUnitPool%spAlpha = 1.0 
+        init_MotorUnitPool%spOperation = SPARSE_OPERATION_NON_TRANSPOSE 
+        init_MotorUnitPool%spBeta = 0.0    
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         
         
         ! #activation signal
@@ -230,7 +281,7 @@ module MotorUnitPoolClass
         real(wp), intent(in) :: t
         real(wp), intent(in) :: V(self%totalNumberOfCompartments)
         real(wp), dimension(self%totalNumberOfCompartments) :: dVdt
-        integer :: i, j
+        integer :: i, j, stat
         real(wp), dimension(self%totalNumberOfCompartments) :: matInt
         
         do i = 1, self%MUnumber
@@ -240,9 +291,16 @@ module MotorUnitPoolClass
                     V((i-1)*self%unit(i)%compNumber+j))
             end do
         end do
-
         
-        matInt = matmul(self%G, V)        
+        stat = mkl_sparse_d_mv(self%spOperation, &
+                               self%spAlpha, &
+                               self%GSp, &
+                               self%spDescr, &
+                               V, &
+                               self%spBeta, &
+                               matInt)
+        
+        ! matInt = matmul(self%G, V)        
         
         dVdt = (self%iIonic + matInt + self%iInjected &
                       + self%EqCurrent_nA) * self%capacitanceInv       
@@ -340,6 +398,7 @@ module MotorUnitPoolClass
         numberOfSpikesLastComp = sum(numberOfNewSpikesLastComp)
 
         
+        
         allocate(self%poolSomaSpikes(numberOfSpikesSoma,2))        
         allocate(self%poolLastCompSpikes(numberOfSpikesLastComp,2))
         allocate(self%poolTerminalSpikes(numberOfSpikesTerminal,2))                
@@ -413,9 +472,9 @@ module MotorUnitPoolClass
         class(MotorUnitPool), intent(inout) :: self
         integer :: i
 
-        deallocate(self%poolSomaSpikes)
-        deallocate(self%poolLastCompSpikes)
-        deallocate(self%poolTerminalSpikes)
+        if (allocated(self%poolSomaSpikes)) deallocate(self%poolSomaSpikes)
+        if (allocated(self%poolLastCompSpikes)) deallocate(self%poolLastCompSpikes)
+        if (allocated(self%poolTerminalSpikes)) deallocate(self%poolTerminalSpikes)
         self%emg(:) = 0.0
 
         do i = 1, self%MUnumber
@@ -428,7 +487,7 @@ module MotorUnitPoolClass
         end do
         
         call self%Activation%reset()
-        if (trim(self%hillModel).eq.'No') then
+        if (trim(self%hillModel)=='No') then
             call self%NoHillMuscle%reset()
         end if
     end subroutine

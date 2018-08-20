@@ -28,7 +28,7 @@ module PointProcessGeneratorClass
 
     type PointProcessGenerator
         integer :: index
-        real(wp) :: threshold
+        real(wp) :: threshold, lastSpike
         real(wp), dimension(:), allocatable :: points
 
         contains
@@ -56,9 +56,8 @@ module PointProcessGeneratorClass
             
             init_PointProcessGenerator%index = index
             call init_PointProcessGenerator%newThreshold(1)
-            !allocate(init_PointProcessGenerator%points(1))
-
-            !init_PointProcessGenerator%points(1) = -1
+            
+            init_PointProcessGenerator%lastSpike = -1e6
 
             
         end function init_PointProcessGenerator
@@ -105,9 +104,10 @@ module PointProcessGeneratorClass
             integer, intent(in) :: gammaOrder
             real(wp), intent(in) :: t, firingRate
 
-            if (self%threshold <= 0) then
+            if (self%threshold <= 0 .and. (t - self%lastSpike)>0.3) then
                 call AddToList(self%points, t)
                 call self%newThreshold(gammaOrder)
+                self%lastSpike = t
             end if
             self%threshold = self%threshold - firingRate
         end subroutine
@@ -115,9 +115,9 @@ module PointProcessGeneratorClass
         subroutine reset(self)
             class(PointProcessGenerator), intent(inout) :: self
             
-            deallocate(self%points)
-            self%points(1) = -1
+            if (allocated(self%points)) deallocate(self%points)
             call self%newThreshold(1)
+            self%lastSpike = -1e6
         end subroutine   
 
 

@@ -176,7 +176,6 @@ EqPot@dendrite,0,
 EqPot@soma,0,
 IPump@dendrite,0,
 IPump@soma,0,
-axonDelayCondVel:SOL-S,44,51
 twitchTimePeak:SOL-S,170.0,132.5
 twitchTimePeak:SOL-FR,135.5,100.5
 twitchTimePeak:SOL-FF,100.5,86

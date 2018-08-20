@@ -110,7 +110,7 @@ program ImpedanceAnkle
     GammaOrder = 10
     
     call cpu_time(tic)
-    do i = 2, size(t)
+    do i = 1, size(t)
         angle = 0.004*disturbance(i)
         call ankle%atualizeAnkle(t(i), angle)      
         ! do j = 1, size(neuralTractPools)
@@ -158,10 +158,10 @@ program ImpedanceAnkle
     ! afferentPools(1)%poolTerminalSpikes(:,2), 'with points pt 5 lc rgb "#0008B0"')
 
 
-    ! call gp%title('Muscle force')
-    ! call gp%xlabel('t (ms))')
-    ! call gp%ylabel('Force (N)')
-    ! call gp%plot(t, motorUnitPools(1)%HillMuscle%force, 'with line lw 2 lc rgb "#0008B0"')
+    call gp%title('Muscle force')
+    call gp%xlabel('t (ms))')
+    call gp%ylabel('Force (N)')
+    call gp%plot(t, motorUnitPools(1)%HillMuscle%force, 'with line lw 2 lc rgb "#0008B0"')
 
     ! call gp%title('Muscle length')
     ! call gp%xlabel('t (ms))')

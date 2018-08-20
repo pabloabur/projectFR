@@ -27,7 +27,7 @@ module AxonDelayClass
     use DynamicalArrays
     implicit none
     private
-    integer, parameter :: wp = kind( 1.0d0 )
+    integer, parameter :: wp = kind(1.0d0)
     public :: AxonDelay
 
     type AxonDelay

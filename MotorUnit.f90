@@ -152,7 +152,7 @@ module MotorUnitClass
         
         ! ## Integer corresponding to the motor unit order in the pool, according to the Henneman's principle (size principle).
                 
-
+        
         ! ## Anatomical position of the neuron in the spinal cord, in mm.
         paramTag = 'position'
         paramChar =  init_MotorUnit%conf%parameterSet(paramTag, pool, index)
@@ -244,7 +244,7 @@ module MotorUnitClass
         ! ## Vector with the last instant of spike of all compartments. 
         allocate(init_MotorUnit%tSpikes(init_MotorUnit%compNumber))
         do i = 1, init_MotorUnit%compNumber
-            init_MotorUnit%tSpikes(i) = 0.0    
+            init_MotorUnit%tSpikes(i) = -1e10   
         end do
         
         allocate(gCoupling_muS(init_MotorUnit%compNumber))        
@@ -621,7 +621,7 @@ module MotorUnitClass
                 end if
             end if        
         end if
-        i = nint(t/self%conf%timeStep_ms)
+        i = nint(t/self%conf%timeStep_ms) + 1
         
         if (trim(self%stimulusCompartment).eq.'delay') then
             call self%Delay%atualizeStimulus(t, self%nerveStimulus_mA(i))
@@ -671,7 +671,7 @@ module MotorUnitClass
             else
                 do i = 1, numberOfSpikes
                     newSpike = self%terminalSpikeTrain(i)
-                    if (newSpike < t .and. newSpike >= t-20*self%timeCteEMG_ms) then                                             
+                    if (newSpike < t .and. newSpike >= t-9*self%timeCteEMG_ms) then                                             
                         call AddToList(numberOfSpikesUntilt, newSpike)
                     end if
                 end do
@@ -703,7 +703,7 @@ module MotorUnitClass
         class(MotorUnit), intent(inout) :: self     
         integer :: i
         
-        self%tSomaSpike = -1e6
+        self%tSomaSpike = -1e10
         do i = 1, self%compNumber
             self%v_mV(i) = self%Compartments(i)%EqPot_mV
             call self%Compartments(i)%reset()
@@ -711,7 +711,7 @@ module MotorUnitClass
         
         call self%Delay%reset()
         
-        self%tSpikes(:) = 0.0
+        self%tSpikes(:) = -1e10
         self%iIonic(:) = 0.0
         self%iInjected(:) = 0.0
 

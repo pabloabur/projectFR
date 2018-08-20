@@ -56,7 +56,7 @@ program MotorUnitPoolEMG
     call cpu_time(tic)
     do i = 1, size(t)
         do j = 1, motorUnitPools(1)%MUnumber
-            motorUnitPools(1)%iInjected(2*j) = 40.0
+            motorUnitPools(1)%iInjected(2*j-1) = 20.0
         end do
         MNv_mV(i) = motorUnitPools(1)%v_mV(30)        
         call motorUnitPools(1)%atualizeMotorUnitPool(t(i))
