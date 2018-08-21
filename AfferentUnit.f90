@@ -503,7 +503,7 @@ module AfferentUnitClass
             
 
             if (self%stimulusCompartment == -1) then
-                simDuration = nint(t/self%conf%timeStep_ms)
+                simDuration = nint(t/self%conf%timeStep_ms) + 1
                 call self%Delay%atualizeStimulus(t, self%nerveStimulus_mA(simDuration))
             end if
         end subroutine

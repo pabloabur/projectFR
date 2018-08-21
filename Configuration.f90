@@ -184,7 +184,7 @@ module ConfigurationClass
                 !     + required parameter value
                 ! '''
                 class(Configuration), intent(inout) :: self
-                character(len=6), intent(in) :: pool
+                character(*), intent(in) :: pool
                 integer, intent(in) :: index
                 integer :: ierr, il, j, stop1, i, k
                 character(len = 80) :: line
@@ -224,7 +224,7 @@ module ConfigurationClass
                         end if
                     end if
                 end do
-                              
+                
                 allocate(paramVec(Nnumber)) 
                 if (allocated(paramVec_S)) deallocate(paramVec_S)
                 if (allocated(paramVec_FR)) deallocate(paramVec_FR)
@@ -384,7 +384,8 @@ module ConfigurationClass
                         call Synapses%append(newSynapse)
                     end if               
                 end do
-               
+
+                if (.not.allocated(Synapses%item)) allocate(Synapses%item(0))               
                 
             end function
             

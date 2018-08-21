@@ -54,7 +54,7 @@ program MotorUnitPoolWithDescendingCommand
                                         motorUnitPools, interneuronPools, &
                                         afferentPools)
     
-    conf = Configuration(filename)
+    
     
     tf = conf%simDuration_ms
     dt = conf%timeStep_ms
@@ -73,10 +73,10 @@ program MotorUnitPoolWithDescendingCommand
     call cpu_time(tic)
     do i = 1, size(t)        
         do j = 1, size(neuralTractPools)
-            call neuralTractPools(j)%atualizePool(t(i), FR, GammaOrder)
+            call neuralTractPools(j)%atualizePool(t(i), FR, GammaOrder)            
         end do
         do j = 1, size(motorUnitPools)
-            call motorUnitPools(j)%atualizeMotorUnitPool(t(i))
+            call motorUnitPools(j)%atualizeMotorUnitPool(t(i))            
             MNv_mV(i) = motorUnitPools(j)%v_mV(30)        
         end do
     end do

@@ -104,9 +104,9 @@ module MotorUnitClass
         !     + **skinThickness** : float, skin Thickness, in mm   
         ! '''
         class(Configuration), intent(in), target :: conf    
-        character(len = 6), intent(in) :: pool
+        character(*), intent(in) :: pool
         integer, intent(in) :: index
-        character(len = 2), intent(in) ::  neuronKind
+        character(*), intent(in) ::  neuronKind
         real(wp), intent(in) :: muscleThickness, skinThickness
         character(len=80) :: paramTag, paramChar
         real(wp) :: paramReal

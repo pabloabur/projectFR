@@ -73,10 +73,10 @@ module PulseConductanceStateClass
 
             !     + **index**: the index of the unit that this state belongs.                    
             ! ''' 
-            character(len = 2), intent(in) :: stateKind, neuronKind
+            character(*), intent(in) :: stateKind, neuronKind
             class(Configuration), intent(in), target :: conf
-            character(len = 6), intent(in) :: pool
-            character(len = 9), intent(in) :: compKind
+            character(*), intent(in) :: pool
+            character(*), intent(in) :: compKind
             integer, intent(in) :: index
             character(len=80) :: paramTag, paramChar
 

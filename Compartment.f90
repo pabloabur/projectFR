@@ -73,16 +73,16 @@ module CompartmentClass
         !     + **neuronKind**: string with the type of the motor unit. It can be *S* (slow), *FR* (fast and resistant), 
         !     and *FF* (fast and fatigable).
         ! '''
-        character(len = 9), intent(in) :: compKind
+        character(*), intent(in) :: compKind
         class(Configuration), intent(in), target :: conf
-        character(len = 6), intent(in) :: pool
+        character(*), intent(in) :: pool
         integer, intent(in) :: index
-        character(len = 2), intent(in) ::  neuronKind
+        character(*), intent(in) ::  neuronKind
         character(len=80) :: paramTag, paramChar
         real(wp) :: area_cm2, specifRes_Ohmcm2, membraneCapacitance
         character(len = 6) :: channelKind
         character(len = 10) :: synapseKind
-
+        
         
         init_Compartment%conf => conf
         ! ## String with the type of the motor unit. It can be *S* (slow), *FR* (fast and resistant), 

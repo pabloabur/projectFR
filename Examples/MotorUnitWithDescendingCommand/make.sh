@@ -1,7 +1,6 @@
 gfortran-8 -c ../../queue.f90
 gfortran-8 -c ../../ogpf.f90
 gfortran-8 -c ../../DynamicalArrays.f90
-gfortran-8 -c ../../Utilities.f90
 gfortran-8 -c ../../String.f90
 gfortran-8 -c ../../CharacterArray.f90
 gfortran-8 -c ../../CharacterMatrix.f90

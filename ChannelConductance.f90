@@ -76,11 +76,11 @@ module ChannelConductanceClass
 
         !     + **index**: the index of the unit that this state belongs.          
         ! '''
-        character(len = 2), intent(in) ::  neuronKind
+        character(*), intent(in) ::  neuronKind
         class(Configuration), intent(in), target :: conf
         real(wp) :: compArea
-        character(len = 6), intent(in) :: channelKind, pool
-        character(len = 9), intent(in) :: compKind
+        character(*), intent(in) :: channelKind, pool
+        character(*), intent(in) :: compKind
         integer, intent(in) :: index
         character(len=80) :: paramTag, paramChar
         real(wp) :: channelDensity

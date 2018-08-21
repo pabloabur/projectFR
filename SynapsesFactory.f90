@@ -77,8 +77,6 @@ module SynapsesFactoryModule
                         neuralSource = trim(neuralTractPools(poolOut)%pool) // '-'&
                          // neuralTractPools(poolOut)%unit(unitOut)%neuronKind
                         neuralTractPools(poolOut)%unit(unitOut)%SynapsesOut = conf%determineSynapses(neuralSource)
-                        ! #print pools[poolOut].pool
-                        ! #print pools[poolOut].unit[unitOut].SynapsesOut
                         do synapseIn = 1, size(neuralTractPools(poolOut)%unit(unitOut)%SynapsesOut%item)
                             paramTag = 'Con:' // trim(neuralTractPools(poolOut)%pool) // '-' &
                                         // trim(neuralTractPools(poolOut)%unit(unitOut)%neuronKind) // '>' &
@@ -299,8 +297,6 @@ module SynapsesFactoryModule
                         neuralSource = trim(interneuronPools(poolOut)%pool) // '-' // &
                         interneuronPools(poolOut)%unit(unitOut)%neuronKind
                         interneuronPools(poolOut)%unit(unitOut)%SynapsesOut = conf%determineSynapses(neuralSource)
-                        ! #print pools[poolOut].pool
-                        ! #print pools[poolOut].unit[unitOut].SynapsesOut
                         do synapseIn = 1, size(interneuronPools(poolOut)%unit(unitOut)%SynapsesOut%item)
                             paramTag = 'Con:' // trim(interneuronPools(poolOut)%pool) // '-' &
                                         // trim(interneuronPools(poolOut)%unit(unitOut)%neuronKind) // '>' &
@@ -511,15 +507,15 @@ module SynapsesFactoryModule
                         end do
                     end do
                 end do
-            end if        
+            end if       
+
+            
             !MotorUnitPool to InterneuronPool
             if (size(motorUnitPools)> 0 .and. size(interneuronPools)>0) then
                 do poolOut = 1, size(motorUnitPools)
                     do unitOut = 1, size(motorUnitPools(poolOut)%unit)
                         neuralSource = trim(motorUnitPools(poolOut)%pool) // '-' // motorUnitPools(poolOut)%unit(unitOut)%neuronKind
                         motorUnitPools(poolOut)%unit(unitOut)%SynapsesOut = conf%determineSynapses(neuralSource)
-                        ! #print pools[poolOut].pool
-                        ! #print pools[poolOut].unit[unitOut].SynapsesOut
                         do synapseIn = 1, size(motorUnitPools(poolOut)%unit(unitOut)%SynapsesOut%item)
                             paramTag = 'Con:' // trim(motorUnitPools(poolOut)%pool) // '-' &
                                         // trim(motorUnitPools(poolOut)%unit(unitOut)%neuronKind) // '>' &
@@ -730,7 +726,6 @@ module SynapsesFactoryModule
                     end do
                 end do
             end if
-
             !Afferent to MotorUnitPool
             if (size(afferentPools)>0 .and. size(motorUnitPools)>0) then
                 do poolOut = 1, size(afferentPools)
@@ -738,8 +733,6 @@ module SynapsesFactoryModule
                         neuralSource = trim(afferentPools(poolOut)%pool) // '-'&
                          // afferentPools(poolOut)%unit(unitOut)%neuronKind
                         afferentPools(poolOut)%unit(unitOut)%SynapsesOut = conf%determineSynapses(neuralSource)
-                        ! #print pools[poolOut].pool
-                        ! #print pools[poolOut].unit[unitOut].SynapsesOut
                         do synapseIn = 1, size(afferentPools(poolOut)%unit(unitOut)%SynapsesOut%item)
                             paramTag = 'Con:' // trim(afferentPools(poolOut)%pool) // '-' &
                                         // trim(afferentPools(poolOut)%unit(unitOut)%neuronKind) // '>' &
@@ -959,8 +952,6 @@ module SynapsesFactoryModule
                         neuralSource = trim(afferentPools(poolOut)%pool) // '-'&
                          // afferentPools(poolOut)%unit(unitOut)%neuronKind
                         afferentPools(poolOut)%unit(unitOut)%SynapsesOut = conf%determineSynapses(neuralSource)
-                        ! #print pools[poolOut].pool
-                        ! #print pools[poolOut].unit[unitOut].SynapsesOut
                         do synapseIn = 1, size(afferentPools(poolOut)%unit(unitOut)%SynapsesOut%item)
                             paramTag = 'Con:' // trim(afferentPools(poolOut)%pool) // '-' &
                                         // trim(afferentPools(poolOut)%unit(unitOut)%neuronKind) // '>' &

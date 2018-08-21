@@ -34,7 +34,7 @@ module SynapseClass
     public :: Synapse
 
     type Synapse
-        character(len = 6) :: pool
+        character(len = 9) :: pool
         character(len = 10) :: synapseKind
         character(len = 2) :: neuronKind
         integer ::index
@@ -96,11 +96,11 @@ module SynapseClass
             !     + **neuronKind**: 
             ! '''
             class(Configuration), intent(in), target :: conf    
-            character(len = 6), intent(in) :: pool
+            character(*), intent(in) :: pool
             integer, intent(in) :: index
-            character(len = 9), intent(in) :: compartment
-            character(len = 10), intent(in) :: synapseKind
-            character(len = 2), intent(in) ::  neuronKind
+            character(*), intent(in) :: compartment
+            character(*), intent(in) :: synapseKind
+            character(*), intent(in) ::  neuronKind
             character(len = 80) :: paramTag, paramChar    
         
 

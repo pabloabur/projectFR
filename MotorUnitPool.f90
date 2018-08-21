@@ -28,6 +28,7 @@ module MotorUnitPoolClass
     use MuscleHillClass
     use MuscleSpindleClass
     use mkl_spblas
+    USE, INTRINSIC :: ISO_C_BINDING , ONLY : C_INT, C_DOUBLE
     implicit none
     private
     integer, parameter :: wp = kind( 1.0d0 )
@@ -56,8 +57,8 @@ module MotorUnitPoolClass
         character(len=80) :: hillModel
         type(sparse_matrix_t) :: GSp
         type(matrix_descr) :: spDescr
-        integer :: spIndexing, spRows, spCols, spNumberOfElements, spOperation
-        integer, dimension(:), allocatable :: spRowStart, spRowEnd, spColIdx
+        integer(c_int) :: spIndexing, spRows, spCols, spNumberOfElements, spOperation
+        integer(c_int), dimension(:), allocatable :: spRowStart, spRowEnd, spColIdx
         real(wp), dimension(:), allocatable :: spValues
         real(wp) :: spAlpha, spBeta
 
@@ -92,7 +93,6 @@ module MotorUnitPoolClass
         integer :: i, j
         character(len = 2) ::  neuronKind
         integer :: simDurationSteps, lastIndex, stat
-
 
         
         init_MotorUnitPool%t = 0.0
@@ -230,7 +230,7 @@ module MotorUnitPoolClass
                                        init_MotorUnitPool%spRowEnd, &
                                        init_MotorUnitPool%spColIdx, &
                                        init_MotorUnitPool%spValues)
-
+        
         ! Values for the matrix-vector operation matInt = GV
         init_MotorUnitPool%spDescr%type = SPARSE_MATRIX_TYPE_GENERAL
         init_MotorUnitPool%spAlpha = 1.0 
@@ -283,14 +283,14 @@ module MotorUnitPoolClass
         real(wp), dimension(self%totalNumberOfCompartments) :: dVdt
         integer :: i, j, stat
         real(wp), dimension(self%totalNumberOfCompartments) :: matInt
-        
+              
         do i = 1, self%MUnumber
             do j = 1, self%unit(i)%compNumber
                 self%iIonic((i-1)*self%unit(i)%compNumber+j) = &
                     self%unit(i)%Compartments(j)%computeCurrent(t, &
                     V((i-1)*self%unit(i)%compNumber+j))
             end do
-        end do
+        end do       
         
         stat = mkl_sparse_d_mv(self%spOperation, &
                                self%spAlpha, &

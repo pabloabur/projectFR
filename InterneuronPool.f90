@@ -31,7 +31,7 @@ module InterneuronPoolClass
 
     type InterneuronPool
         character(len = 2) :: poolKind
-        character(len = 6) :: pool
+        character(len = 15) :: pool
         type(Configuration), pointer :: conf
         integer :: Nnumber, totalNumberOfCompartments
         type(Interneuron), dimension(:), allocatable :: unit
@@ -70,7 +70,7 @@ module InterneuronPoolClass
             !     + **pool**: string with Interneuron pool to which the motor unit belongs.
             ! '''
             class(Configuration), intent(in), target :: conf
-            character(len = 6), intent(in) :: pool
+            character(len = 15), intent(in) :: pool
             character(len = 4), intent(in) :: group
             character(len = 80) :: paramTag, paramChar
             real(wp) :: paramReal
@@ -84,6 +84,7 @@ module InterneuronPoolClass
             ! ## String with Motor unit pool to which the motor unit belongs.
             init_InterNeuronPool%pool = trim(pool) // '_' // trim(group)
             ! ## Number of Neurons.
+            
             paramTag = 'Number_' // trim(init_InterNeuronPool%pool)
             paramChar = init_InterNeuronPool%conf%parameterSet(paramTag, pool, 0)
             read(paramChar, *)paramReal
