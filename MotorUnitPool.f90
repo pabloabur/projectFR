@@ -86,11 +86,11 @@ module MotorUnitPoolClass
         !     + **pool**: string with Motor unit pool to which the motor unit belongs.
         ! '''
         class(Configuration), intent(in), target :: conf        
-        character(len = 6), intent(in):: pool
+        character(*), intent(in):: pool
         character(len = 80) :: paramTag, paramChar
         integer :: MUnumber_S, MUnumber_FR, MUnumber_FF
         real(wp) :: paramReal
-        integer :: i, j
+        integer(c_int) :: i, j
         character(len = 2) ::  neuronKind
         integer :: simDurationSteps, lastIndex, stat
 
@@ -213,8 +213,7 @@ module MotorUnitPoolClass
                     end if                    
                     call AddToList(init_MotorUnitPool%spValues, init_MotorUnitPool%G(i,j))
                     call integerAddToList(init_MotorUnitPool%spColIdx, j)
-                end if                
-
+                end if   
             end do
             init_MotorUnitPool%spRowEnd(i) = init_MotorUnitPool%spNumberOfElements+1
         end do
@@ -279,10 +278,12 @@ module MotorUnitPoolClass
     function dVdt(self, t, V)
         class(MotorUnitPool), intent(inout) :: self
         real(wp), intent(in) :: t
-        real(wp), intent(in) :: V(self%totalNumberOfCompartments)
+        real(wp), intent(in) :: V(:)
         real(wp), dimension(self%totalNumberOfCompartments) :: dVdt
         integer :: i, j, stat
-        real(wp), dimension(self%totalNumberOfCompartments) :: matInt
+        real(wp), dimension(:), allocatable :: matInt
+
+        allocate(matInt(self%totalNumberOfCompartments))
               
         do i = 1, self%MUnumber
             do j = 1, self%unit(i)%compNumber
@@ -303,7 +304,7 @@ module MotorUnitPoolClass
         ! matInt = matmul(self%G, V)        
         
         dVdt = (self%iIonic + matInt + self%iInjected &
-                      + self%EqCurrent_nA) * self%capacitanceInv       
+                + self%EqCurrent_nA) * self%capacitanceInv       
     end function
 
     subroutine atualizeMotorUnitPool(self, t)
@@ -316,12 +317,16 @@ module MotorUnitPoolClass
         ! '''
         class(MotorUnitPool) , intent(inout), target:: self
         real(wp), intent(in) :: t
-        real(wp), dimension(self%totalNumberOfCompartments) :: k1, k2, k3, k4
+        real(wp), dimension(:), allocatable :: k1, k2, k3, k4
         integer :: i
         real(wp) :: vmax, vmin
         real(wp) :: length, velocity, acceleration
         real(wp) :: dynGamma, statGamma
         
+        allocate(k1(self%totalNumberOfCompartments))
+        allocate(k2(self%totalNumberOfCompartments))
+        allocate(k3(self%totalNumberOfCompartments))
+        allocate(k4(self%totalNumberOfCompartments))
         
         vmin = -30.0
         vmax = 120.0      
@@ -341,6 +346,7 @@ module MotorUnitPoolClass
         do i = 1, self%MUnumber 
             call self%unit(i)%atualizeMotorUnit(t, self%v_mV((i-1)*self%unit(i)%compNumber+1:i*self%unit(i)%compNumber))
         end do
+        
         self%Activation%unit => self%unit(:)
         
         call self%Activation%atualizeActivationSignal(t)

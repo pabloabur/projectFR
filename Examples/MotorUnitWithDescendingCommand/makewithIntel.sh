@@ -1,34 +1,33 @@
-ifort -c -g -traceback ../../queue.f90
-ifort -c -g -traceback ../../ogpf.f90
-ifort -c -g -traceback ../../DynamicalArrays.f90
-ifort -c -g -traceback ../../String.f90
-ifort -c -g -traceback ../../CharacterArray.f90
-ifort -c -g -traceback ../../CharacterMatrix.f90
-ifort -c -g -traceback ../../randomSeedInitialize.f90
-ifort -c -g -traceback ../../Configuration.f90
-ifort -c -g -traceback ../../PulseConductanceState.f90
-ifort -c -g -traceback ../../ChannelConductance.f90
-ifort -c -g -traceback ../../Synapse.f90
-ifort -c -g -traceback ../../SynapsePointer.f90
-ifort -c -g -traceback ../../Compartment.f90
-ifort -c -g -traceback ../../AxonDelay.f90
-ifort -c -g -traceback ../../MotorUnit.f90
-ifort -c -g -traceback ../../MuscularActivation.f90
-ifort -c -g -traceback ../../MuscleNoHill.f90
-ifort -c -g -traceback ../../MuscleHill.f90
-ifort -c -g -traceback ../../MuscleSpindle.f90
-ifort -c -g -traceback $MKLROOT/include/mkl_spblas.f90
-ifort -c -g -traceback ../../MotorUnitPool.f90
-ifort -c -g -traceback ../../PointProcessGenerator.f90
-ifort -c -g -traceback ../../NeuralTractUnit.f90
-ifort -c -g -traceback ../../NeuralTract.f90
-ifort -c -g -traceback ../../Interneuron.f90
-ifort -c -g -traceback ../../InterneuronPool.f90
-ifort -c -g -traceback ../../SynapticNoise.f90
-ifort -c -g -traceback ../../AfferentUnit.f90
-ifort -c -g -traceback ../../AfferentPool.f90
-ifort -c -g -traceback ../../SynapsesFactory.f90
-ifort -c -g -traceback ../../MusclePointer.f90
-ifort -c -g -traceback ../../jointAnkleForceTask.f90
+ifort -c  ../../queue.f90
+ifort -c  ../../ogpf.f90
+ifort -c  ../../DynamicalArrays.f90
+ifort -c  ../../String.f90
+ifort -c  ../../CharacterArray.f90
+ifort -c  ../../CharacterMatrix.f90
+ifort -c  ../../randomSeedInitialize.f90
+ifort -c  ../../Configuration.f90
+ifort -c  ../../PulseConductanceState.f90
+ifort -c  ../../ChannelConductance.f90
+ifort -c  ../../Synapse.f90
+ifort -c  ../../SynapsePointer.f90
+ifort -c  ../../Compartment.f90
+ifort -c  ../../AxonDelay.f90
+ifort -c  ../../MotorUnit.f90
+ifort -c  ../../MuscularActivation.f90
+ifort -c  ../../MuscleNoHill.f90
+ifort -c  ../../MuscleHill.f90
+ifort -c  ../../MuscleSpindle.f90
+ifort -c  ../../MotorUnitPool.f90
+ifort -c  ../../PointProcessGenerator.f90
+ifort -c  ../../NeuralTractUnit.f90
+ifort -c  ../../NeuralTract.f90
+ifort -c  ../../Interneuron.f90
+ifort -c  ../../InterneuronPool.f90
+ifort -c  ../../SynapticNoise.f90
+ifort -c  ../../AfferentUnit.f90
+ifort -c  ../../AfferentPool.f90
+ifort -c  ../../SynapsesFactory.f90
+ifort -c  ../../MusclePointer.f90
+ifort -c  ../../jointAnkleForceTask.f90
 
-ifort MotorUnitPoolWithDescendingCommand.f90 -o MotorUnitPoolWithDescendingCommand   ../../AfferentUnit.f90 ../../AfferentPool.f90 ../../String.f90 ../../SynapticNoise.f90 ../../MuscleSpindle.f90 ../../MuscleHill.f90 ../../Interneuron.f90 ../../InterneuronPool.f90 ../../SynapsePointer.f90 ../../SynapsesFactory.f90 ../../Synapse.f90 ../../CharacterMatrix.f90 ../../PointProcessGenerator.f90 ../../NeuralTractUnit.f90 ../../NeuralTract.f90  ../../queue.f90 ../../CharacterArray.f90 ../../MuscleNoHill.f90 ../../MuscularActivation.f90 ../../MotorUnitPool.f90 ../../AxonDelay.f90 ../../Compartment.f90 ../../MotorUnit.f90   ../../DynamicalArrays.f90 ../../randomSeedInitialize.f90 ../../ogpf.f90 ../../Configuration.f90 ../../PulseConductanceState.f90 ../../ChannelConductance.f90 -Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_lp64.a ${MKLROOT}/lib/intel64/libmkl_sequential.a ${MKLROOT}/lib/intel64/libmkl_core.a -Wl,--end-group -lpthread -lm -ldl -I$MKLROOT/include
+ifort MotorUnitPoolWithDescendingCommand.f90 -o MotorUnitPoolWithDescendingCommand -mkl=sequential ../../AfferentUnit.f90 ../../AfferentPool.f90 ../../String.f90 ../../SynapticNoise.f90 ../../MuscleSpindle.f90 ../../MuscleHill.f90 ../../Interneuron.f90 ../../InterneuronPool.f90 ../../SynapsePointer.f90 ../../SynapsesFactory.f90 ../../Synapse.f90 ../../CharacterMatrix.f90 ../../PointProcessGenerator.f90 ../../NeuralTractUnit.f90 ../../NeuralTract.f90  ../../queue.f90 ../../CharacterArray.f90 ../../MuscleNoHill.f90 ../../MuscularActivation.f90 ../../MotorUnitPool.f90 ../../AxonDelay.f90 ../../Compartment.f90 ../../MotorUnit.f90   ../../DynamicalArrays.f90 ../../randomSeedInitialize.f90 ../../ogpf.f90 ../../Configuration.f90 ../../PulseConductanceState.f90 ../../ChannelConductance.f90  

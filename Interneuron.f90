@@ -283,7 +283,7 @@ module InterneuronClass
         self%iIonic(:) = 0.0
         self%iInjected(:) = 0.0
 
-        deallocate(self%somaSpikeTrain)
+        if (allocated(self%somaSpikeTrain)) deallocate(self%somaSpikeTrain)
         
     end subroutine
 

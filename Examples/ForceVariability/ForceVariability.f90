@@ -194,29 +194,29 @@ program ForceVariability
         allocate(neuralTractPools(1))
     end do
     do l = 1, size(FR)
-        write(fileNumber, '(F3.0)')FR(l)
-        filename = 'forceSOL_FR'// trim(fileNumber) //'.txt'
+        write(fileNumber, '(F4.0)')FR(l)
+        filename = 'forceSOL_FR'// trim(fileNumber) //'linear.txt'
         open(1, file=filename, status = 'replace') 
         do i = 1, size(t)        
             write(1, '(F15.6, 1X,F15.6,1X,F15.6,1X,F15.6,1X,F15.6)') (forceSOL(i,l,j), j=1,size(condVelS))
         end do
         close(1)
 
-        filename = 'forceMG_FR'// trim(fileNumber) //'.txt'
+        filename = 'forceMG_FR'// trim(fileNumber) //'linear.txt'
         open(1, file=filename, status = 'replace') 
         do i = 1, size(t)        
             write(1, '(F15.6, 1X,F15.6,1X,F15.6,1X,F15.6,1X,F15.6)') (forceMG(i,l,j), j=1,size(condVelS))
         end do
         close(1)
 
-        filename = 'forceLG_FR'// trim(fileNumber) //'.txt'
+        filename = 'forceLG_FR'// trim(fileNumber) //'linear.txt'
         open(1, file=filename, status = 'replace') 
         do i = 1, size(t)        
             write(1, '(F15.6, 1X,F15.6,1X,F15.6,1X,F15.6,1X,F15.6)') (forceLG(i,l,j), j=1,size(condVelS))
         end do
         close(1)
 
-        filename = 'torque_FR'// trim(fileNumber) //'.txt'
+        filename = 'torque_FR'// trim(fileNumber) //'linear.txt'
         open(1, file=filename, status = 'replace') 
         do i = 1, size(t)        
             write(1, '(F15.6, 1X,F15.6,1X,F15.6,1X,F15.6,1X,F15.6)') (torque(i,l,j), j=1,size(condVelS))
