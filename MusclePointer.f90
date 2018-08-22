@@ -19,7 +19,7 @@
 ! # '''
 
 module MusclePointerClass
-    use MotorUnitPoolClass
+    use MotorUnitPoolClassNoMKL
     implicit none
     private
     public :: MusclePointer

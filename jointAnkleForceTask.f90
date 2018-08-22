@@ -20,7 +20,7 @@
 
 module jointAnkleForceTaskClass
     use ConfigurationClass
-    use MotorUnitPoolClass
+    use MotorUnitPoolClassNoMKL
     use MusclePointerClass
     implicit none
     private

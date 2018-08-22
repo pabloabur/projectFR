@@ -714,6 +714,7 @@ module MotorUnitClass
         self%tSpikes(:) = -1e10
         self%iIonic(:) = 0.0
         self%iInjected(:) = 0.0
+        !self%nerveStimulus_mA(:) = 0.0
 
         if (allocated(self%somaSpikeTrain)) deallocate(self%somaSpikeTrain)
         ! ## Vector with the instants of spikes at the last compartment.
