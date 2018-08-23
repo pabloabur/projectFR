@@ -39,4 +39,6 @@
 
 *.txt
 
+# Jupyter notebooks
 ForceVariability.ipynb
+.ipynb_checkpoints/
