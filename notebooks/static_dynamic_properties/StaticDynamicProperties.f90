@@ -19,9 +19,9 @@
 ! '''
 
 program StaticDynamicProperties
-    use MotorUnitPoolClassNoMKL
+    use MotorUnitPoolClass
     use NeuralTractClass
-    use InterneuronPoolClassNoMKL
+    use InterneuronPoolClass
     use SynapticNoiseClass
     use ConfigurationClass
     use ogpf 
@@ -46,7 +46,7 @@ program StaticDynamicProperties
     real(wp) :: FR
     integer :: GammaOrder 
     character(len = 80) :: pool, group
-    character(len = 80) :: filename = 'conf.rmto'
+    character(len = 80) :: filename = '../conf.rmto'
     type(MotorUnitPool), dimension(:), allocatable, target :: motorUnitPools
     type(NeuralTract), dimension(:), allocatable :: neuralTractPools    
     type(InterneuronPool), dimension(:), allocatable, target :: interneuronPools    
@@ -59,15 +59,15 @@ program StaticDynamicProperties
     logical, parameter :: probDecay = .true.
     real(wp), parameter :: FFConducStrength = 0.3_wp, & 
         declineFactorMN = real(1, wp)/6, declineFactorRC = real(3.5, wp)/3
-    character(len=3), parameter :: stimAmp = '100', nS = '75', nFR = '75', &
+    character(len=3), parameter :: stimAmp = '90', nS = '75', nFR = '75', &
         nFF = '150', nRC = '300'
-    character(len=6), parameter :: simDuration = '20'
-    integer, dimension(8), parameter :: fs = [10, 20, 30, 40, 50, 60, 70, 80]
+    integer, dimension(1), parameter :: fs = [10]!, 20, 30, 40, 50, 60, 70, 80]
 
     call init_random_seed()
 
     conf = Configuration(filename)
-    ! Changing configuration file
+
+    !Changing configuration file
     paramTag = 'MUnumber_MG-S'
     value1 = nS
     value2 = ''
@@ -82,10 +82,6 @@ program StaticDynamicProperties
     call conf%changeConfigurationParameter(paramTag, value1, value2)
     paramTag = 'Number_RC_ext'
     value1 = nRC
-    value2 = ''
-    call conf%changeConfigurationParameter(paramTag, value1, value2)
-    paramTag = 'simDuration'
-    value1 = simDuration
     value2 = ''
     call conf%changeConfigurationParameter(paramTag, value1, value2)
 
@@ -405,6 +401,7 @@ program StaticDynamicProperties
     value2 = ''
     call conf%changeConfigurationParameter(paramTag, value1, value2)
 
+    print *, 'Building neural elements'
     allocate(neuralTractPools(0))
     pool = 'MG'
     allocate(motorUnitPools(1))
@@ -417,7 +414,7 @@ program StaticDynamicProperties
     synapticNoisePools = synapseFactory(conf, neuralTractPools, &
                                         motorUnitPools, &
                                         interneuronPools, &
-                                        afferentPools, probDecay)
+                                        afferentPools)
     
     tf = conf%simDuration_ms
     dt = conf%timeStep_ms
@@ -429,6 +426,7 @@ program StaticDynamicProperties
 
     t = [(dt*(i-1), i=1, timeLength)]
     
+    print *, 'Running simulation'
     call cpu_time(tic)
     do k=1, size(fs)
         paramTag = 'stimFrequency_PTN'
@@ -436,12 +434,11 @@ program StaticDynamicProperties
         value2 = ''
         call conf%changeConfigurationParameter(paramTag, value1, value2)
 
-        call gp%title('PTN stimulus')
-        call gp%xlabel('t (ms))')
-        call gp%ylabel('Stimulus (mA)')
-        call gp%plot(t, motorUnitPools(1)%unit(1)%nerveStimulus_mA, &
-            'with line lw 2 lc rgb "#0008B0"')  
-    
+        ! Apply stimulus to the nerve
+        do i = 1, size(motorUnitPools(1)%unit)
+            call motorUnitPools(1)%unit(i)%createStimulus()
+        end do
+        
         do i = 1, size(t)        
             do j = 1, size(synapticNoisePools)
                 call synapticNoisePools(j)%atualizePool(t(i))
@@ -467,6 +464,18 @@ program StaticDynamicProperties
         end do
         close(1)
 
+        call gp%title('MN spike instants at the soma')
+        call gp%xlabel('t (s))')
+        call gp%ylabel('Motoneuron index')
+        call gp%plot(motorUnitPools(1)%poolSomaSpikes(:,1), &
+        motorUnitPools(1)%poolSomaSpikes(:,2), 'with points pt 5 lc rgb "#0008B0"')
+
+        call gp%title('RC spike instants at the soma')
+        call gp%xlabel('t (s))')
+        call gp%ylabel('Motoneuron index')
+        call gp%plot(interneuronPools(1)%poolSomaSpikes(:,1), &
+        interneuronPools(1)%poolSomaSpikes(:,2), 'with points pt 5 lc rgb "#0008B0"')
+
         call motorUnitPools(1)%reset()
         call interneuronPools(1)%reset()
     end do
@@ -474,33 +483,20 @@ program StaticDynamicProperties
     call cpu_time(toc)
     print '(F15.6, A)', toc - tic, ' seconds'
     
-    call gp%title('Membrane potential of the soma of the MN #1')
-    call gp%xlabel('t (ms))')
-    call gp%ylabel('Descending command index')
-    call gp%plot(t, MNv_mV, 'with line lw 2 lc rgb "#0008B0"')  
+    !call gp%title('Membrane potential of the soma of the MN #1')
+    !call gp%xlabel('t (ms))')
+    !call gp%ylabel('Descending command index')
+    !call gp%plot(t, MNv_mV, 'with line lw 2 lc rgb "#0008B0"')  
 
-    call gp%title('Membrane potential of the soma of the RC #1')
-    call gp%xlabel('t (ms))')
-    call gp%ylabel('Descending command index')
-    call gp%plot(t, RCv_mV, 'with line lw 2 lc rgb "#0008B0"')  
+    !call gp%title('Membrane potential of the soma of the RC #1')
+    !call gp%xlabel('t (ms))')
+    !call gp%ylabel('Descending command index')
+    !call gp%plot(t, RCv_mV, 'with line lw 2 lc rgb "#0008B0"')  
 
-    call gp%title('MN spike instants at the soma')
-    call gp%xlabel('t (s))')
-    call gp%ylabel('Motoneuron index')
-    call gp%plot(motorUnitPools(1)%poolSomaSpikes(:,1), &
-    motorUnitPools(1)%poolSomaSpikes(:,2), 'with points pt 5 lc rgb "#0008B0"')
-
-    call gp%title('RC spike instants at the soma')
-    call gp%xlabel('t (s))')
-    call gp%ylabel('Motoneuron index')
-    call gp%plot(interneuronPools(1)%poolSomaSpikes(:,1), &
-    interneuronPools(1)%poolSomaSpikes(:,2), 'with points pt 5 lc rgb "#0008B0"')
-
-
-    call gp%title('Muscle force')
-    call gp%xlabel('t (ms))')
-    call gp%ylabel('Force (N)')
-    call gp%plot(t, motorUnitPools(1)%NoHillMuscle%force, 'with line lw 2 lc rgb "#0008B0"')
+    !call gp%title('Muscle force')
+    !call gp%xlabel('t (ms))')
+    !call gp%ylabel('Force (N)')
+    !call gp%plot(t, motorUnitPools(1)%NoHillMuscle%force, 'with line lw 2 lc rgb "#0008B0"')
     
     
 end program StaticDynamicProperties
