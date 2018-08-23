@@ -100,6 +100,12 @@ module ConfigurationClass
                 init_Configuration%filename = filename
                 init_Configuration%confMatrix = CharacterMatrix()
                 open(1,file = init_Configuration%filename, status='old',iostat=ierr)
+
+                ! In case file does not exist
+                if (ierr.ne.0) then
+                    print *, 'File name provided does not exist on directory'
+                    stop 1
+                end if
                 
                 do while (ierr.eq.0)
                     read(1, '(A)', iostat=ierr) line
@@ -397,16 +403,22 @@ module ConfigurationClass
                 character(len = 80), intent(in) :: paramTag
                 character(len = 80), intent(in) :: value1, value2 
                 integer :: i
+                logical :: found
                 
-                
+                found = .false.
                 do i = 1, size(self%confMatrix%item)
                     if (self%confMatrix%item(i)%item(1)%string == paramTag) then
                         self%confMatrix%item(i)%item(2)%string = trim(value1)
                         self%confMatrix%item(i)%item(3)%string = trim(value2)
+                        found = .true.
                     end if
                 end do
                 
-                
+                ! In case the parameter did not match any tag
+                if (.not.found) then
+                    print *, "Parameter tag was not found on configuration file"
+                    stop 1
+                end if
 
             end subroutine
 
