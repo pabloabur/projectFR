@@ -399,6 +399,7 @@ module MuscleHillClass
             self%force(self%timeIndex) = self%forceNorm * self%maximumForce_N
             self%tendonForce_N(self%timeIndex) = self%tendonForceNorm * self%maximumForce_N                  
             
+            
             self%timeIndex = self%timeIndex + 1
         end subroutine
 
@@ -590,6 +591,8 @@ module MuscleHillClass
 
             ! '''
             class(MuscleHill), intent(inout) :: self
+            character(len = 80) :: paramTag, paramChar
+
 
             self%timeIndex = 1
             self%tendonForce_N(:) = 0.0
@@ -606,9 +609,20 @@ module MuscleHillClass
             self%momentArm_m(:) = 0.0
             self%lengthNorm = 0.0
             self%velocityNorm = 0.0
-            self%tendonLengthNorm = 0.0
             self%forceNorm = 0.0
             self%tendonForceNorm = 0.0
+
+            paramTag = 'initialMuscleLength:' // trim(self%pool)
+            paramChar = self%conf%parameterSet(paramTag, self%pool, 0)
+            read(paramChar, *)self%length_m(1)
+
+            self%pennationAngle_rad(1) = self%computePennationAngle()
+
+            self%tendonLength_m(1) = self%musculoTendonLength_m(1) - &
+                                     self%length_m(1) * &
+                                     cos(self%pennationAngle_rad(1))
+            self%tendonLengthNorm = self%tendonLength_m(1)/self%optimalTendonLength
+            
         end subroutine
 
 end module MuscleHillClass

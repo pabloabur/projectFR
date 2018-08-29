@@ -238,6 +238,7 @@ module MuscularActivationClass
 
             ! '''
             class(MuscularActivation), intent(inout) :: self
+            
             self%an(:) = 0.0
             self%activation_nonSat(:) = 0.0
             self%activation_Sat(:) = 0.0

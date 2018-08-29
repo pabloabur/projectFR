@@ -620,6 +620,7 @@ module AfferentUnitClass
             if (allocated(self%lastCompSpikeTrain)) deallocate(self%lastCompSpikeTrain)
             ! ## Vector with the instants of spikes at the terminal.
             if (allocated(self%terminalSpikeTrain)) deallocate(self%terminalSpikeTrain)
+            call self%spikesGenerator%reset()
         end subroutine
 
 

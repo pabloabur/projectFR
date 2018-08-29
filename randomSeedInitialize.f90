@@ -4,17 +4,17 @@ module randomSeedInitialize
 
         subroutine init_random_seed()
 
-            INTEGER :: i, n, clock
-            INTEGER, DIMENSION(:), ALLOCATABLE :: seed
+            integer :: i, n, clock
+            integer, dimension(:), allocatable :: seed
 
-            CALL RANDOM_SEED(size = n)
-            ALLOCATE(seed(n))
+            call random_seed(size = n)
+            allocate(seed(n))
 
-            CALL SYSTEM_CLOCK(COUNT=clock)
+            call system_clock(count=clock)
 
-            seed = clock + 37 * (/ (i - 1, i = 1, n) /)
-            CALL RANDOM_SEED(PUT = seed)
+            seed = clock + 37 * [(i - 1, i = 1, n)]
+            call random_seed(put = seed)
 
-            DEALLOCATE(seed)
+            deallocate(seed)
         end subroutine init_random_seed
 end module randomSeedInitialize

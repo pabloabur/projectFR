@@ -28,10 +28,10 @@ module MotorUnitPoolClass
     use MuscleHillClass
     use MuscleSpindleClass
     use mkl_spblas
-    USE, INTRINSIC :: ISO_C_BINDING , ONLY : C_INT, C_DOUBLE
+    use, intrinsic :: iso_c_binding, only: c_int, c_double
     implicit none
     private
-    integer, parameter :: wp = kind( 1.0d0 )
+    integer, parameter :: wp = kind(1.0d0)
     real(wp), parameter :: pi = 4 * atan(1.0_wp)    
     public :: MotorUnitPool
 
@@ -55,12 +55,12 @@ module MotorUnitPoolClass
         type(MuscleHill) :: HillMuscle
         type(MuscleSpindle) :: spindle
         character(len=80) :: hillModel
-        type(sparse_matrix_t) :: GSp
         type(matrix_descr) :: spDescr
         integer(c_int) :: spIndexing, spRows, spCols, spNumberOfElements, spOperation
         integer(c_int), dimension(:), allocatable :: spRowStart, spRowEnd, spColIdx
         real(wp), dimension(:), allocatable :: spValues
         real(wp) :: spAlpha, spBeta
+        type(sparse_matrix_t):: Gsp
 
 
         contains
@@ -93,6 +93,7 @@ module MotorUnitPoolClass
         integer(c_int) :: i, j
         character(len = 2) ::  neuronKind
         integer :: simDurationSteps, lastIndex, stat
+        
 
         
         init_MotorUnitPool%t = 0.0
@@ -217,10 +218,8 @@ module MotorUnitPoolClass
             end do
             init_MotorUnitPool%spRowEnd(i) = init_MotorUnitPool%spNumberOfElements+1
         end do
-        
 
         
-        ! Create a Sparse Matrix for performance purposes (init_MotorUnitPool%GSp)
         stat = mkl_sparse_d_create_csr(init_MotorUnitPool%GSp, &
                                        init_MotorUnitPool%spIndexing, &
                                        init_MotorUnitPool%spRows, &
@@ -228,7 +227,8 @@ module MotorUnitPoolClass
                                        init_MotorUnitPool%spRowStart, &
                                        init_MotorUnitPool%spRowEnd, &
                                        init_MotorUnitPool%spColIdx, &
-                                       init_MotorUnitPool%spValues)
+                                       init_MotorUnitPool%spValues)  
+        
         
         ! Values for the matrix-vector operation matInt = GV
         init_MotorUnitPool%spDescr%type = SPARSE_MATRIX_TYPE_GENERAL
@@ -291,7 +291,17 @@ module MotorUnitPoolClass
                     self%unit(i)%Compartments(j)%computeCurrent(t, &
                     V((i-1)*self%unit(i)%compNumber+j))
             end do
-        end do       
+        end do 
+
+        ! Create a Sparse Matrix for performance purposes (init_MotorUnitPool%GSp)
+        stat = mkl_sparse_d_create_csr(self%GSp, &
+                                       self%spIndexing, &
+                                       self%spRows, &
+                                       self%spCols, &
+                                       self%spRowStart, &
+                                       self%spRowEnd, &
+                                       self%spColIdx, &
+                                       self%spValues)      
         
         stat = mkl_sparse_d_mv(self%spOperation, &
                                self%spAlpha, &
@@ -307,7 +317,7 @@ module MotorUnitPoolClass
                 + self%EqCurrent_nA) * self%capacitanceInv       
     end function
 
-    subroutine atualizeMotorUnitPool(self, t)
+    subroutine atualizeMotorUnitPool(self, t, dynGamma, statGamma)
         ! '''
         ! Update all parts of the Motor Unit pool. It consists
         ! to update all motor units, the activation signal and
@@ -317,11 +327,11 @@ module MotorUnitPoolClass
         ! '''
         class(MotorUnitPool) , intent(inout), target:: self
         real(wp), intent(in) :: t
+        real(wp), intent(in) :: dynGamma, statGamma
         real(wp), dimension(:), allocatable :: k1, k2, k3, k4
         integer :: i
         real(wp) :: vmax, vmin
         real(wp) :: length, velocity, acceleration
-        real(wp) :: dynGamma, statGamma
         
         allocate(k1(self%totalNumberOfCompartments))
         allocate(k2(self%totalNumberOfCompartments))
@@ -362,8 +372,7 @@ module MotorUnitPoolClass
             acceleration = self%HillMuscle%accelerationNorm
         end if
 
-        dynGamma = 31.0
-        statGamma = 33.0
+        
         call self%spindle%atualizeMuscleSpindle(t, length,&
                                                 velocity, &
                                                 acceleration,& 
@@ -495,7 +504,10 @@ module MotorUnitPoolClass
         call self%Activation%reset()
         if (trim(self%hillModel)=='No') then
             call self%NoHillMuscle%reset()
+        else
+            call self%HillMuscle%reset()
         end if
+        call self%spindle%reset()
     end subroutine
 
 
