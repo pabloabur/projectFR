@@ -24,7 +24,7 @@ module MuscleNoHillClass
     implicit none
     private
     integer, parameter :: wp = kind( 1.0d0 )
-    real(wp), parameter :: PI = 4 * atan(1.0_wp)    
+    real(wp), parameter :: pi = 4 * atan(1.0_wp)    
     public :: MuscleNoHill
 
     type :: MuscleNoHill

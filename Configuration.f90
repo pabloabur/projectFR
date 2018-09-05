@@ -397,17 +397,23 @@ module ConfigurationClass
                 character(len = 80), intent(in) :: paramTag
                 character(len = 80), intent(in) :: value1, value2 
                 integer :: i
+                logical :: found
                 
-                
+                found = .false.
                 do i = 1, size(self%confMatrix%item)
                     if (self%confMatrix%item(i)%item(1)%string == paramTag) then
                         self%confMatrix%item(i)%item(2)%string = trim(value1)
                         self%confMatrix%item(i)%item(3)%string = trim(value2)
+                        found = .true.
                     end if
                 end do
                 
-                
-
+                ! In case the parameter did not match any tag
+                if (.not.found) then
+                    print *, "Following parameter tag was not found on configuration file:"
+                    print *, paramTag
+                    stop 1
+                end if
             end subroutine
 
 end module

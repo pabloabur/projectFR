@@ -127,58 +127,47 @@ module postureTaskClass
         end subroutine
 
 
-    subroutine computeTorque(self, t)
-        ! '''
-        ! '''
-        class(postureTask), intent(inout) :: self
-        real(wp), intent(in) ::t
-        real(wp) :: muscularTorque, velocity, acceleration
-        integer :: i
-        integer :: timeIndex
+        subroutine computeTorque(self, t)
+            ! '''
+            ! '''
+            class(postureTask), intent(inout) :: self
+            real(wp), intent(in) ::t
+            real(wp) :: muscularTorque, velocity, acceleration
+            integer :: i
+            integer :: timeIndex
 
-        timeIndex = nint(t/self%conf%timeStep_ms) + 1
+            timeIndex = nint(t/self%conf%timeStep_ms) + 1
+                
+            muscularTorque = 0.0
+
+            if (self%muscles(1)%muscle%hillModel == 'No') then
+                do i = 1, size(self%muscles)
+                    muscularTorque = muscularTorque + &
+                    self%muscles(i)%muscle%NoHillMuscle%force(timeIndex) * &
+                    self%muscles(i)%muscle%NoHillMuscle%momentArm_m(timeIndex)
+                end do
+            else
+                do i = 1, size(self%muscles)
+                    muscularTorque = muscularTorque + &
+                    self%muscles(i)%muscle%HillMuscle%force(timeIndex) * &
+                    self%muscles(i)%muscle%HillMuscle%momentArm_m(timeIndex)
+                end do
+            end if
             
-        muscularTorque = 0.0
-
-        if (self%muscles(1)%muscle%hillModel == 'No') then
-            do i = 1, size(self%muscles)
-                muscularTorque = muscularTorque + &
-                self%muscles(i)%muscle%NoHillMuscle%force(timeIndex) * &
-                self%muscles(i)%muscle%NoHillMuscle%momentArm_m(timeIndex)
-            end do
-        else
-            do i = 1, size(self%muscles)
-                muscularTorque = muscularTorque + &
-                self%muscles(i)%muscle%HillMuscle%force(timeIndex) * &
-                self%muscles(i)%muscle%HillMuscle%momentArm_m(timeIndex)
-            end do
-        end if
-
+            self%ankleTorque_Nm(timeIndex) = muscularTorque - 5.81*self%ankleOmega_rad_s(timeIndex) -&
+                                             0.65*self%mass*g*self%height*self%ankleAngle_rad(timeIndex) + &
+                                             self%mass*g*self%height*sin(self%ankleAngle_rad(timeIndex))
         
-        self%ankleTorque_Nm(timeIndex) = muscularTorque  - 5.81*self%ankleOmega_rad_s(timeIndex) -&
-                                         0.65*self%mass*g*self%height*self%ankleAngle_rad(timeIndex) + &
-                                         self%mass*g*self%height*sin(self%ankleAngle_rad(timeIndex))
-    
-    end subroutine
+        end subroutine
 
-    subroutine reset(self)
-        ! '''
-        ! '''
-        class(postureTask), intent(inout) :: self
-        
-        self%ankleAngle_rad(:) = 5.0*pi/180.0
-        self%ankleTorque_Nm(:) = 0.0
-        self%ankleOmega_rad_s(:) = 0.0
-    end subroutine
-end module postureTaskClass
-
-
-
-    
-    
-        
-    
-
-        
-        
+        subroutine reset(self)
+            ! '''
+            ! '''
+            class(postureTask), intent(inout) :: self
+            
+            self%ankleAngle_rad(:) = 5.0*pi/180.0
+            self%ankleTorque_Nm(:) = 0.0
+            self%ankleOmega_rad_s(:) = 0.0
+        end subroutine
+end module postureTaskClass        
     

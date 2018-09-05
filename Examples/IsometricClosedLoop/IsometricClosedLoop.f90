@@ -74,7 +74,7 @@ program IsometricClosedLoop
             call neuralTractPools(j)%atualizePool(t(i), FR, GammaOrder)
         end do
         do j = 1, size(motorUnitPools)
-            call motorUnitPools(j)%atualizeMotorUnitPool(t(i))
+            call motorUnitPools(j)%atualizeMotorUnitPool(t(i), 32.0_wp, 32.0_wp)
             call afferentPools(j)%atualizeAfferentPool(t(i), motorUnitPools(j)%spindle%IaFR_Hz)            
         end do
         call ankle%computeTorque(t(i))

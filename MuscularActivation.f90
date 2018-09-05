@@ -105,14 +105,14 @@ module MuscularActivationClass
 
                 do i = 1, init_MuscularActivation%MUnumber
                     init_MuscularActivation%ActMatrix(i,3*(i-1)+1:3*(i-1)+3) = &
-                                    (/2*exp(-init_MuscularActivation%conf%timeStep_ms/&
+                                    [2*exp(-init_MuscularActivation%conf%timeStep_ms/&
                                     init_MuscularActivation%unit(i)%TwitchTc_ms),&
                                       -exp(-2*init_MuscularActivation%conf%timeStep_ms/&
                                       init_MuscularActivation%unit(i)%TwitchTc_ms),& 
                                        (init_MuscularActivation%conf%timeStep_ms**2)/&
                                        init_MuscularActivation%unit(i)%TwitchTc_ms*&
                                        exp(1.0-init_MuscularActivation%conf%timeStep_ms/&
-                                       init_MuscularActivation%unit(i)%TwitchTc_ms)/)
+                                       init_MuscularActivation%unit(i)%TwitchTc_ms)]
                 end do
                 
                 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -136,9 +136,7 @@ module MuscularActivationClass
                     end do
                     init_MuscularActivation%spRowEnd(i) = init_MuscularActivation%spNumberOfElements + 1
                 end do
-                
 
-                
                 ! Create a Sparse Matrix for performance purposes (init_MotorUnitPool%GSp)
                 stat = mkl_sparse_d_create_csr(init_MuscularActivation%ActMatrixSp, &
                                                init_MuscularActivation%spIndexing, &
@@ -197,16 +195,14 @@ module MuscularActivationClass
             class(MuscularActivation), intent(inout) :: self
             real(wp), intent(in) :: t
             !class(MotorUnit), intent(in), dimension(self%MUnumber)  :: unit
-            integer :: i, sizeTrain, stat
-
-            
+            integer :: i, sizeTrain, stat            
 
             do i = 1, self%MUnumber
                 self%an(3*(i-1)+2) = self%an(3*(i-1)+1)
                 self%an(3*(i-1)+1) = self%activation_nonSat(i)
                 if (allocated(self%unit(i)%terminalSpikeTrain)) then                    
                     sizeTrain = size(self%unit(i)%terminalSpikeTrain)                    
-                    if (abs(t - self%unit(i)%terminalSpikeTrain(sizeTrain)) < 1E-6) then   
+                    if (abs(t - self%unit(i)%terminalSpikeTrain(sizeTrain)) < 1e-6) then   
                         self%an(3*(i-1)+3) = self%diracDeltaValue(i)
                     else
                         self%an(3*(i-1)+3) =  0.0
@@ -214,7 +210,18 @@ module MuscularActivationClass
                 else
                     self%an(3*(i-1)+3) =  0.0
                 end if
-            end do            
+            end do  
+
+             ! Create a Sparse Matrix for performance purposes (init_MotorUnitPool%GSp)
+            stat = mkl_sparse_d_create_csr(self%ActMatrixSp, &
+                                           self%spIndexing, &
+                                           self%spRows, &
+                                           self%spCols, &
+                                           self%spRowStart, &
+                                           self%spRowEnd, &
+                                           self%spColIdx, &
+                                           self%spValues)
+          
 
             stat = mkl_sparse_d_mv(self%spOperation, &
                                    self%spAlpha, &
