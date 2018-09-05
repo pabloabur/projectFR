@@ -461,11 +461,10 @@ module MuscleSpindleClass
     end subroutine
 
 
-    subroutine reset(self, t)
+    subroutine reset(self)
         ! '''
         ! '''
         class(MuscleSpindle), intent(inout) :: self
-        real(wp), intent(in) :: t
 
 
         self%betaBag1 = 0.0

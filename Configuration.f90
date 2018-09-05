@@ -421,7 +421,6 @@ module ConfigurationClass
                     print *, paramTag
                     stop 1
                 end if
-
             end subroutine
 
 end module

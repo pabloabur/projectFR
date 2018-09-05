@@ -167,7 +167,7 @@ module ChannelConductanceClass
             call self%condState(i)%computeStateValue(t) 
         end do       
         
-        if (trim(self%channelKind).eq.'Kf') then
+        if (trim(self%channelKind)=='Kf') then
             !     It is computed as:
 
             ! \f{equation}{
@@ -175,7 +175,7 @@ module ChannelConductanceClass
             ! \f}
             current = self%gmax_muS*(self%condState(1)%value**4) * (self%EqPot_mV - V_mV)            
         end if
-        if (trim(self%channelKind).eq.'Ks') then
+        if (trim(self%channelKind)=='Ks') then
             !It is computed as:
 
             ! \f{equation}{
@@ -183,7 +183,7 @@ module ChannelConductanceClass
             ! \f}
             current = self%gmax_muS*(self%condState(1)%value**2) * (self%EqPot_mV - V_mV)    
         end if
-        if (trim(self%channelKind).eq.'Na') then
+        if (trim(self%channelKind)=='Na') then
             !     It is computed as:
 
             ! \f{equation}{
@@ -195,7 +195,7 @@ module ChannelConductanceClass
         ! if (init_ChannelConductance%kind == 'Ca')
         
         !end if
-        if (self%channelKind.eq.'Nap') then
+        if (self%channelKind=='Nap') then
             !     It is computed as:
 
             ! \f{equation}{
@@ -203,7 +203,7 @@ module ChannelConductanceClass
             ! \f}
             current = self%gmax_muS*(self%condState(1)%value**3)*(self%EqPot_mV - V_mV)    
         end if
-        if (self%channelKind.eq.'KsAxon') then
+        if (self%channelKind=='KsAxon') then
             !It is computed as:
 
             ! \f{equation}{
@@ -211,7 +211,7 @@ module ChannelConductanceClass
             ! \f}
             current = self%gmax_muS * self%condState(1)%value * (self%EqPot_mV - V_mV)    
         end if
-        if (self%channelKind.eq.'H') then
+        if (self%channelKind=='H') then
             ! It is computed as:
 
             ! \f{equation}{

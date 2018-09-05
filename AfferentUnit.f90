@@ -237,8 +237,8 @@ module AfferentUnitClass
             
             ! ## Matrix of the conductance of the motoneuron. Multiplied by the vector self.v_mV,
             ! ## results in the passive currents of each compartment.
-            if (init_AfferentUnit%compNumber>0) then
-                init_AfferentUnit%G = GC+GL
+            if (init_AfferentUnit%compNumber > 0) then
+                init_AfferentUnit%G = GC + GL
                 init_AfferentUnit%EqCurrent_nA = matmul(-GL, EqPot) + IPump 
                 ! ## index of the last compartment.
             else
@@ -453,7 +453,7 @@ module AfferentUnitClass
                 self%iIonic(i) = self%Compartments(i)%computeCurrent(t, V(i))
             end do
                 
-            dVdt =  (self%iIonic + matmul(self%G, V)  + self%iInjected + self%EqCurrent_nA) * self%capacitanceInv
+            dVdt =  (self%iIonic + matmul(self%G, V) + self%iInjected + self%EqCurrent_nA) * self%capacitanceInv
         end function
         
         
@@ -608,18 +608,22 @@ module AfferentUnitClass
             ! '''
             class(AfferentUnit), intent(inout) :: self
             integer :: i
-
             
             do i = 1, size(self%Compartments)
                 self%v_mV(i) = self%Compartments(i)%EqPot_mV
             end do
+            
             call self%Delay%reset()
-            if (self%compNumber>0) then
+            
+            if (self%compNumber > 0) then
                 self%tSpikes(:) = 0.0
             end if
+            
             if (allocated(self%lastCompSpikeTrain)) deallocate(self%lastCompSpikeTrain)
             ! ## Vector with the instants of spikes at the terminal.
             if (allocated(self%terminalSpikeTrain)) deallocate(self%terminalSpikeTrain)
+            
+            call self%spikesGenerator%reset()
         end subroutine
 
 

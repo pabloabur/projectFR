@@ -85,7 +85,6 @@ module PointProcessGeneratorClass
             class(PointProcessGenerator), intent(inout) :: self
             integer, intent(in) :: gammaOrder
             real(wp) :: randomVector(gammaOrder)
-
             
             call random_number(randomVector)
             

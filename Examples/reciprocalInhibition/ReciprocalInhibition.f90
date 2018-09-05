@@ -78,7 +78,7 @@ program ReciprocalInhibition
     call cpu_time(tic)
     do i = 1, size(t)
         do j = 1, size(motorUnitPools)
-            call motorUnitPools(j)%atualizeMotorUnitPool(t(i))
+            call motorUnitPools(j)%atualizeMotorUnitPool(t(i), 30.0_wp, 30.0_wp)
         end do
         do j = 1, size(afferentPools)            
             call afferentPools(j)%atualizeAfferentPool(t(i), IaFR)

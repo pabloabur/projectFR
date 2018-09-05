@@ -279,8 +279,8 @@ module MotorUnitClass
             ! \f$r_1\f$ and \f$r_2\f$ are the radius [\f$\mu\f$m] of compartments 1 and
             ! 2, respectively.
             ! '''
-            rAxis2=(cytR * init_MotorUnit%Compartments(i+1)%length_mum)/(PI*(init_MotorUnit%Compartments(i+1)%diameter_mum/2.0)**2)
-            rAxis1=(cytR * init_MotorUnit%Compartments(i)%length_mum)/(PI*(init_MotorUnit%Compartments(i)%diameter_mum/2.0)**2)
+            rAxis2=(cytR * init_MotorUnit%Compartments(i+1)%length_mum)/(pi*(init_MotorUnit%Compartments(i+1)%diameter_mum/2.0)**2)
+            rAxis1=(cytR * init_MotorUnit%Compartments(i)%length_mum)/(pi*(init_MotorUnit%Compartments(i)%diameter_mum/2.0)**2)
                    
             gCoupling_muS(i) = 200.0 / (rAxis1 + rAxis2)
         end do

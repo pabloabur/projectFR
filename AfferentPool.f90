@@ -197,8 +197,8 @@ module AfferentPoolClass
             class(AfferentPool), intent(inout) :: self
             integer :: i
 
-            deallocate(self%poolLastCompSpikes)
-            deallocate(self%poolTerminalSpikes)
+            if (allocated(self%poolLastCompSpikes)) deallocate(self%poolLastCompSpikes)
+            if (allocated(self%poolTerminalSpikes)) deallocate(self%poolTerminalSpikes)
             do i = 1, self%AFnumber
                 call self%unit(i)%reset()
             end do

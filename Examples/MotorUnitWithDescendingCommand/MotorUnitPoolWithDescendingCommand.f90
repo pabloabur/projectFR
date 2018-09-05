@@ -76,16 +76,13 @@ program MotorUnitPoolWithDescendingCommand
             call neuralTractPools(j)%atualizePool(t(i), FR, GammaOrder)            
         end do
         do j = 1, size(motorUnitPools)
-            call motorUnitPools(j)%atualizeMotorUnitPool(t(i))            
+            call motorUnitPools(j)%atualizeMotorUnitPool(t(i), 30.0_wp, 30.0_wp)            
             MNv_mV(i) = motorUnitPools(j)%v_mV(30)        
         end do
     end do
     call cpu_time(toc)
 
-    print '(F15.6, A)', toc - tic, ' seconds'
-
-    
-    
+    print '(F15.6, A)', toc - tic, ' seconds'    
     
     call neuralTractPools(1)%listSpikes()
     call motorUnitPools(1)%listSpikes()

@@ -56,7 +56,7 @@ program DynamicProperties
     character(len=80) :: paramTag
     character(len=80) :: value1, value2
     ! Input parameters
-    logical, parameter :: probDecay = .true.
+    logical, parameter :: probDecay = .false.
     real(wp), parameter :: FFConducStrength = 0.3_wp, & 
         declineFactorMN = real(1, wp)/6, declineFactorRC = real(3.5, wp)/3
     character(len=3), parameter :: stimAmp = '0', nS = '75', nFR = '75', &
@@ -411,6 +411,12 @@ program DynamicProperties
     value2 = ''
     call conf%changeConfigurationParameter(paramTag, value1, value2)
 
+    ! Removing RC spontaneous activity 
+    paramTag = 'NoiseFunction_RC_ext'
+    value1 = '0'
+    value2 = ''
+    call conf%changeConfigurationParameter(paramTag, value1, value2)
+
     print *, 'Building neural elements'
     allocate(neuralTractPools(0))
     pool = 'MG'
@@ -486,12 +492,12 @@ program DynamicProperties
 
         call gp%title('Membrane potential of the soma of the RC #1')
         call gp%xlabel('t (ms))')
-        call gp%ylabel('Descending command index')
+        call gp%ylabel('Membrane potential (mV)')
         call gp%plot(t, RCv_mV, 'with line lw 2 lc rgb "#0008B0"') 
 
         call gp%title('Membrane potential of the soma of the MN #1')
         call gp%xlabel('t (ms))')
-        call gp%ylabel('Descending command index')
+        call gp%ylabel('Membrane potential (mV)')
         call gp%plot(t, MNv_mV, 'with line lw 2 lc rgb "#0008B0"')
 
         call gp%title('PTN stimulus')

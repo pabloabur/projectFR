@@ -70,7 +70,7 @@ program MuscleHillExample
             call neuralTractPools(j)%atualizePool(t(i), FR, GammaOrder)
         end do
         do j = 1, size(motorUnitPools)
-            call motorUnitPools(j)%atualizeMotorUnitPool(t(i))
+            call motorUnitPools(j)%atualizeMotorUnitPool(t(i), 30.0_wp, 30.0_wp)
         end do
     end do    
     call cpu_time(toc)

@@ -72,7 +72,7 @@ program MNWithRenshawCells
             call synapticNoisePools(j)%atualizePool(t(i))
         end do
         do j = 1, size(motorUnitPools)
-            call motorUnitPools(j)%atualizeMotorUnitPool(t(i))
+            call motorUnitPools(j)%atualizeMotorUnitPool(t(i), 32.0_wp, 32.0_wp)
         end do
         do j = 1, size(interneuronPools)
             call interneuronPools(j)%atualizeInterneuronPool(t(i))

@@ -238,6 +238,7 @@ module AxonDelayClass
 
         ! '''
         class(AxonDelay), intent(inout) :: self
+        
         self%electricCharge_muC = 0
         self%terminalSpikeTrain = -1e6
         self%axonSpikeTrain = -1e6

@@ -28,7 +28,7 @@ module CompartmentClass
     use SynapseClass
     implicit none
     private
-    integer, parameter :: wp = kind( 1.0d0 )
+    integer, parameter :: wp = kind(1.0d0)
     real(wp), parameter :: pi = 4 * atan(1.0_wp)    
     public :: Compartment
 
@@ -90,7 +90,6 @@ module CompartmentClass
         init_Compartment%neuronKind = neuronKind
         ! ## List of summed synapses (see Lytton, 1996) that the Compartment do with other neural components.
         
-        !TODO: self.SynapsesOut = []
         
         
         ! ## List of summed synapses (see Lytton, 1996) that the Compartment receive from other neural components.

@@ -161,8 +161,8 @@ module jointAnkleForceTaskClass
             acceleration = 0.0 
         end if
         
-        torque = torque - 0*1100*velocity  - 0*320*self%ankleAngle_rad(timeIndex) &
-                + 0*0.007*acceleration
+        torque = torque - 1100*velocity  - 320*self%ankleAngle_rad(timeIndex) &
+                + 0.007*acceleration
         
         self%ankleTorque_Nm(timeIndex) = torque
 
