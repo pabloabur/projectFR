@@ -62,7 +62,7 @@ program DynamicProperties
     real(wp), parameter :: FFConducStrength = 0.3_wp, & 
         declineFactorMN = real(1, wp)/6, declineFactorRC = real(3.5, wp)/3
     character(len=3), parameter :: nS = '75', nFR = '75', &
-        nFF = '150', nRC = '600'
+        nFF = '150', nRC = '300'
     GammaOrder = 7
     FR = 0
 
@@ -407,7 +407,7 @@ program DynamicProperties
     synapticNoisePools = synapseFactory(conf, neuralTractPools, &
                                         motorUnitPools, &
                                         interneuronPools, &
-                                        afferentPools, probDecay)
+                                        afferentPools)!, probDecay)
     
     timeLength = nint(tf/dt)
     
@@ -435,11 +435,11 @@ program DynamicProperties
             RCv_mV(i) = interneuronPools(j)%v_mV(1)        
         end do
         do j = 1, size(motorUnitPools)
-            call motorUnitPools(j)%atualizeMotorUnitPool(t(i))
+            call motorUnitPools(j)%atualizeMotorUnitPool(t(i), 32.0_wp, 32.0_wp)
             MNv_mV(i) = motorUnitPools(j)%v_mV(2)      
-            excNetSynCond(i) = motorUnitPools(j)%unit(0)%compartments(0)%&
+            excNetSynCond(i) = motorUnitPools(j)%unit(1)%compartments(2)%&
                 SynapsesIn(2)%computeConductance(t(i))
-            inhNetSynCond(i) = motorUnitPools(j)%unit(0)%compartments(0)%&
+            inhNetSynCond(i) = motorUnitPools(j)%unit(1)%compartments(2)%&
                 SynapsesIn(1)%computeConductance(t(i))
         end do
     end do
