@@ -37,7 +37,7 @@ module SynapsesFactoryModule
     contains
 
         function synapseFactory(conf, neuralTractPools, &
-            motorUnitPools, interneuronPools, afferentPools) result(synapticNoisePools)
+            motorUnitPools, interneuronPools, afferentPools, probabilityDecay) result(synapticNoisePools)
             ! '''
             ! Constructor
 
@@ -58,13 +58,14 @@ module SynapsesFactoryModule
             integer :: numberOfSynapses, numberOfSynapticNoise
             integer :: poolOut, unitOut, synapseIn, poolIn, unitIn, compartmentIn, synapseComp
             character(len = 80) :: neuralSource, paramTag, paramChar
-            real(wp) :: tau, var, gmax, conn, delay, declineFactor
+            real(wp) :: tau, var, gmax, conn, Pconn, delay, declineFactor
             character(len=80) :: dyn
             integer :: pos, i, newIndex, j
             real(wp) :: randomNumber
             type(CharacterMatrix) :: NoiseSynapsesOut
             real(wp) :: neuronsDistance, weight
             type(SynapsePointer), dimension(:), allocatable:: tempTransmitSpikes
+            logical, intent(in) :: probabilityDecay
             
 
             ! ## Total number of synapses in the system.
@@ -416,88 +417,180 @@ module SynapsesFactoryModule
                                                     SynapsesOut%item(synapseIn)%item(3)%string)==&
                                                 trim(motorUnitPools(poolIn)%unit(unitIn)%&
                                                 Compartments(compartmentIn)%compKind))) then
-                                                call random_number(randomNumber)
-                                                if (randomNumber <= conn) then
-                                                    do synapseComp = 1, size(motorUnitPools(poolIn)%unit(unitIn)%&
-                                                                            Compartments(compartmentIn)%SynapsesIn)
-                                                        if (motorUnitPools(poolIn)%unit(unitIn)%Compartments(compartmentIn)%&
-                                                            SynapsesIn(synapseComp)%synapseKind ==&
-                                                            interneuronPools(poolOut)%unit(unitOut)%&
-                                                            SynapsesOut%item(synapseIn)%item(4)%string) then
-                                                            
-                                                            if (declineFactor<1e5) then
-                                                                neuronsDistance = abs(motorUnitPools(poolIn)%&
-                                                                unit(unitIn)%position_mm &
-                                                                            - interneuronPools(poolOut)%unit(unitOut)%position_mm)
-                                                                weight = declineFactor / (declineFactor + neuronsDistance**2)
-                                                                gmax = gmax * weight
-                                                            end if
-                                                            call motorUnitPools(poolIn)%unit(unitIn)%&
-                                                            Compartments(compartmentIn)%SynapsesIn(synapseComp)%&
-                                                            addConductance(gmax, delay, dyn, var, tau)
-                                                            
-                                                            if (allocated(interneuronPools(poolOut)%&
-                                                                unit(unitOut)%transmitSpikesThroughSynapses)) then
+                                                if (probabilityDecay) then
+                                                    if (declineFactor<1e5) then
+                                                        neuronsDistance = abs(motorUnitPools(poolIn)%&
+                                                        unit(unitIn)%position_mm &
+                                                                    - interneuronPools(poolOut)%unit(unitOut)%position_mm)
+                                                        weight = exp(-(neuronsDistance)**2/(2*declineFactor**2))
+                                                        gmax = gmax * weight
+                                                        Pconn = conn * weight
+                                                    else 
+                                                        weight = 1
+                                                        Pconn = conn
+                                                    end if
+                                                    call random_number(randomNumber)
+                                                    if (randomNumber <= Pconn) then
+                                                        do synapseComp = 1, size(motorUnitPools(poolIn)%unit(unitIn)%&
+                                                                                Compartments(compartmentIn)%SynapsesIn)
+                                                            if (motorUnitPools(poolIn)%unit(unitIn)%Compartments(compartmentIn)%&
+                                                                SynapsesIn(synapseComp)%synapseKind ==&
+                                                                interneuronPools(poolOut)%unit(unitOut)%&
+                                                                SynapsesOut%item(synapseIn)%item(4)%string) then
                                                                 
+                                                                call motorUnitPools(poolIn)%unit(unitIn)%&
+                                                                Compartments(compartmentIn)%SynapsesIn(synapseComp)%&
+                                                                addConductance(gmax, delay, dyn, var, tau)
                                                                 
-                                                                allocate(tempTransmitSpikes(size(interneuronPools(poolOut)%&
-                                                                    unit(unitOut)%transmitSpikesThroughSynapses)))
-                                                                
-                                                                do j = 1, size(tempTransmitSpikes)
-                                                                    call tempTransmitSpikes(j)%&
-                                                                    assignSynapse(interneuronPools(poolOut)%&
-                                                                        unit(unitOut)%transmitSpikesThroughSynapses(j)%synapse)
-                                                                end do
-                                                                
-                                                                
-                                                                deallocate(interneuronPools(poolOut)%&
-                                                                        unit(unitOut)%transmitSpikesThroughSynapses)
-                                                                
-                                                                allocate(interneuronPools(poolOut)%&
-                                                                        unit(unitOut)%&
-                                                                        transmitSpikesThroughSynapses(size(tempTransmitSpikes)+1))
-                                                                
-                                                                do j = 1, size(tempTransmitSpikes)
+                                                                if (allocated(interneuronPools(poolOut)%&
+                                                                    unit(unitOut)%transmitSpikesThroughSynapses)) then
+                                                                    
+                                                                    
+                                                                    allocate(tempTransmitSpikes(size(interneuronPools(poolOut)%&
+                                                                        unit(unitOut)%transmitSpikesThroughSynapses)))
+                                                                    
+                                                                    do j = 1, size(tempTransmitSpikes)
+                                                                        call tempTransmitSpikes(j)%&
+                                                                        assignSynapse(interneuronPools(poolOut)%&
+                                                                            unit(unitOut)%transmitSpikesThroughSynapses(j)%synapse)
+                                                                    end do
+                                                                    
+                                                                    
+                                                                    deallocate(interneuronPools(poolOut)%&
+                                                                            unit(unitOut)%transmitSpikesThroughSynapses)
+                                                                    
+                                                                    allocate(interneuronPools(poolOut)%&
+                                                                            unit(unitOut)%&
+                                                                            transmitSpikesThroughSynapses(size(tempTransmitSpikes)&
+                                                                                +1))
+                                                                    
+                                                                    do j = 1, size(tempTransmitSpikes)
+                                                                        call interneuronPools(poolOut)%unit(unitOut)%&
+                                                                        transmitSpikesThroughSynapses(j)%&
+                                                                        assignSynapse(tempTransmitSpikes(j)%synapse)
+                                                                    end do
+
+                                                                    interneuronPools(poolOut)%unit(unitOut)%&
+                                                                            transmitSpikesThroughSynapses(size(tempTransmitSpikes)&
+                                                                            +1)= SynapsePointer()        
+
                                                                     call interneuronPools(poolOut)%unit(unitOut)%&
-                                                                    transmitSpikesThroughSynapses(j)%&
-                                                                    assignSynapse(tempTransmitSpikes(j)%synapse)
-                                                                end do
+                                                                    transmitSpikesThroughSynapses(size(tempTransmitSpikes)+1)%&
+                                                                    assignSynapse(motorUnitPools(poolIn)%unit(unitIn)%&
+                                                                    Compartments(compartmentIn)%SynapsesIn(synapseComp))  
+                                                                    
+                                                                    deallocate(tempTransmitSpikes)
+                                                                else 
+                                                                    allocate(interneuronPools(poolOut)%&
+                                                                            unit(unitOut)%&
+                                                                            transmitSpikesThroughSynapses(1))
+                                                                    interneuronPools(poolOut)%unit(unitOut)%&
+                                                                            transmitSpikesThroughSynapses(1)=&
+                                                                            SynapsePointer()        
 
-                                                                interneuronPools(poolOut)%unit(unitOut)%&
-                                                                        transmitSpikesThroughSynapses(size(tempTransmitSpikes)+1)=&
-                                                                        SynapsePointer()        
-
-                                                                call interneuronPools(poolOut)%unit(unitOut)%&
-                                                                transmitSpikesThroughSynapses(size(tempTransmitSpikes)+1)%&
-                                                                assignSynapse(motorUnitPools(poolIn)%unit(unitIn)%&
-                                                                Compartments(compartmentIn)%SynapsesIn(synapseComp))  
+                                                                    call interneuronPools(poolOut)%unit(unitOut)%&
+                                                                            transmitSpikesThroughSynapses(1)%&
+                                                                            assignSynapse(motorUnitPools(poolIn)%unit(unitIn)%&
+                                                                            Compartments(compartmentIn)%&
+                                                                            SynapsesIn(synapseComp))
+                                                                end if            
                                                                 
-                                                                deallocate(tempTransmitSpikes)
-                                                            else 
-                                                                allocate(interneuronPools(poolOut)%&
-                                                                        unit(unitOut)%&
-                                                                        transmitSpikesThroughSynapses(1))
+                                                                newIndex = size(motorUnitPools(poolIn)%&
+                                                                    unit(unitIn)%Compartments(compartmentIn)%&
+                                                                    SynapsesIn(synapseComp)%gmax_muS)
+                                                                
+                                                                call integerAddToList(interneuronPools(poolOut)%&
+                                                                unit(unitOut)%indicesOfSynapsesOnTarget,newIndex)
+                                                                
+                                                                numberOfSynapses = numberOfSynapses + 1
+                                                            end if
+                                                        end do
+                                                    end if
+                                                else
+                                                    call random_number(randomNumber)
+                                                    if (randomNumber <= conn) then
+                                                        do synapseComp = 1, size(motorUnitPools(poolIn)%unit(unitIn)%&
+                                                                                Compartments(compartmentIn)%SynapsesIn)
+                                                            if (motorUnitPools(poolIn)%unit(unitIn)%Compartments(compartmentIn)%&
+                                                                SynapsesIn(synapseComp)%synapseKind ==&
                                                                 interneuronPools(poolOut)%unit(unitOut)%&
-                                                                        transmitSpikesThroughSynapses(1)=&
-                                                                        SynapsePointer()        
+                                                                SynapsesOut%item(synapseIn)%item(4)%string) then
+                                                                
+                                                                if (declineFactor<1e5) then
+                                                                    neuronsDistance = abs(motorUnitPools(poolIn)%&
+                                                                    unit(unitIn)%position_mm &
+                                                                        - interneuronPools(poolOut)%unit(unitOut)%position_mm)
+                                                                    weight = declineFactor / (declineFactor + neuronsDistance**2)
+                                                                    gmax = gmax * weight
+                                                                end if
+                                                                call motorUnitPools(poolIn)%unit(unitIn)%&
+                                                                Compartments(compartmentIn)%SynapsesIn(synapseComp)%&
+                                                                addConductance(gmax, delay, dyn, var, tau)
+                                                                
+                                                                if (allocated(interneuronPools(poolOut)%&
+                                                                    unit(unitOut)%transmitSpikesThroughSynapses)) then
+                                                                    
+                                                                    
+                                                                    allocate(tempTransmitSpikes(size(interneuronPools(poolOut)%&
+                                                                        unit(unitOut)%transmitSpikesThroughSynapses)))
+                                                                    
+                                                                    do j = 1, size(tempTransmitSpikes)
+                                                                        call tempTransmitSpikes(j)%&
+                                                                        assignSynapse(interneuronPools(poolOut)%&
+                                                                            unit(unitOut)%transmitSpikesThroughSynapses(j)%synapse)
+                                                                    end do
+                                                                    
+                                                                    
+                                                                    deallocate(interneuronPools(poolOut)%&
+                                                                            unit(unitOut)%transmitSpikesThroughSynapses)
+                                                                    
+                                                                    allocate(interneuronPools(poolOut)%&
+                                                                            unit(unitOut)%&
+                                                                            transmitSpikesThroughSynapses(size(tempTransmitSpikes)&
+                                                                                +1))
+                                                                    
+                                                                    do j = 1, size(tempTransmitSpikes)
+                                                                        call interneuronPools(poolOut)%unit(unitOut)%&
+                                                                        transmitSpikesThroughSynapses(j)%&
+                                                                        assignSynapse(tempTransmitSpikes(j)%synapse)
+                                                                    end do
 
-                                                                call interneuronPools(poolOut)%unit(unitOut)%&
-                                                                        transmitSpikesThroughSynapses(1)%&
-                                                                        assignSynapse(motorUnitPools(poolIn)%unit(unitIn)%&
-                                                                        Compartments(compartmentIn)%&
-                                                                        SynapsesIn(synapseComp))
-                                                            end if            
-                                                            
-                                                            newIndex = size(motorUnitPools(poolIn)%&
-                                                                unit(unitIn)%Compartments(compartmentIn)%&
-                                                                SynapsesIn(synapseComp)%gmax_muS)
-                                                            
-                                                            call integerAddToList(interneuronPools(poolOut)%&
-                                                            unit(unitOut)%indicesOfSynapsesOnTarget,newIndex)
-                                                            
-                                                            numberOfSynapses = numberOfSynapses + 1
-                                                        end if
-                                                    end do
+                                                                    interneuronPools(poolOut)%unit(unitOut)%&
+                                                                            transmitSpikesThroughSynapses(size(tempTransmitSpikes)&
+                                                                                +1)= SynapsePointer()        
+
+                                                                    call interneuronPools(poolOut)%unit(unitOut)%&
+                                                                    transmitSpikesThroughSynapses(size(tempTransmitSpikes)+1)%&
+                                                                    assignSynapse(motorUnitPools(poolIn)%unit(unitIn)%&
+                                                                    Compartments(compartmentIn)%SynapsesIn(synapseComp))  
+                                                                    
+                                                                    deallocate(tempTransmitSpikes)
+                                                                else 
+                                                                    allocate(interneuronPools(poolOut)%&
+                                                                            unit(unitOut)%&
+                                                                            transmitSpikesThroughSynapses(1))
+                                                                    interneuronPools(poolOut)%unit(unitOut)%&
+                                                                            transmitSpikesThroughSynapses(1)=&
+                                                                            SynapsePointer()        
+
+                                                                    call interneuronPools(poolOut)%unit(unitOut)%&
+                                                                            transmitSpikesThroughSynapses(1)%&
+                                                                            assignSynapse(motorUnitPools(poolIn)%unit(unitIn)%&
+                                                                            Compartments(compartmentIn)%&
+                                                                            SynapsesIn(synapseComp))
+                                                                end if            
+                                                                
+                                                                newIndex = size(motorUnitPools(poolIn)%&
+                                                                    unit(unitIn)%Compartments(compartmentIn)%&
+                                                                    SynapsesIn(synapseComp)%gmax_muS)
+                                                                
+                                                                call integerAddToList(interneuronPools(poolOut)%&
+                                                                unit(unitOut)%indicesOfSynapsesOnTarget,newIndex)
+                                                                
+                                                                numberOfSynapses = numberOfSynapses + 1
+                                                            end if
+                                                        end do
+                                                    end if
                                                 end if
                                             end if
                                         end do
@@ -635,87 +728,188 @@ module SynapsesFactoryModule
                                                     SynapsesOut%item(synapseIn)%item(3)%string)==&
                                                 trim(interneuronPools(poolIn)%unit(unitIn)%&
                                                 Compartments(compartmentIn)%compKind))) then
-                                                call random_number(randomNumber)
-                                                if (randomNumber <= conn) then
-                                                    do synapseComp = 1, size(interneuronPools(poolIn)%unit(unitIn)%&
-                                                                            Compartments(compartmentIn)%SynapsesIn)
-                                                        if (interneuronPools(poolIn)%unit(unitIn)%Compartments(compartmentIn)%&
-                                                            SynapsesIn(synapseComp)%synapseKind ==&
-                                                            motorUnitPools(poolOut)%unit(unitOut)%&
-                                                            SynapsesOut%item(synapseIn)%item(4)%string) then
-                                                            
-                                                            if (declineFactor<1e5) then
-                                                            neuronsDistance = abs(interneuronPools(poolIn)%unit(unitIn)%position_mm&
-                                                                            - motorUnitPools(poolOut)%unit(unitOut)%position_mm)
-                                                                weight = declineFactor / (declineFactor + neuronsDistance**2)
-                                                                gmax = gmax * weight
-                                                            end if
-                                                            call interneuronPools(poolIn)%unit(unitIn)%&
-                                                            Compartments(compartmentIn)%SynapsesIn(synapseComp)%&
-                                                            addConductance(gmax, delay, dyn, var, tau)
-                                                            
-                                                            if (allocated(motorUnitPools(poolOut)%&
-                                                                unit(unitOut)%transmitSpikesThroughSynapses)) then
+                                                if (probabilityDecay) then
+                                                    if (declineFactor<1e5) then
+                                                        neuronsDistance = abs(motorUnitPools(poolIn)%&
+                                                        unit(unitIn)%position_mm &
+                                                                    - interneuronPools(poolOut)%unit(unitOut)%position_mm)
+                                                        weight = exp(-(neuronsDistance)**2/(2*declineFactor**2))
+                                                        gmax = gmax * weight
+                                                        Pconn = conn * weight
+                                                    else 
+                                                        weight = 1
+                                                        Pconn = conn
+                                                    end if
+                                                    call random_number(randomNumber)
+                                                    if (randomNumber <= Pconn) then
+                                                        do synapseComp = 1, size(interneuronPools(poolIn)%unit(unitIn)%&
+                                                                                Compartments(compartmentIn)%SynapsesIn)
+                                                            if (interneuronPools(poolIn)%unit(unitIn)%Compartments(compartmentIn)%&
+                                                                SynapsesIn(synapseComp)%synapseKind ==&
+                                                                motorUnitPools(poolOut)%unit(unitOut)%&
+                                                                SynapsesOut%item(synapseIn)%item(4)%string) then
                                                                 
+                                                                if (declineFactor<1e5) then
+                                                                neuronsDistance = abs(interneuronPools(poolIn)%unit(unitIn)%&
+                                                                                position_mm - motorUnitPools(poolOut)%&
+                                                                                unit(unitOut)%position_mm)
+                                                                    weight = declineFactor / (declineFactor + neuronsDistance**2)
+                                                                    gmax = gmax * weight
+                                                                end if
+                                                                call interneuronPools(poolIn)%unit(unitIn)%&
+                                                                Compartments(compartmentIn)%SynapsesIn(synapseComp)%&
+                                                                addConductance(gmax, delay, dyn, var, tau)
                                                                 
-                                                                allocate(tempTransmitSpikes(size(motorUnitPools(poolOut)%&
-                                                                    unit(unitOut)%transmitSpikesThroughSynapses)))
-                                                                
-                                                                do j = 1, size(tempTransmitSpikes)
-                                                                    call tempTransmitSpikes(j)%&
-                                                                    assignSynapse(motorUnitPools(poolOut)%&
-                                                                    unit(unitOut)%transmitSpikesThroughSynapses(j)%synapse)
-                                                                end do
-                                                                
-                                                                
-                                                                deallocate(motorUnitPools(poolOut)%&
-                                                                        unit(unitOut)%transmitSpikesThroughSynapses)
-                                                                
-                                                                allocate(motorUnitPools(poolOut)%&
-                                                                        unit(unitOut)%&
-                                                                        transmitSpikesThroughSynapses(size(tempTransmitSpikes)+1))
-                                                                
-                                                                do j = 1, size(tempTransmitSpikes)
+                                                                if (allocated(motorUnitPools(poolOut)%&
+                                                                    unit(unitOut)%transmitSpikesThroughSynapses)) then
+                                                                    
+                                                                    
+                                                                    allocate(tempTransmitSpikes(size(motorUnitPools(poolOut)%&
+                                                                        unit(unitOut)%transmitSpikesThroughSynapses)))
+                                                                    
+                                                                    do j = 1, size(tempTransmitSpikes)
+                                                                        call tempTransmitSpikes(j)%&
+                                                                        assignSynapse(motorUnitPools(poolOut)%&
+                                                                        unit(unitOut)%transmitSpikesThroughSynapses(j)%synapse)
+                                                                    end do
+                                                                    
+                                                                    
+                                                                    deallocate(motorUnitPools(poolOut)%&
+                                                                            unit(unitOut)%transmitSpikesThroughSynapses)
+                                                                    
+                                                                    allocate(motorUnitPools(poolOut)%&
+                                                                            unit(unitOut)%&
+                                                                            transmitSpikesThroughSynapses(size(&
+                                                                            tempTransmitSpikes)+1))
+                                                                    
+                                                                    do j = 1, size(tempTransmitSpikes)
+                                                                        call motorUnitPools(poolOut)%unit(unitOut)%&
+                                                                        transmitSpikesThroughSynapses(j)%&
+                                                                        assignSynapse(tempTransmitSpikes(j)%synapse)
+                                                                    end do
+
+                                                                    motorUnitPools(poolOut)%unit(unitOut)%&
+                                                                            transmitSpikesThroughSynapses(size(&
+                                                                            tempTransmitSpikes)+1)=&
+                                                                            SynapsePointer()        
+
                                                                     call motorUnitPools(poolOut)%unit(unitOut)%&
-                                                                    transmitSpikesThroughSynapses(j)%&
-                                                                    assignSynapse(tempTransmitSpikes(j)%synapse)
-                                                                end do
+                                                                    transmitSpikesThroughSynapses(size(tempTransmitSpikes)+1)%&
+                                                                    assignSynapse(interneuronPools(poolIn)%unit(unitIn)%&
+                                                                    Compartments(compartmentIn)%SynapsesIn(synapseComp))  
+                                                                    
+                                                                    deallocate(tempTransmitSpikes)
+                                                                else 
+                                                                    allocate(motorUnitPools(poolOut)%&
+                                                                            unit(unitOut)%&
+                                                                            transmitSpikesThroughSynapses(1))
+                                                                    motorUnitPools(poolOut)%unit(unitOut)%&
+                                                                            transmitSpikesThroughSynapses(1)=&
+                                                                            SynapsePointer()        
 
-                                                                motorUnitPools(poolOut)%unit(unitOut)%&
-                                                                        transmitSpikesThroughSynapses(size(tempTransmitSpikes)+1)=&
-                                                                        SynapsePointer()        
-
-                                                                call motorUnitPools(poolOut)%unit(unitOut)%&
-                                                                transmitSpikesThroughSynapses(size(tempTransmitSpikes)+1)%&
-                                                                assignSynapse(interneuronPools(poolIn)%unit(unitIn)%&
-                                                                Compartments(compartmentIn)%SynapsesIn(synapseComp))  
+                                                                    call motorUnitPools(poolOut)%unit(unitOut)%&
+                                                                            transmitSpikesThroughSynapses(1)%&
+                                                                            assignSynapse(interneuronPools(poolIn)%unit(unitIn)%&
+                                                                            Compartments(compartmentIn)%&
+                                                                            SynapsesIn(synapseComp))
+                                                                end if            
                                                                 
-                                                                deallocate(tempTransmitSpikes)
-                                                            else 
-                                                                allocate(motorUnitPools(poolOut)%&
-                                                                        unit(unitOut)%&
-                                                                        transmitSpikesThroughSynapses(1))
+                                                                newIndex = size(interneuronPools(poolIn)%&
+                                                                    unit(unitIn)%Compartments(compartmentIn)%&
+                                                                    SynapsesIn(synapseComp)%gmax_muS)
+                                                                
+                                                                call integerAddToList(motorUnitPools(poolOut)%&
+                                                                unit(unitOut)%indicesOfSynapsesOnTarget,newIndex)
+                                                                
+                                                                numberOfSynapses = numberOfSynapses + 1
+                                                            end if
+                                                        end do
+                                                    end if
+                                                else
+                                                    call random_number(randomNumber)
+                                                    if (randomNumber <= conn) then
+                                                        do synapseComp = 1, size(interneuronPools(poolIn)%unit(unitIn)%&
+                                                                                Compartments(compartmentIn)%SynapsesIn)
+                                                            if (interneuronPools(poolIn)%unit(unitIn)%Compartments(compartmentIn)%&
+                                                                SynapsesIn(synapseComp)%synapseKind ==&
                                                                 motorUnitPools(poolOut)%unit(unitOut)%&
-                                                                        transmitSpikesThroughSynapses(1)=&
-                                                                        SynapsePointer()        
+                                                                SynapsesOut%item(synapseIn)%item(4)%string) then
+                                                                
+                                                                if (declineFactor<1e5) then
+                                                                neuronsDistance = abs(interneuronPools(poolIn)%unit(unitIn)%&
+                                                                    position_mm - motorUnitPools(poolOut)%unit(unitOut)%&
+                                                                    position_mm)
+                                                                    weight = declineFactor / (declineFactor + neuronsDistance**2)
+                                                                    gmax = gmax * weight
+                                                                end if
+                                                                call interneuronPools(poolIn)%unit(unitIn)%&
+                                                                Compartments(compartmentIn)%SynapsesIn(synapseComp)%&
+                                                                addConductance(gmax, delay, dyn, var, tau)
+                                                                
+                                                                if (allocated(motorUnitPools(poolOut)%&
+                                                                    unit(unitOut)%transmitSpikesThroughSynapses)) then
+                                                                    
+                                                                    
+                                                                    allocate(tempTransmitSpikes(size(motorUnitPools(poolOut)%&
+                                                                        unit(unitOut)%transmitSpikesThroughSynapses)))
+                                                                    
+                                                                    do j = 1, size(tempTransmitSpikes)
+                                                                        call tempTransmitSpikes(j)%&
+                                                                        assignSynapse(motorUnitPools(poolOut)%&
+                                                                        unit(unitOut)%transmitSpikesThroughSynapses(j)%synapse)
+                                                                    end do
+                                                                    
+                                                                    
+                                                                    deallocate(motorUnitPools(poolOut)%&
+                                                                            unit(unitOut)%transmitSpikesThroughSynapses)
+                                                                    
+                                                                    allocate(motorUnitPools(poolOut)%&
+                                                                            unit(unitOut)%&
+                                                                            transmitSpikesThroughSynapses(size(&
+                                                                            tempTransmitSpikes)+1))
+                                                                    
+                                                                    do j = 1, size(tempTransmitSpikes)
+                                                                        call motorUnitPools(poolOut)%unit(unitOut)%&
+                                                                        transmitSpikesThroughSynapses(j)%&
+                                                                        assignSynapse(tempTransmitSpikes(j)%synapse)
+                                                                    end do
 
-                                                                call motorUnitPools(poolOut)%unit(unitOut)%&
-                                                                        transmitSpikesThroughSynapses(1)%&
-                                                                        assignSynapse(interneuronPools(poolIn)%unit(unitIn)%&
-                                                                        Compartments(compartmentIn)%&
-                                                                        SynapsesIn(synapseComp))
-                                                            end if            
-                                                            
-                                                            newIndex = size(interneuronPools(poolIn)%&
-                                                                unit(unitIn)%Compartments(compartmentIn)%&
-                                                                SynapsesIn(synapseComp)%gmax_muS)
-                                                            
-                                                            call integerAddToList(motorUnitPools(poolOut)%&
-                                                            unit(unitOut)%indicesOfSynapsesOnTarget,newIndex)
-                                                            
-                                                            numberOfSynapses = numberOfSynapses + 1
-                                                        end if
-                                                    end do
+                                                                    motorUnitPools(poolOut)%unit(unitOut)%&
+                                                                            transmitSpikesThroughSynapses(size(&
+                                                                            tempTransmitSpikes)+1)= SynapsePointer()        
+
+                                                                    call motorUnitPools(poolOut)%unit(unitOut)%&
+                                                                    transmitSpikesThroughSynapses(size(tempTransmitSpikes)+1)%&
+                                                                    assignSynapse(interneuronPools(poolIn)%unit(unitIn)%&
+                                                                    Compartments(compartmentIn)%SynapsesIn(synapseComp))  
+                                                                    
+                                                                    deallocate(tempTransmitSpikes)
+                                                                else 
+                                                                    allocate(motorUnitPools(poolOut)%&
+                                                                            unit(unitOut)%&
+                                                                            transmitSpikesThroughSynapses(1))
+                                                                    motorUnitPools(poolOut)%unit(unitOut)%&
+                                                                            transmitSpikesThroughSynapses(1)=&
+                                                                            SynapsePointer()        
+
+                                                                    call motorUnitPools(poolOut)%unit(unitOut)%&
+                                                                            transmitSpikesThroughSynapses(1)%&
+                                                                            assignSynapse(interneuronPools(poolIn)%unit(unitIn)%&
+                                                                            Compartments(compartmentIn)%&
+                                                                            SynapsesIn(synapseComp))
+                                                                end if            
+                                                                
+                                                                newIndex = size(interneuronPools(poolIn)%&
+                                                                    unit(unitIn)%Compartments(compartmentIn)%&
+                                                                    SynapsesIn(synapseComp)%gmax_muS)
+                                                                
+                                                                call integerAddToList(motorUnitPools(poolOut)%&
+                                                                unit(unitOut)%indicesOfSynapsesOnTarget,newIndex)
+                                                                
+                                                                numberOfSynapses = numberOfSynapses + 1
+                                                            end if
+                                                        end do
+                                                    end if
                                                 end if
                                             end if
                                         end do
@@ -1267,6 +1461,7 @@ module SynapsesFactoryModule
                     end if
                             
                     do unitOut = 1, size(synapticNoisePools(poolOut)%unit)
+                        
                         do poolIn = 1, size(interneuronPools)
                             if (trim(NoiseSynapsesOut%item(synapseIn)%item(1)%string)==&
                                 trim(interneuronPools(poolIn)%pool)) then
@@ -1371,7 +1566,3 @@ module SynapsesFactoryModule
         end function
 
 end module SynapsesFactoryModule 
-
-
-    
-        

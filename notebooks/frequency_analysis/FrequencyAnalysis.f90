@@ -61,16 +61,20 @@ program DynamicProperties
     logical, parameter :: probDecay = .false.
     real(wp), parameter :: FFConducStrength = 0.3_wp, & 
         declineFactorMN = real(1, wp)/6, declineFactorRC = real(3.5, wp)/3
-    character(len=3), parameter :: nS = '75', nFR = '75', &
-        nFF = '150', nRC = '300'
+    character(len=3), parameter :: nS = '3', nFR = '3', &
+        nFF = '6', nRC = '24', nCM = '28'
     GammaOrder = 7
-    FR = 0
+    FR = 15
 
     call init_random_seed()
 
     conf = Configuration(filename)
 
     !Changing configuration file
+    paramTag = 'Number_CMExt'
+    value1 = nCM
+    value2 = ''
+    call conf%changeConfigurationParameter(paramTag, value1, value2)
     paramTag = 'MUnumber_MG-S'
     value1 = nS
     value2 = ''
@@ -382,8 +386,30 @@ program DynamicProperties
     value2 = ''
     call conf%changeConfigurationParameter(paramTag, value1, value2)
 
-    ! Removing RC spontaneous activity 
-    paramTag = 'NoiseFunction_RC_ext'
+    ! Connectivity of independent noise
+    paramTag = 'Con:Noise>MG-@dendrite|excitatory'
+    value1 = '100'
+    value2 = ''
+    call conf%changeConfigurationParameter(paramTag, value1, value2)
+    paramTag = 'NoiseGammaOrder_MG'
+    value1 = '7'
+    value2 = ''
+    call conf%changeConfigurationParameter(paramTag, value1, value2)
+    paramTag = 'NoiseTarget_MG'
+    value1 = 'FR'
+    value2 = ''
+    call conf%changeConfigurationParameter(paramTag, value1, value2)
+    paramTag = 'NoiseFunction_MG'
+    value1 = '100 + 0*t'
+    value2 = ''
+    call conf%changeConfigurationParameter(paramTag, value1, value2)
+    paramTag = 'gmax:Noise>MG-@dendrite|excitatory'
+    value1 = '25'
+    value2 = ''
+    call conf%changeConfigurationParameter(paramTag, value1, value2)
+
+    ! Removing influence of stimulus (required)
+    paramTag = 'stimIntensity_PTN'
     value1 = '0'
     value2 = ''
     call conf%changeConfigurationParameter(paramTag, value1, value2)
@@ -436,11 +462,11 @@ program DynamicProperties
         end do
         do j = 1, size(motorUnitPools)
             call motorUnitPools(j)%atualizeMotorUnitPool(t(i), 32.0_wp, 32.0_wp)
-            MNv_mV(i) = motorUnitPools(j)%v_mV(2)      
-            excNetSynCond(i) = motorUnitPools(j)%unit(1)%compartments(2)%&
-                SynapsesIn(2)%computeConductance(t(i))
-            inhNetSynCond(i) = motorUnitPools(j)%unit(1)%compartments(2)%&
-                SynapsesIn(1)%computeConductance(t(i))
+            !MNv_mV(i) = motorUnitPools(j)%v_mV(2)      
+            !excNetSynCond(i) = motorUnitPools(j)%unit(1)%compartments(2)%&
+            !    SynapsesIn(2)%computeConductance(t(i))
+            !inhNetSynCond(i) = motorUnitPools(j)%unit(1)%compartments(2)%&
+            !    SynapsesIn(1)%computeConductance(t(i))
         end do
     end do
 
@@ -452,34 +478,34 @@ program DynamicProperties
         force(i) = motorUnitPools(1)%NoHillMuscle%force(i)
     end do
 
-    !write(filename, "output.dat")
-    !open(1, file=filename, status = 'replace')
-    !do i = 1, size(interneuronPools(1)%poolSomaSpikes, 1)
-    !    write(1, '(F15.6, 1X, F15.1, 1X, F15.2)') interneuronPools(1)%poolSomaSpikes(i,1), &
-    !        interneuronPools(1)%poolSomaSpikes(i,2)
-    !end do
-    !close(1)
+    filename = "output.dat"
+    open(1, file=filename, status = 'replace')
+    do i = 1, size(motorUnitPools(1)%poolSomaSpikes, 1)
+        write(1, '(F15.6, 1X, F15.1)') motorUnitPools(1)%poolSomaSpikes(i,1), &
+            motorUnitPools(1)%poolSomaSpikes(i,2)
+    end do
+    close(1)
 
-    !write(filename, "force.dat")
-    !open(1, file=filename, status = 'replace')
-    !do i = 1, size(motorUnitPools(1)%unit(1)%nerveStimulus_mA)
-    !write(1, '(F15.2)') motorUnitPools(1)%unit(1)%nerveStimulus_mA(i)
-    !end do
-    !close(1)
+    filename = "force.dat"
+    open(1, file=filename, status = 'replace')
+    do i = 1, size(force)
+           write(1, '(F15.2)') force(i)
+    end do
+    close(1)
 
-    call gp%title('Membrane potential of the soma of the RC #1')
-    call gp%xlabel('t (ms))')
-    call gp%ylabel('Membrane potential (mV)')
-    call gp%plot(t, RCv_mV, 'with line lw 2 lc rgb "#0008B0"') 
+    !call gp%title('Membrane potential of the soma of the RC #1')
+    !call gp%xlabel('t (ms))')
+    !call gp%ylabel('Membrane potential (mV)')
+    !call gp%plot(t, RCv_mV, 'with line lw 2 lc rgb "#0008B0"') 
 
-    call gp%title('Membrane potential of the soma of the MN #1')
-    call gp%xlabel('t (ms))')
-    call gp%ylabel('Membrane potential (mV)')
-    call gp%plot(t, MNv_mV, 'with line lw 2 lc rgb "#0008B0"')
+    !call gp%title('Membrane potential of the soma of the MN #1')
+    !call gp%xlabel('t (ms))')
+    !call gp%ylabel('Membrane potential (mV)')
+    !call gp%plot(t, MNv_mV, 'with line lw 2 lc rgb "#0008B0"')
 
-    call gp%title('Muscle force')
-    call gp%xlabel('t (ms))')
-    call gp%plot(t, force, 'with line lw 2 lc rgb "#0008B0"')
+    !call gp%title('Muscle force')
+    !call gp%xlabel('t (ms))')
+    !call gp%plot(t, force, 'with line lw 2 lc rgb "#0008B0"')
 
     call cpu_time(toc)
     print '(F15.6, A)', toc - tic, ' seconds'

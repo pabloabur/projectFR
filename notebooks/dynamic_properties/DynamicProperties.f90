@@ -430,7 +430,7 @@ program DynamicProperties
     synapticNoisePools = synapseFactory(conf, neuralTractPools, &
                                         motorUnitPools, &
                                         interneuronPools, &
-                                        afferentPools, probDecay)
+                                        afferentPools)!, probDecay)
     
     tf = conf%simDuration_ms
     dt = conf%timeStep_ms
@@ -464,7 +464,7 @@ program DynamicProperties
                 RCv_mV(i) = interneuronPools(j)%v_mV(1)        
             end do
             do j = 1, size(motorUnitPools)
-                call motorUnitPools(j)%atualizeMotorUnitPool(t(i))
+                call motorUnitPools(j)%atualizeMotorUnitPool(t(i), 32.0_wp, 32.0_wp)
                 MNv_mV(i) = motorUnitPools(j)%v_mV(2)      
             end do
         end do
