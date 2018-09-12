@@ -56,15 +56,15 @@ program DynamicProperties
     character(len=80) :: value1, value2
     real(wp), dimension(:), allocatable :: force
     ! Input parameters
-    real(wp) :: dt = 0.05
-    real(wp) :: tf = 1000
+    real(wp) :: dt
+    real(wp) :: tf
     logical, parameter :: probDecay = .false.
     real(wp), parameter :: FFConducStrength = 0.3_wp, & 
         declineFactorMN = real(1, wp)/6, declineFactorRC = real(3.5, wp)/3
-    character(len=3), parameter :: nS = '3', nFR = '3', &
-        nFF = '6', nRC = '24', nCM = '28', nMN = '9' ! nS+nFR+nFF
+    character(len=3), parameter :: nS = '75', nFR = '75', &
+        nFF = '150', nRC = '600', nCM = '400', nMN = '300' ! nS+nFR+nFF
     GammaOrder = 7
-    FR = 15
+    FR = 300!150
 
     call init_random_seed()
 
@@ -408,7 +408,7 @@ program DynamicProperties
     value2 = ''
     call conf%changeConfigurationParameter(paramTag, value1, value2)
     paramTag = 'gmax:Noise>MG-@dendrite|excitatory'
-    value1 = '25'
+    value1 = '5000'!'25'
     value2 = ''
     call conf%changeConfigurationParameter(paramTag, value1, value2)
 
@@ -439,6 +439,8 @@ program DynamicProperties
                                         interneuronPools, &
                                         afferentPools)!, probDecay)
     
+    tf = conf%simDuration_ms
+    dt = conf%timeStep_ms
     timeLength = nint(tf/dt)
     
     allocate(t(timeLength))
@@ -466,6 +468,7 @@ program DynamicProperties
         end do
         do j = 1, size(motorUnitPools)
             call motorUnitPools(j)%atualizeMotorUnitPool(t(i), 32.0_wp, 32.0_wp)
+            !print *, motorUnitPools(j)%unit(1)%compartments(2)%SynapsesIn(2)%computeConductance(t(i))
             !MNv_mV(i) = motorUnitPools(j)%v_mV(2)      
             !excNetSynCond(i) = motorUnitPools(j)%unit(1)%compartments(2)%&
             !    SynapsesIn(2)%computeConductance(t(i))
@@ -481,6 +484,13 @@ program DynamicProperties
     do i = 1, timeLength
         force(i) = motorUnitPools(1)%NoHillMuscle%force(i)
     end do
+
+    filename = "g.dat"
+    open(1, file=filename, status = 'replace')
+    do i = 1, size(excNetSynCond)
+        write(1, '(F15.6)') excNetSynCond(i)
+    end do
+    close(1)
 
     filename = "output.dat"
     open(1, file=filename, status = 'replace')

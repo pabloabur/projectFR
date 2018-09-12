@@ -1201,7 +1201,7 @@ module SynapsesFactoryModule
                     paramChar = conf%parameterSet(paramTag,synapticNoisePools(poolOut)%pool, 0)
                     read(paramChar,*)gmax
 
-                    paramTag = 'delayNoise>' &
+                    paramTag = 'delay:Noise>' &
                             // trim(NoiseSynapsesOut%item(synapseIn)%item(1)%string) &
                             // '-' &
                             // trim(NoiseSynapsesOut%item(synapseIn)%item(2)%string) &
