@@ -412,7 +412,7 @@ program DynamicProperties
     call conf%changeConfigurationParameter(paramTag, value1, value2)
 
     ! Removing RC spontaneous activity 
-    paramTag = 'NoiseFunction_RC_ext'
+    paramTag = 'gmax:Noise>RC_ext-@soma|excitatory'
     value1 = '0'
     value2 = ''
     call conf%changeConfigurationParameter(paramTag, value1, value2)

@@ -62,7 +62,7 @@ program DynamicProperties
     real(wp), parameter :: FFConducStrength = 0.3_wp, & 
         declineFactorMN = real(1, wp)/6, declineFactorRC = real(3.5, wp)/3
     character(len=3), parameter :: nS = '3', nFR = '3', &
-        nFF = '6', nRC = '24', nCM = '28'
+        nFF = '6', nRC = '24', nCM = '28', nMN = '9' ! nS+nFR+nFF
     GammaOrder = 7
     FR = 15
 
@@ -89,6 +89,10 @@ program DynamicProperties
     call conf%changeConfigurationParameter(paramTag, value1, value2)
     paramTag = 'Number_RC_ext'
     value1 = nRC
+    value2 = ''
+    call conf%changeConfigurationParameter(paramTag, value1, value2)
+    paramTag = 'Number_MG'
+    value1 = nMN
     value2 = ''
     call conf%changeConfigurationParameter(paramTag, value1, value2)
 
