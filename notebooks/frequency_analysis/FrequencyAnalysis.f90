@@ -61,8 +61,10 @@ program DynamicProperties
     logical, parameter :: probDecay = .false.
     real(wp), parameter :: FFConducStrength = 0.3_wp, & 
         declineFactorMN = real(1, wp)/6, declineFactorRC = real(3.5, wp)/3
-    character(len=3), parameter :: nS = '75', nFR = '75', &
-        nFF = '150', nRC = '600', nCM = '400', nMN = '300' ! nS+nFR+nFF
+    !character(len=3), parameter :: nS = '75', nFR = '75', &
+    !    nFF = '150', nRC = '600', nCM = '400', nMN = '300' ! nS+nFR+nFF
+    character(len=3), parameter :: nS = '1', nFR = '1', &
+        nFF = '2', nRC = '4', nCM = '400', nMN = '4' ! nS+nFR+nFF
     GammaOrder = 7
     FR = 300!150
 
@@ -468,12 +470,8 @@ program DynamicProperties
         end do
         do j = 1, size(motorUnitPools)
             call motorUnitPools(j)%atualizeMotorUnitPool(t(i), 32.0_wp, 32.0_wp)
-            !print *, motorUnitPools(j)%unit(1)%compartments(2)%SynapsesIn(2)%computeConductance(t(i))
-            !MNv_mV(i) = motorUnitPools(j)%v_mV(2)      
-            !excNetSynCond(i) = motorUnitPools(j)%unit(1)%compartments(2)%&
-            !    SynapsesIn(2)%computeConductance(t(i))
-            !inhNetSynCond(i) = motorUnitPools(j)%unit(1)%compartments(2)%&
-            !    SynapsesIn(1)%computeConductance(t(i))
+            MNv_mV(i) = motorUnitPools(j)%v_mV(1)
+            excNetSynCond(i) = motorUnitPools(j)%iIonic(1)/MNv_mV(i)
         end do
     end do
 
