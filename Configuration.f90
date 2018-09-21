@@ -91,7 +91,7 @@ module ConfigurationClass
                 !     + **filename**: name of the file with the parameter values. The extension  of the file should be .rmto.
                 
                 ! '''
-                character(len = 80), intent(in) :: filename
+                character(*), intent(in) :: filename
                 integer :: ierr, il, j, stop1, i
                 character(len = 80) :: line
                 character(len = 80) :: param1, param2, param3

@@ -39,7 +39,7 @@ program DynamicProperties
     integer :: timeLength
     integer :: i, j
     real(wp), dimension(:), allocatable :: t, MNv_mV, RCv_mV, &
-        excNetSynCond, inhNetSynCond
+        synapticInput
     real(wp) :: tic, toc
     type(gpf) :: gp
     real(wp) :: FR
@@ -64,9 +64,7 @@ program DynamicProperties
     !character(len=3), parameter :: nS = '75', nFR = '75', &
     !    nFF = '150', nRC = '600', nCM = '400', nMN = '300' ! nS+nFR+nFF
     character(len=3), parameter :: nS = '1', nFR = '1', &
-        nFF = '2', nRC = '4', nCM = '400', nMN = '4' ! nS+nFR+nFF
-    GammaOrder = 7
-    FR = 300!150
+        nFF = '2', nRC = '12', nCM = '100', nMN = '4' ! nS+nFR+nFF
 
     call init_random_seed()
 
@@ -378,6 +376,16 @@ program DynamicProperties
         stop (1)
     endif
 
+    !!!!!!!!!!!!!!!! RC
+    ! Turning off spontaneous activity
+    paramtag = 'gmax:Noise>RC_ext-@soma|excitatory'
+    value1 = '0.08'
+    value2 = ''
+    call conf%changeconfigurationparameter(paramtag, value1, value2)
+    paramtag = 'NoiseFunction_RC_ext'
+    value1 = '60'
+    value2 = ''
+    call conf%changeconfigurationparameter(paramtag, value1, value2)
     ! Dynamics of MN-RC synapse
     paramtag = 'dyn:MG-S>RC_ext-@soma|excitatory'
     value1 = 'None'
@@ -392,7 +400,8 @@ program DynamicProperties
     value2 = ''
     call conf%changeConfigurationParameter(paramTag, value1, value2)
 
-    ! Connectivity of independent noise
+    !!!!!!!!!!!!!!!! Independent noise
+    ! TODO try high FR, low g, and vice versa
     paramTag = 'Con:Noise>MG-@dendrite|excitatory'
     value1 = '100'
     value2 = ''
@@ -406,13 +415,29 @@ program DynamicProperties
     value2 = ''
     call conf%changeConfigurationParameter(paramTag, value1, value2)
     paramTag = 'NoiseFunction_MG'
-    value1 = '100 + 0*t'
+    value1 = '0'
     value2 = ''
     call conf%changeConfigurationParameter(paramTag, value1, value2)
     paramTag = 'gmax:Noise>MG-@dendrite|excitatory'
-    value1 = '5000'!'25'
+    value1 = '0.95'
     value2 = ''
     call conf%changeConfigurationParameter(paramTag, value1, value2)
+
+    !!!!!!!!!!!!!!!! Descending commands parameters
+    paramTag = 'gmax:CMExt->MG-S@dendrite|excitatory'
+    value1 = '0.6'
+    value2 = ''
+    call conf%changeConfigurationParameter(paramTag, value1, value2)
+    paramTag = 'gmax:CMExt->MG-FR@dendrite|excitatory'
+    value1 = '0.6'
+    value2 = ''
+    call conf%changeConfigurationParameter(paramTag, value1, value2)
+    paramTag = 'gmax:CMExt->MG-FF@dendrite|excitatory'
+    value1 = '0.6'
+    value2 = ''
+    call conf%changeConfigurationParameter(paramTag, value1, value2)
+    GammaOrder = 7
+    FR = 0!80 once made them fire at 22-28
 
     ! Removing influence of stimulus (required)
     paramTag = 'stimIntensity_PTN'
@@ -448,8 +473,7 @@ program DynamicProperties
     allocate(t(timeLength))
     allocate(MNv_mV(timeLength))
     allocate(RCv_mV(timeLength))
-    allocate(excNetSynCond(timeLength))
-    allocate(inhNetSynCond(timeLength))
+    allocate(synapticInput(timeLength))
     allocate(force(timeLength))
 
     t = [(dt*(i-1), i=1, timeLength)]
@@ -471,7 +495,7 @@ program DynamicProperties
         do j = 1, size(motorUnitPools)
             call motorUnitPools(j)%atualizeMotorUnitPool(t(i), 32.0_wp, 32.0_wp)
             MNv_mV(i) = motorUnitPools(j)%v_mV(1)
-            excNetSynCond(i) = motorUnitPools(j)%iIonic(1)/MNv_mV(i)
+            synapticInput(i) = motorUnitPools(j)%iIonic(1)
         end do
     end do
 
@@ -485,8 +509,8 @@ program DynamicProperties
 
     filename = "g.dat"
     open(1, file=filename, status = 'replace')
-    do i = 1, size(excNetSynCond)
-        write(1, '(F15.6)') excNetSynCond(i)
+    do i = 1, timeLength
+        write(1, '(F15.6, 1X, F15.6)') MNv_mV(i), synapticInput(i)
     end do
     close(1)
 
@@ -498,9 +522,25 @@ program DynamicProperties
     end do
     close(1)
 
+    filename = "nt.dat"
+    open(1, file=filename, status = 'replace')
+    do i = 1, size(neuralTractPools(1)%poolTerminalSpikes, 1)
+        write(1, '(F15.6, 1X, F15.1)') neuralTractPools(1)%poolTerminalSpikes(i,1), &
+            neuralTractPools(1)%poolTerminalSpikes(i,2)
+    end do
+    close(1)
+
+    filename = "in.dat"
+    open(1, file=filename, status = 'replace')
+    do i = 1, size(interneuronPools(1)%poolSomaSpikes, 1)
+        write(1, '(F15.6, 1X, F15.1)') interneuronPools(1)%poolSomaSpikes(i,1), &
+            interneuronPools(1)%poolSomaSpikes(i,2)
+    end do
+    close(1)
+
     filename = "force.dat"
     open(1, file=filename, status = 'replace')
-    do i = 1, size(force)
+    do i = 1, timeLength
            write(1, '(F15.2)') force(i)
     end do
     close(1)

@@ -151,7 +151,7 @@ module InterneuronClass
         end do
 
         ! ## Vector with  the inverse of the capacitance of all compartments.
-        init_Interneuron%capacitanceInv = 1 / capacitance_nF
+        init_Interneuron%capacitanceInv = 1.0 / capacitance_nF
 
         ! ## Vector with current, in nA,  of each compartment coming from other elements of the model. For example
         ! ## from ionic channels and synapses.
@@ -191,7 +191,11 @@ module InterneuronClass
         ! ## Build synapses       
          
         init_Interneuron%SynapsesOut = CharacterMatrix()
-        
+
+        if (allocated(gLeak)) deallocate(gLeak)
+        if (allocated(capacitance_nF)) deallocate(capacitance_nF)
+        if (allocated(EqPot)) deallocate(EqPot)
+        if (allocated(GL)) deallocate(GL)
     end function
 
     subroutine atualizeInterneuron(self, t, v_mV)
@@ -244,7 +248,7 @@ module InterneuronClass
 
         do i = 1, self%Compartments(self%somaIndex)%numberChannels
             do j = 1, self%Compartments(self%somaIndex)%Channels(i)%lenStates
-                call self%Compartments(self%somaIndex)%Channels(i)%condState(j)%changeState(t) 
+                call self%Compartments(self%somaIndex)%Channels(i)%condState(j)%changeState(t)
             end do
         end do
     end subroutine
@@ -255,7 +259,7 @@ module InterneuronClass
             !         + **t**: current instant, in ms.
             !     '''
             class(Interneuron), intent(inout) :: self
-            real(wp), intent(in) :: t     
+            real(wp), intent(in) :: t
             integer :: i
             
             if (allocated(self%indicesOfSynapsesOnTarget)) then

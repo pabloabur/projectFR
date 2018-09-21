@@ -24,8 +24,8 @@ module MuscleSpindleClass
     ! '''
     use ConfigurationClass
     implicit none
-    integer, parameter :: wp = kind( 1.0d0 )
-    real(wp), parameter :: PI = 4 * atan(1.0_wp)    
+    integer, parameter :: wp = kind(1.0d0)
+    real(wp), parameter :: pi = 4 * atan(1.0_wp)    
     private
     public :: MuscleSpindle
 
@@ -46,6 +46,7 @@ module MuscleSpindleClass
         real(wp) :: RBag1, RBag2, RChain
         real(wp) :: KPrBag1, KPrBag2, KPrChain
         real(wp) :: GPrimaryBag1, GPrimaryBag2, GPrimaryChain
+        real(wp) :: GSecondaryBag1, GSecondaryBag2, GSecondaryChain
         real(wp) :: SOcclusionFactor
         real(wp) :: betaBag1, betaBag2, betaChain
         real(wp) :: GAMMABag1, GAMMABag2, GAMMAChain
@@ -54,6 +55,8 @@ module MuscleSpindleClass
         real(wp), dimension(3) :: fusimotorActivation
         real(wp), dimension(6) :: fiberTension
         real(wp) :: IaFR_Hz, IIFR_Hz    
+        real(wp) :: XBag2, XChain
+        real(wp) :: LSecondaryBag2, LSecondaryChain
 
         contains
             procedure :: atualizeMuscleSpindle
@@ -63,6 +66,8 @@ module MuscleSpindleClass
             procedure :: dfdt
             procedure :: computeFiberTension
             procedure :: dTdt
+            procedure :: computeSecondaryActivity
+            procedure :: computeII
             procedure :: reset
             
     end type MuscleSpindle
@@ -251,9 +256,33 @@ module MuscleSpindleClass
         paramChar = init_MuscleSpindle%conf%parameterSet(paramTag, muscle, 0)
         read(paramChar, *)init_MuscleSpindle%GPrimaryChain
 
+        paramTag = 'GSecondaryBag2'
+        paramChar = init_MuscleSpindle%conf%parameterSet(paramTag, muscle, 0)
+        read(paramChar, *)init_MuscleSpindle%GSecondaryBag2
+        
+        paramtag = 'GSecondaryChain'
+        paramChar = init_MuscleSpindle%conf%parameterSet(paramTag, muscle, 0)
+        read(paramChar, *)init_MuscleSpindle%GSecondaryChain
+
         paramTag = 'SOcclusionFactor'
         paramChar = init_MuscleSpindle%conf%parameterSet(paramTag, muscle, 0)
         read(paramChar, *)init_MuscleSpindle%SOcclusionFactor
+
+        paramTag = 'XBag2'
+        paramChar = init_MuscleSpindle%conf%parameterSet(paramTag, muscle, 0)
+        read(paramChar, *)init_MuscleSpindle%XBag2
+
+        paramTag = 'XChain'
+        paramChar = init_MuscleSpindle%conf%parameterSet(paramTag, muscle, 0)
+        read(paramChar, *)init_MuscleSpindle%XChain
+
+        paramTag = 'LSecondaryBag2'
+        paramChar = init_MuscleSpindle%conf%parameterSet(paramTag, muscle, 0)
+        read(paramChar, *)init_MuscleSpindle%LSecondaryBag2
+
+        paramTag = 'LSecondaryChain'
+        paramChar = init_MuscleSpindle%conf%parameterSet(paramTag, muscle, 0)
+        read(paramChar, *)init_MuscleSpindle%LSecondaryChain
 
         init_MuscleSpindle%betaBag1 = 0.0
         init_MuscleSpindle%betaBag2 = 0.0
@@ -304,8 +333,7 @@ module MuscleSpindleClass
         real(wp), intent(in) :: gammaMNDynamicFR, gammaMNStaticFR
 
         call self%computeFusimotorActivation(t, gammaMNDynamicFR, gammaMNStaticFR)
-        
-        
+                
         self%betaBag1 = self%beta0Bag1 + self%beta1Bag1 * self%fusimotorActivation(1)
         self%betaBag2 = self%beta0Bag2 + self%beta2Bag2 * self%fusimotorActivation(2)
         self%betaChain = self%beta0Chain + self%beta2Chain * self%fusimotorActivation(3)
@@ -315,9 +343,9 @@ module MuscleSpindleClass
         self%GAMMAChain = self%GAMMA2Chain * self%fusimotorActivation(3)
         
         call self%computeFiberTension(t, fascicleLength, fascicleVelocity, fascicleAcceleration)
-
+        
         self%IaFR_Hz = self%computeIa(t)
-        !TODO: self%IIFR = self%computeII(t)
+        self%IIFR_Hz = self%computeII(t, fascicleLength)        
     end subroutine
 
     subroutine computeFusimotorActivation(self, t, gammaMNDynamicFR, gammaMNStaticFR)
@@ -436,11 +464,15 @@ module MuscleSpindleClass
         IaFR = self%SOcclusionFactor * smaller + larger
     end function
 
-    !TODO:
-    ! def computeII(self, t):
-    !     '''
+    real(wp) function computeII(self, t, fascicleLength) result(IIFR)
+        class(MuscleSpindle), intent(inout) :: self
+        real(wp), intent(in) :: t
+        real(wp), intent(in) :: fascicleLength
 
-    !     '''
+        call self%computeSecondaryActivity(t, fascicleLength)
+
+        IIFR = self%secondaryPotentialBag2 + self%secondaryPotentialChain
+    end function
 
     subroutine computePrimaryActivity(self, t) 
         ! '''
@@ -448,7 +480,8 @@ module MuscleSpindleClass
         ! '''
         class(MuscleSpindle), intent(inout) :: self
         real(wp), intent(in) :: t
-
+        
+        
 
         self%primaryPotentialBag1 = self%GPrimaryBag1 * (self%fiberTension(1) / self%KsrBag1 - &
                                                          self%LNSrBag1 + self%L0SrBag1)
@@ -460,12 +493,30 @@ module MuscleSpindleClass
                                                            self%LNSrChain + self%L0SrChain)
     end subroutine
 
+    subroutine computeSecondaryActivity(self, t, fascicleLength) 
+        ! '''
+
+        ! '''
+        class(MuscleSpindle), intent(inout) :: self
+        real(wp), intent(in) :: t
+        real(wp), intent(in) :: fascicleLength
+
+        self%secondaryPotentialBag2 = self%GSecondaryBag2 * ((self%XBag2 * self%LSecondaryBag2 / self%L0SrBag2) * &
+                                      (self%fiberTension(3)/self%KsrBag2 - (self%LNSrBag2 - self%L0SrBag2)) + &
+                                      (1 - self%XBag2) * self%LSecondaryBag2 / self%L0PrBag2 * &
+                                      (fascicleLength - self%fiberTension(3)/self%KsrBag2 - self%L0SrBag2 - self%LNPrBag2)) 
+                                                    
+        self%secondaryPotentialChain = self%GSecondaryChain * ((self%XChain * self%LSecondaryChain / self%L0SrChain) * &
+                                      (self%fiberTension(5)/self%KsrChain - (self%LNSrChain - self%L0SrChain)) + &
+                                      (1 - self%XChain) * self%LSecondaryChain / self%L0PrChain * &
+                                      (fascicleLength - self%fiberTension(5)/self%KsrChain - self%L0SrChain - self%LNPrChain)) 
+    end subroutine
+
 
     subroutine reset(self)
         ! '''
         ! '''
         class(MuscleSpindle), intent(inout) :: self
-
 
         self%betaBag1 = 0.0
         self%betaBag2 = 0.0
@@ -493,79 +544,4 @@ module MuscleSpindleClass
 
 
 
-end module MuscleSpindleClass
-
-
-
-
-
-
-! def runge_kutta(derivativeFunction, t, x, timeStep, timeStepByTwo,  timeStepBySix):
-!     '''
-!     Function to implement the fourth order Runge-Kutta Method to solve numerically a 
-!     differential equation.
-
-!     - Inputs: 
-!         + **derivativeFunction**: function that corresponds to the derivative of the differential equation.
-
-!         + **t**: current instant.
-
-!         + **x**:  current state value.
-
-!         + **timeStep**: time step of the solution of the differential equation, in the same unit of t.
-
-!         + **timeStepByTwo**:  timeStep divided by two, for computational efficiency.
-
-!         + **timeStepBySix**: timeStep divided by six, for computational efficiency.
-
-!     This method is intended to solve the following differential equation:
-
-!     \f{equation}{
-!         \frac{dx(t)}{dt} = f(t, x(t))
-!     \f}
-!     First, four derivatives are computed:
-
-!     \f{align}{
-!         k_1 &= f(t,x(t))\\
-!         k_2 &= f(t+\frac{\Delta t}{2}, x(t) + \frac{\Delta t}{2}.k_1)\\
-!         k_3 &= f(t+\frac{\Delta t}{2}, x(t) + \frac{\Delta t}{2}.k_2)\\
-!         k_4 &= f(t+\Delta t, x(t) + \Delta t.k_3)
-!     \f}
-!     where \f$\Delta t\f$ is the time step of the numerical solution of the
-!     differential equation.
-
-!     Then the value of \f$x(t+\Delta t)\f$ is computed with:
-
-!     \f{equation}{
-!         x(t+\Delta t) = x(t) + \frac{\Delta t}{6}(k_1 + 2k_2 + 2k_3+k_4)
-!     \f}
-!     '''       
-!     k1 = derivativeFunction(t, x)
-!     k2 = derivativeFunction(t + timeStepByTwo, x + timeStepByTwo * k1)
-!     k3 = derivativeFunction(t + timeStepByTwo, x + timeStepByTwo * k2)
-!     k4 = derivativeFunction(t + timeStep, x + timeStep * k3)
-    
-!     return x + timeStepBySix * (k1 + k2 + k2 + k3 + k3 + k4)
-
-
-
-
-    
-
-    
-
-    
-
-
-    
-
-    
-
-
-
-
-
-
-
-    
-        
+end module MuscleSpindleClass       

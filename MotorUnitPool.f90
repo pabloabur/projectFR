@@ -294,14 +294,14 @@ module MotorUnitPoolClass
         end do 
 
         ! Create a Sparse Matrix for performance purposes (init_MotorUnitPool%GSp)
-        stat = mkl_sparse_d_create_csr(self%GSp, &
-                                       self%spIndexing, &
-                                       self%spRows, &
-                                       self%spCols, &
-                                       self%spRowStart, &
-                                       self%spRowEnd, &
-                                       self%spColIdx, &
-                                       self%spValues)      
+        ! stat = mkl_sparse_d_create_csr(self%GSp, &
+        !                                self%spIndexing, &
+        !                                self%spRows, &
+        !                                self%spCols, &
+        !                                self%spRowStart, &
+        !                                self%spRowEnd, &
+        !                                self%spColIdx, &
+        !                                self%spValues)      
         
         stat = mkl_sparse_d_mv(self%spOperation, &
                                self%spAlpha, &
@@ -315,6 +315,9 @@ module MotorUnitPoolClass
         
         dVdt = (self%iIonic + matInt + self%iInjected &
                 + self%EqCurrent_nA) * self%capacitanceInv       
+
+        if (allocated(matInt)) deallocate(matInt)
+
     end function
 
     subroutine atualizeMotorUnitPool(self, t, dynGamma, statGamma)
@@ -377,6 +380,10 @@ module MotorUnitPoolClass
                                                 velocity, &
                                                 acceleration,& 
                                                 dynGamma, statGamma)
+        deallocate(k1)
+        deallocate(k2)
+        deallocate(k3)
+        deallocate(k4)
     end subroutine
 
     subroutine listSpikes(self)
@@ -508,6 +515,8 @@ module MotorUnitPoolClass
             call self%HillMuscle%reset()
         end if
         call self%spindle%reset()
+        print *, 'Motorneuron Pool reseted'
+        ! read(*,*)
     end subroutine
 
 

@@ -218,13 +218,13 @@ module SynapseClass
 
             if (.not.allocated(self%tEndOfPulse)) then
                 allocate(self%tBeginOfPulse(size(self%gmax_muS)))
-                self%tBeginOfPulse(:) = -1e8
+                self%tBeginOfPulse(:) = -1e4
                 
                 allocate(self%tEndOfPulse(size(self%gmax_muS)))
-                self%tEndOfPulse(:) = -1e8
+                self%tEndOfPulse(:) = -1e4
                 
                 allocate(self%tLastPulse(size(self%gmax_muS)))
-                self%tLastPulse(:) = -1e8
+                self%tLastPulse(:) = -1e4
 
                 allocate(self%conductanceState(size(self%gmax_muS)))
                 self%conductanceState(:) = .false.
@@ -306,6 +306,9 @@ module SynapseClass
             if (allocated(idxEndPulse)) call self%stopConductance(t, idxEndPulse)
 
             conductance = self%gMaxTot_muS * (self%Ron + self%Roff)
+
+            if (allocated(idxBeginPulse)) deallocate(idxBeginPulse)
+            if (allocated(idxEndPulse)) deallocate(idxEndPulse)
         end function
 
         subroutine startConductance(self, t, idxBeginPulse)
@@ -364,7 +367,10 @@ module SynapseClass
             
             self%tEndOfPulse(idxBeginPulse) = t + self%tPeak_ms
             self%tLastPulse(idxBeginPulse) = self%tBeginOfPulse(idxBeginPulse)
-            self%tBeginOfPulse(idxBeginPulse) = -1e6
+            self%tBeginOfPulse(idxBeginPulse) = -1e4
+
+            if (allocated(idxTurningOnCond)) deallocate(idxTurningOnCond)
+            if (allocated(logCount)) deallocate(logCount)
         end subroutine
 
         subroutine stopConductance(self, t, idxEndPulse)
@@ -385,7 +391,7 @@ module SynapseClass
             self%Ron = self%Ron - synLost
             self%Roff = self%Roff + synLost
             self%Non = self%Non - sum(self%synContrib(idxEndPulse))
-            self%tEndOfPulse(idxEndPulse) = -1e6
+            self%tEndOfPulse(idxEndPulse) = -1e4
             self%conductanceState(idxEndPulse) = .false.
         end subroutine
 
@@ -424,6 +430,7 @@ module SynapseClass
             !     can be *None*.
 
             ! '''
+            
             class(Synapse), intent(inout) :: self
             real(wp), intent(in) :: gmax, delay
             character(len = 80), intent(in) ::dynamics
@@ -450,10 +457,10 @@ module SynapseClass
             
             call self%inQueue%clear()
             call self%outQueue%clear()
-            if (self%numberOfIncomingSynapses>0) then
-                self%tBeginOfPulse(:) = -1e6
-                self%tEndOfPulse(:) = -1e6
-                self%tLastPulse(:) = -1e6
+            if (self%numberOfIncomingSynapses > 0) then
+                self%tBeginOfPulse(:) = -1e4
+                self%tEndOfPulse(:) = -1e4
+                self%tLastPulse(:) = -1e4
                 self%conductanceState(:) = .false.
                 self%ri(:) = 0.0
                 self%ti(:) = 0.0
@@ -464,7 +471,7 @@ module SynapseClass
             self%Non = 0.0
             self%Ron = 0.0
             self%Roff = 0.0
-            self%t0 = 0.0           
+            self%t0 = 0.0
 
         end subroutine
 
