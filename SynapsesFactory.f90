@@ -53,6 +53,7 @@ module SynapsesFactoryModule
             class(AfferentPool), intent(inout) :: afferentPools(:)
             class(MotorUnitPool), intent(inout), target:: motorUnitPools(:)
             class(InterneuronPool), intent(inout), target:: interneuronPools(:)
+            class(*), pointer :: noiseTarget(:)
             type(SynapticNoise), allocatable:: synapticNoisePools(:)
             type(SynapticNoise), allocatable:: tempSynNoise(:)
             integer :: numberOfSynapses, numberOfSynapticNoise
@@ -1171,11 +1172,25 @@ module SynapsesFactoryModule
             NoiseSynapsesOut = conf%determineSynapses(neuralSource)    
 
             if (allocated(synapticNoisePools)) deallocate(synapticNoisePools)
-            if (allocated(NoiseSynapsesOut%item) .and. size(interneuronPools)>0) then
+            !if (allocated(NoiseSynapsesOut%item) .and. size(interneuronPools)>0) then
+            if (allocated(NoiseSynapsesOut%item)) then
+                ! Iterate over groups receiving synaptic noise, i.e. RC, MN, etc
                 do synapseIn = 1, size(NoiseSynapsesOut%item)
-                    do poolIn = 1, size(interneuronPools)
+                    ! Using a pointer to properly apply noise to all pools involved
+                    ! TODO other pools, like AF, SOL, etc
+                    if (trim(NoiseSynapsesOut%item(synapseIn)%item(1)%string).eq.'RC_ext') then
+                        noiseTarget => interneuronPools
+                    else if (trim(NoiseSynapsesOut%item(synapseIn)%item(1)%string).eq.'MG') then
+                        noiseTarget => motorUnitPools
+                    end if
+                    ! select block seems to be unecessary, but I could not access data from pointer
+                    ! in any other way
+                    select type (noiseTarget)
+                    class is (InterneuronPool)
+                    ! Iterate over the number of pools for this group
+                    do poolIn = 1, size(noiseTarget)
                         if (trim(NoiseSynapsesOut%item(synapseIn)%item(1)%string)==&
-                            trim(interneuronPools(poolIn)%pool)) then
+                            trim(noiseTarget(poolIn)%pool)) then
                             if (allocated(synapticNoisePools)) then
                                 allocate(tempSynNoise(size(synapticNoisePools)))
                                 do i = 1, size(synapticNoisePools)
@@ -1269,101 +1284,301 @@ module SynapsesFactoryModule
                                 var = 0.0
                                 tau = 1e6
                             end if
-                            
+                            ! Iterate over the total of elements in the group receiving noise
                             do unitOut = 1, size(synapticNoisePools(poolOut)%unit)
-                                    unitIn = unitOut
-                                    do compartmentIn = 1, size(interneuronPools(poolIn)%unit(unitIn)%Compartments)
-                                        if ((trim(NoiseSynapsesOut%item(synapseIn)%item(1)%string)==&
-                                            trim(interneuronPools(poolIn)%pool)) .and.&
-                                            (trim(NoiseSynapsesOut%item(synapseIn)%item(2)%string)==&
-                                            trim(interneuronPools(poolIn)%unit(unitIn)%neuronKind)) .and.&
-                                            (trim(NoiseSynapsesOut%item(synapseIn)%item(3)%string)==&
-                                            trim(interneuronPools(poolIn)%unit(unitIn)%&
-                                                    Compartments(compartmentIn)%compKind))) then
-                                            
-                                            do synapseComp = 1, size(interneuronPools(poolIn)%unit(unitIn)%&
-                                                                Compartments(compartmentIn)%SynapsesIn)                                                    
-                                                    if (NoiseSynapsesOut%item(synapseIn)%item(4)%string==&
-                                                        interneuronPools(poolIn)%unit(unitIn)%&
-                                                        Compartments(compartmentIn)%SynapsesIn(synapseComp)%synapseKind) then
-                                                        if (declineFactor<1e5) then
-                                                            neuronsDistance = abs(interneuronPools(poolIn)%&
-                                                                            unit(unitIn)%position_mm&
-                                                                            - synapticNoisePools(poolOut)%unit(unitOut)%&
-                                                                            position_mm)
-                                                            weight = declineFactor / (declineFactor + neuronsDistance**2)
-                                                            gmax = gmax * weight
-                                                        end if
-                                                        call interneuronPools(poolIn)%unit(unitIn)%&
-                                                        Compartments(compartmentIn)%SynapsesIn(synapseComp)%&
-                                                        addConductance(gmax, delay, dyn, var, tau)
-                                                        
-                                                        if (allocated(synapticNoisePools(poolOut)%&
-                                                            unit(unitOut)%transmitSpikesThroughSynapses)) then
-                                                            
-                                                            
-                                                            allocate(tempTransmitSpikes(size(synapticNoisePools(poolOut)%&
-                                                                unit(unitOut)%transmitSpikesThroughSynapses)))
-                                                            
-                                                            do j = 1, size(tempTransmitSpikes)
-                                                                call tempTransmitSpikes(j)%&
-                                                                assignSynapse(synapticNoisePools(poolOut)%&
-                                                                unit(unitOut)%transmitSpikesThroughSynapses(j)%synapse)
-                                                            end do
-                                                            
-                                                            
-                                                            deallocate(synapticNoisePools(poolOut)%&
-                                                                    unit(unitOut)%transmitSpikesThroughSynapses)
-                                                            
-                                                            allocate(synapticNoisePools(poolOut)%&
-                                                                    unit(unitOut)%&
-                                                                    transmitSpikesThroughSynapses(size(tempTransmitSpikes)+1))
-                                                            
-                                                            do j = 1, size(tempTransmitSpikes)
-                                                                call synapticNoisePools(poolOut)%unit(unitOut)%&
-                                                                transmitSpikesThroughSynapses(j)%&
-                                                                assignSynapse(tempTransmitSpikes(j)%synapse)
-                                                            end do
+                                unitIn = unitOut
+                                ! Iterate over the compartments
+                                do compartmentIn = 1, size(noiseTarget(poolIn)%unit(unitIn)%Compartments)
+                                    if ((trim(NoiseSynapsesOut%item(synapseIn)%item(1)%string)==&
+                                        trim(noiseTarget(poolIn)%pool)) .and.&
+                                        (trim(NoiseSynapsesOut%item(synapseIn)%item(2)%string)==&
+                                        trim(noiseTarget(poolIn)%unit(unitIn)%neuronKind)) .and.&
+                                        (trim(NoiseSynapsesOut%item(synapseIn)%item(3)%string)==&
+                                        trim(noiseTarget(poolIn)%unit(unitIn)%&
+                                                Compartments(compartmentIn)%compKind))) then
+                                        
+                                        ! Iterate over the synapses in the compartment (usually 2, exc/inh)
+                                        do synapseComp = 1, size(noiseTarget(poolIn)%unit(unitIn)%&
+                                                            Compartments(compartmentIn)%SynapsesIn)                                                    
+                                            if (NoiseSynapsesOut%item(synapseIn)%item(4)%string==&
+                                                noiseTarget(poolIn)%unit(unitIn)%&
+                                                Compartments(compartmentIn)%SynapsesIn(synapseComp)%synapseKind) then
+                                                if (declineFactor<1e5) then
+                                                    neuronsDistance = abs(noiseTarget(poolIn)%&
+                                                                    unit(unitIn)%position_mm&
+                                                                    - synapticNoisePools(poolOut)%unit(unitOut)%&
+                                                                    position_mm)
+                                                    weight = declineFactor / (declineFactor + neuronsDistance**2)
+                                                    gmax = gmax * weight
+                                                end if
+                                                call noiseTarget(poolIn)%unit(unitIn)%&
+                                                Compartments(compartmentIn)%SynapsesIn(synapseComp)%&
+                                                addConductance(gmax, delay, dyn, var, tau)
+                                                
+                                                if (allocated(synapticNoisePools(poolOut)%&
+                                                    unit(unitOut)%transmitSpikesThroughSynapses)) then
+                                                    
+                                                    
+                                                    allocate(tempTransmitSpikes(size(synapticNoisePools(poolOut)%&
+                                                        unit(unitOut)%transmitSpikesThroughSynapses)))
+                                                    
+                                                    do j = 1, size(tempTransmitSpikes)
+                                                        call tempTransmitSpikes(j)%&
+                                                        assignSynapse(synapticNoisePools(poolOut)%&
+                                                        unit(unitOut)%transmitSpikesThroughSynapses(j)%synapse)
+                                                    end do
+                                                    
+                                                    
+                                                    deallocate(synapticNoisePools(poolOut)%&
+                                                            unit(unitOut)%transmitSpikesThroughSynapses)
+                                                    
+                                                    allocate(synapticNoisePools(poolOut)%&
+                                                            unit(unitOut)%&
+                                                            transmitSpikesThroughSynapses(size(tempTransmitSpikes)+1))
+                                                    
+                                                    do j = 1, size(tempTransmitSpikes)
+                                                        call synapticNoisePools(poolOut)%unit(unitOut)%&
+                                                        transmitSpikesThroughSynapses(j)%&
+                                                        assignSynapse(tempTransmitSpikes(j)%synapse)
+                                                    end do
 
-                                                            synapticNoisePools(poolOut)%unit(unitOut)%&
-                                                                    transmitSpikesThroughSynapses(size(tempTransmitSpikes)+1)=&
-                                                                    SynapsePointer()        
+                                                    synapticNoisePools(poolOut)%unit(unitOut)%&
+                                                            transmitSpikesThroughSynapses(size(tempTransmitSpikes)+1)=&
+                                                            SynapsePointer()        
 
-                                                            call synapticNoisePools(poolOut)%unit(unitOut)%&
-                                                            transmitSpikesThroughSynapses(size(tempTransmitSpikes)+1)%&
-                                                            assignSynapse(interneuronPools(poolIn)%unit(unitIn)%&
-                                                            Compartments(compartmentIn)%SynapsesIn(synapseComp))
-                                                            
-                                                            deallocate(tempTransmitSpikes)
-                                                        else
-                                                            allocate(synapticNoisePools(poolOut)%&
-                                                                    unit(unitOut)%&
-                                                                    transmitSpikesThroughSynapses(1))
-                                                            synapticNoisePools(poolOut)%unit(unitOut)%&
-                                                                    transmitSpikesThroughSynapses(1)=&
-                                                                    SynapsePointer()
+                                                    call synapticNoisePools(poolOut)%unit(unitOut)%&
+                                                    transmitSpikesThroughSynapses(size(tempTransmitSpikes)+1)%&
+                                                    assignSynapse(noiseTarget(poolIn)%unit(unitIn)%&
+                                                    Compartments(compartmentIn)%SynapsesIn(synapseComp))
+                                                    
+                                                    deallocate(tempTransmitSpikes)
+                                                else
+                                                    allocate(synapticNoisePools(poolOut)%&
+                                                            unit(unitOut)%&
+                                                            transmitSpikesThroughSynapses(1))
+                                                    synapticNoisePools(poolOut)%unit(unitOut)%&
+                                                            transmitSpikesThroughSynapses(1)=&
+                                                            SynapsePointer()
 
-                                                            call synapticNoisePools(poolOut)%unit(unitOut)%&
-                                                                    transmitSpikesThroughSynapses(1)%&
-                                                                    assignSynapse(interneuronPools(poolIn)%unit(unitIn)%&
-                                                                    Compartments(compartmentIn)%&
-                                                                    SynapsesIn(synapseComp))
-                                                        end if            
-                                                        
-                                                        newIndex = size(interneuronPools(poolIn)%&
-                                                            unit(unitIn)%Compartments(compartmentIn)%&
-                                                            SynapsesIn(synapseComp)%gmax_muS)
-                                                        
-                                                        call integerAddToList(synapticNoisePools(poolOut)%&
-                                                        unit(unitOut)%indicesOfSynapsesOnTarget,newIndex)
-                                                        numberOfSynapticNoise = numberOfSynapticNoise + 1
-                                                    end if
-                                                end do                                            
+                                                    call synapticNoisePools(poolOut)%unit(unitOut)%&
+                                                            transmitSpikesThroughSynapses(1)%&
+                                                            assignSynapse(noiseTarget(poolIn)%unit(unitIn)%&
+                                                            Compartments(compartmentIn)%&
+                                                            SynapsesIn(synapseComp))
+                                                end if            
+                                                
+                                                newIndex = size(noiseTarget(poolIn)%&
+                                                    unit(unitIn)%Compartments(compartmentIn)%&
+                                                    SynapsesIn(synapseComp)%gmax_muS)
+                                                
+                                                call integerAddToList(synapticNoisePools(poolOut)%&
+                                                unit(unitOut)%indicesOfSynapsesOnTarget,newIndex)
+                                                numberOfSynapticNoise = numberOfSynapticNoise + 1
                                             end if
-                                    end do                                    
+                                        end do                                            
+                                    end if
+                                end do
                             end do
                         end if
                     end do
+                    class is (MotorUnitPool)
+                    ! Iterate over the number of pools for this group
+                    do poolIn = 1, size(noiseTarget)
+                        if (trim(NoiseSynapsesOut%item(synapseIn)%item(1)%string)==&
+                            trim(noiseTarget(poolIn)%pool)) then
+                            if (allocated(synapticNoisePools)) then
+                                allocate(tempSynNoise(size(synapticNoisePools)))
+                                do i = 1, size(synapticNoisePools)
+                                    tempSynNoise(i) = synapticNoisePools(i)
+                                end do
+                                deallocate(synapticNoisePools)
+                                allocate(synapticNoisePools(size(tempSynNoise)+1))
+                                do i = 1, size(tempSynNoise)
+                                    synapticNoisePools(i) = tempSynNoise(i)
+                                end do
+                                synapticNoisePools(size(tempSynNoise)+1) = &
+                                SynapticNoise(conf, NoiseSynapsesOut%item(synapseIn)%item(1)%string)
+                                deallocate(tempSynNoise)
+                            else 
+                                allocate(synapticNoisePools(1))
+                                synapticNoisePools(1) = SynapticNoise(conf, NoiseSynapsesOut%item(synapseIn)%item(1)%string)
+                            end if
+                            poolOut = size(synapticNoisePools)
+                            paramTag = 'gmax:Noise>' &
+                                        // trim(NoiseSynapsesOut%item(synapseIn)%item(1)%string) &
+                                        // '-' &
+                                        // trim(NoiseSynapsesOut%item(synapseIn)%item(2)%string) &
+                                        // '@' &
+                                        // trim(NoiseSynapsesOut%item(synapseIn)%item(3)%string) &
+                                        // '|' &
+                                        // trim(NoiseSynapsesOut%item(synapseIn)%item(4)%string)
+                            paramChar = conf%parameterSet(paramTag,synapticNoisePools(poolOut)%pool, 0)
+                            read(paramChar,*)gmax
+
+                            paramTag = 'delay:Noise>' &
+                                    // trim(NoiseSynapsesOut%item(synapseIn)%item(1)%string) &
+                                    // '-' &
+                                    // trim(NoiseSynapsesOut%item(synapseIn)%item(2)%string) &
+                                    // '@' &
+                                    // trim(NoiseSynapsesOut%item(synapseIn)%item(3)%string) &
+                                    // '|' &
+                                    // trim(NoiseSynapsesOut%item(synapseIn)%item(4)%string)
+                                    
+                            paramChar = conf%parameterSet(paramTag, synapticNoisePools(poolOut)%pool, 0)
+                            read(paramChar, *)delay
+                                    
+                            paramTag = 'dec:Noise>' &
+                                        // trim(NoiseSynapsesOut%item(synapseIn)%item(1)%string) &
+                                        // '-' &
+                                        // trim(NoiseSynapsesOut%item(synapseIn)%item(2)%string) &
+                                        // '@' &
+                                        // trim(NoiseSynapsesOut%item(synapseIn)%item(3)%string) &
+                                        // '|' &
+                                        // trim(NoiseSynapsesOut%item(synapseIn)%item(4)%string)
+                            paramChar = conf%parameterSet(paramTag, synapticNoisePools(poolOut)%pool, 0)
+                            if (trim(paramChar)=='inf') then
+                                declineFactor = 1e6
+                            else 
+                                read(paramChar, *)declineFactor
+                            end if
+                                
+                            paramTag = 'dyn:Noise>'&
+                                        // trim(NoiseSynapsesOut%item(synapseIn)%item(1)%string) &
+                                        // '-' &
+                                        // trim(NoiseSynapsesOut%item(synapseIn)%item(2)%string) &
+                                        // '@' &
+                                        // trim(NoiseSynapsesOut%item(synapseIn)%item(3)%string) &
+                                        // '|' &
+                                        // trim(NoiseSynapsesOut%item(synapseIn)%item(4)%string)
+                            dyn = conf%parameterSet(paramTag, synapticNoisePools(poolOut)%pool, 0)
+                                    
+                            if (trim(dyn).ne.'None') then
+                                paramTag = 'var:Noise>'&
+                                        // trim(NoiseSynapsesOut%item(synapseIn)%item(1)%string)&
+                                        // '-' &
+                                        // trim(NoiseSynapsesOut%item(synapseIn)%item(2)%string)&
+                                        // '@' &
+                                        // trim(NoiseSynapsesOut%item(synapseIn)%item(3)%string)&
+                                        // '|' &
+                                        // trim(NoiseSynapsesOut%item(synapseIn)%item(4)%string)
+                                        
+                                paramChar = conf%parameterSet(paramTag,synapticNoisePools(poolOut)%pool, 0)
+                                read(paramChar, *)var
+
+                                paramTag = 'tau:Noise>'&
+                                            // trim(NoiseSynapsesOut%item(synapseIn)%item(1)%string)&
+                                            // '-' &
+                                            // trim(NoiseSynapsesOut%item(synapseIn)%item(2)%string)&
+                                            // '@' &
+                                            // trim(NoiseSynapsesOut%item(synapseIn)%item(3)%string)&
+                                            // '|' &
+                                            // trim(NoiseSynapsesOut%item(synapseIn)%item(4)%string)
+                                paramChar = conf%parameterSet(paramTag,synapticNoisePools(poolOut)%pool, 0)
+                                read(paramChar, *)tau
+                            else
+                                var = 0.0
+                                tau = 1e6
+                            end if
+                            ! Iterate over the total of elements in the group receiving noise
+                            do unitOut = 1, size(synapticNoisePools(poolOut)%unit)
+                                unitIn = unitOut
+                                ! Iterate over the compartments
+                                do compartmentIn = 1, size(noiseTarget(poolIn)%unit(unitIn)%Compartments)
+                                    if ((trim(NoiseSynapsesOut%item(synapseIn)%item(1)%string)==&
+                                        trim(noiseTarget(poolIn)%pool)) .and.&
+                                        !(trim(NoiseSynapsesOut%item(synapseIn)%item(2)%string)==&
+                                        !trim(noiseTarget(poolIn)%unit(unitIn)%neuronKind)) .and.&
+                                        (trim(NoiseSynapsesOut%item(synapseIn)%item(3)%string)==&
+                                        trim(noiseTarget(poolIn)%unit(unitIn)%&
+                                                Compartments(compartmentIn)%compKind))) then
+                                        
+                                        ! Iterate over the synapses in the compartment (usually 2, exc/inh)
+                                        do synapseComp = 1, size(noiseTarget(poolIn)%unit(unitIn)%&
+                                                            Compartments(compartmentIn)%SynapsesIn)                                                    
+                                            if (NoiseSynapsesOut%item(synapseIn)%item(4)%string==&
+                                                noiseTarget(poolIn)%unit(unitIn)%&
+                                                Compartments(compartmentIn)%SynapsesIn(synapseComp)%synapseKind) then
+                                                if (declineFactor<1e5) then
+                                                    neuronsDistance = abs(noiseTarget(poolIn)%&
+                                                                    unit(unitIn)%position_mm&
+                                                                    - synapticNoisePools(poolOut)%unit(unitOut)%&
+                                                                    position_mm)
+                                                    weight = declineFactor / (declineFactor + neuronsDistance**2)
+                                                    gmax = gmax * weight
+                                                end if
+                                                call noiseTarget(poolIn)%unit(unitIn)%&
+                                                Compartments(compartmentIn)%SynapsesIn(synapseComp)%&
+                                                addConductance(gmax, delay, dyn, var, tau)
+                                                
+                                                if (allocated(synapticNoisePools(poolOut)%&
+                                                    unit(unitOut)%transmitSpikesThroughSynapses)) then
+                                                    
+                                                    
+                                                    allocate(tempTransmitSpikes(size(synapticNoisePools(poolOut)%&
+                                                        unit(unitOut)%transmitSpikesThroughSynapses)))
+                                                    
+                                                    do j = 1, size(tempTransmitSpikes)
+                                                        call tempTransmitSpikes(j)%&
+                                                        assignSynapse(synapticNoisePools(poolOut)%&
+                                                        unit(unitOut)%transmitSpikesThroughSynapses(j)%synapse)
+                                                    end do
+                                                    
+                                                    
+                                                    deallocate(synapticNoisePools(poolOut)%&
+                                                            unit(unitOut)%transmitSpikesThroughSynapses)
+                                                    
+                                                    allocate(synapticNoisePools(poolOut)%&
+                                                            unit(unitOut)%&
+                                                            transmitSpikesThroughSynapses(size(tempTransmitSpikes)+1))
+                                                    
+                                                    do j = 1, size(tempTransmitSpikes)
+                                                        call synapticNoisePools(poolOut)%unit(unitOut)%&
+                                                        transmitSpikesThroughSynapses(j)%&
+                                                        assignSynapse(tempTransmitSpikes(j)%synapse)
+                                                    end do
+
+                                                    synapticNoisePools(poolOut)%unit(unitOut)%&
+                                                            transmitSpikesThroughSynapses(size(tempTransmitSpikes)+1)=&
+                                                            SynapsePointer()        
+
+                                                    call synapticNoisePools(poolOut)%unit(unitOut)%&
+                                                    transmitSpikesThroughSynapses(size(tempTransmitSpikes)+1)%&
+                                                    assignSynapse(noiseTarget(poolIn)%unit(unitIn)%&
+                                                    Compartments(compartmentIn)%SynapsesIn(synapseComp))
+                                                    
+                                                    deallocate(tempTransmitSpikes)
+                                                else
+                                                    allocate(synapticNoisePools(poolOut)%&
+                                                            unit(unitOut)%&
+                                                            transmitSpikesThroughSynapses(1))
+                                                    synapticNoisePools(poolOut)%unit(unitOut)%&
+                                                            transmitSpikesThroughSynapses(1)=&
+                                                            SynapsePointer()
+
+                                                    call synapticNoisePools(poolOut)%unit(unitOut)%&
+                                                            transmitSpikesThroughSynapses(1)%&
+                                                            assignSynapse(noiseTarget(poolIn)%unit(unitIn)%&
+                                                            Compartments(compartmentIn)%&
+                                                            SynapsesIn(synapseComp))
+                                                end if            
+                                                
+                                                newIndex = size(noiseTarget(poolIn)%&
+                                                    unit(unitIn)%Compartments(compartmentIn)%&
+                                                    SynapsesIn(synapseComp)%gmax_muS)
+                                                
+                                                call integerAddToList(synapticNoisePools(poolOut)%&
+                                                unit(unitOut)%indicesOfSynapsesOnTarget,newIndex)
+                                                numberOfSynapticNoise = numberOfSynapticNoise + 1
+                                            end if
+                                        end do                                            
+                                    end if
+                                end do
+                            end do
+                        end if
+                    end do
+                    class default
+                        print *, 'No pool declared for noise'
+                    end select
                 end do
             end if
 

@@ -64,11 +64,12 @@ program DynamicProperties
     !character(len=3), parameter :: nS = '75', nFR = '75', &
     !    nFF = '150', nRC = '600', nCM = '400', nMN = '300' ! nS+nFR+nFF
     character(len=3), parameter :: nS = '1', nFR = '1', &
-        nFF = '2', nRC = '12', nCM = '100', nMN = '4' ! nS+nFR+nFF
+        nFF = '2', nRC = '17', nCM = '100', nMN = '4' ! nS+nFR+nFF
 
     call init_random_seed()
 
     conf = Configuration(filename)
+    conf%simDuration_ms = 1000
 
     !Changing configuration file
     paramTag = 'Number_CMExt'
@@ -383,7 +384,7 @@ program DynamicProperties
     value2 = ''
     call conf%changeconfigurationparameter(paramtag, value1, value2)
     paramtag = 'NoiseFunction_RC_ext'
-    value1 = '60'
+    value1 = '0'
     value2 = ''
     call conf%changeconfigurationparameter(paramtag, value1, value2)
     ! Dynamics of MN-RC synapse
@@ -415,11 +416,11 @@ program DynamicProperties
     value2 = ''
     call conf%changeConfigurationParameter(paramTag, value1, value2)
     paramTag = 'NoiseFunction_MG'
-    value1 = '0'
+    value1 = '200'
     value2 = ''
     call conf%changeConfigurationParameter(paramTag, value1, value2)
     paramTag = 'gmax:Noise>MG-@dendrite|excitatory'
-    value1 = '0.95'
+    value1 = '10'
     value2 = ''
     call conf%changeConfigurationParameter(paramTag, value1, value2)
 
