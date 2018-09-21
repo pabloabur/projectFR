@@ -695,8 +695,8 @@ module MotorUnitClass
                 end if
             end do
         end if
-        
-        
+
+        if (allocated(numberOfSpikesUntilt)) deallocate(numberOfSpikesUntilt)        
     end function
 
     subroutine reset(self)

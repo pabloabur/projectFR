@@ -27,7 +27,7 @@ module MuscleNoHillClass
     real(wp), parameter :: pi = 4 * atan(1.0_wp)    
     public :: MuscleNoHill
 
-    type :: MuscleNoHill
+    type MuscleNoHill
         type(Configuration), pointer :: conf
         character(len = 6) :: pool
         integer :: MUnumber, MUtypeInumber

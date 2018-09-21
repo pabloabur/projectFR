@@ -67,6 +67,8 @@ module QueueClass
                 self%item(1) = newItem
                 self%endQueue = 1
             end if
+
+            if (allocated(tempList)) deallocate(tempList)
         end subroutine
 
         integer function popleft(self) result(item)
@@ -85,6 +87,9 @@ module QueueClass
             else
                 deallocate(self%item)
             end if
+
+            if (allocated(tempList)) deallocate(tempList)
+
         end function
 
         subroutine remove(self, removeItem)
@@ -117,6 +122,11 @@ module QueueClass
                 self%endQueue = self%endQueue - 1
                 if (self%endQueue == 0) call self%clear()
             end if
+
+            if (allocated(tempList1)) deallocate(tempList1)
+            if (allocated(tempList2)) deallocate(tempList2)
+
+
         end subroutine
 
         subroutine extend(self, newItens)
@@ -147,6 +157,9 @@ module QueueClass
                 self%item = newItens
                 self%endQueue = sizeNewList
             end if
+
+            if (allocated(tempList)) deallocate(tempList)
+
         end subroutine
 
         subroutine clear(self)

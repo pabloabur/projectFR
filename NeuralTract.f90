@@ -141,10 +141,15 @@ module NeuralTractClass
         subroutine reset(self)
             class(NeuralTract), intent(inout) :: self
             integer :: i
+            
             do i = 1, self%Number
-                call self%unit(i)%reset()    
+                call self%unit(i)%reset()
             end do
+            
 
             if (allocated(self%poolTerminalSpikes)) deallocate(self%poolTerminalSpikes)
+
+            print *, 'Neural tract reseted'
+            
         end subroutine
 end module NeuralTractClass

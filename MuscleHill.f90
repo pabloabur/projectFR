@@ -572,7 +572,7 @@ module MuscleHillClass
             real(wp), intent(in) :: ankleAngle
 
             self%musculoTendonLength_m(self%timeIndex) = (self%m0 + self%m1 * ankleAngle + self%m2 * (ankleAngle ** 2) + &
-                                                        self%m3 * (ankleAngle ** 3) + self%m4 * (ankleAngle ** 4))
+                                                          self%m3 * (ankleAngle ** 3) + self%m4 * (ankleAngle ** 4))
                                                                 
         end subroutine
 
@@ -583,7 +583,7 @@ module MuscleHillClass
             real(wp), intent(in) :: ankleAngle
 
             self%momentArm_m(self%timeIndex) = (self%n0 + self%n1 * ankleAngle + self%n2 * (ankleAngle ** 2) + &
-                                                        self%n3 * (ankleAngle ** 3) + self%n4 * (ankleAngle ** 4))
+                                                self%n3 * (ankleAngle ** 3) + self%n4 * (ankleAngle ** 4))
         end subroutine
 
         subroutine reset(self)
@@ -607,7 +607,7 @@ module MuscleHillClass
             self%activationTypeII(:) = 0.0
             self%musculoTendonLength_m(:) = 0.0
             self%momentArm_m(:) = 0.0
-            self%lengthNorm = 0.0
+            
             self%velocityNorm = 0.0
             self%forceNorm = 0.0
             self%tendonForceNorm = 0.0
@@ -615,6 +615,8 @@ module MuscleHillClass
             paramTag = 'initialMuscleLength:' // trim(self%pool)
             paramChar = self%conf%parameterSet(paramTag, self%pool, 0)
             read(paramChar, *)self%length_m(1)
+
+            self%lengthNorm = self%length_m(1)/self%optimalLength_m
 
             self%pennationAngle_rad(1) = self%computePennationAngle()
 

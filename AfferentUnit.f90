@@ -361,7 +361,19 @@ module AfferentUnitClass
             ! ## Build synapses       
             
             init_AfferentUnit%SynapsesOut = CharacterMatrix()
+
+            if (allocated(gCoupling_muS)) deallocate(gCoupling_muS) 
+            if (allocated(gLeak)) deallocate(gLeak)
+            if (allocated(capacitance_nF)) deallocate(capacitance_nF)
+            if (allocated(EqPot)) deallocate(EqPot)
+            if (allocated(IPump)) deallocate(IPump)            
+            if (allocated(compLength)) deallocate(compLength)           
+            if (allocated(GC)) deallocate(GC)           
+            if (allocated(GL)) deallocate(GL)           
+
             
+
+
         end function 
 
         subroutine atualizeAfferentUnit(self, t, proprioceptorFR) 

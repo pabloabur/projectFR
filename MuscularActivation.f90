@@ -173,8 +173,7 @@ module MuscularActivationClass
             do i = 1, init_MuscularActivation%MUnumber     
                 init_MuscularActivation%bSat(i) = init_MuscularActivation%unit(i)%bSat
             end do
-                
-            
+                       
             ! ## The non-saturated activation signal of all motor units (see actMatrix explanation).
             allocate(init_MuscularActivation%activation_Sat(init_MuscularActivation%MUnumber))
             init_MuscularActivation%activation_Sat(:) = 0.0
@@ -202,25 +201,25 @@ module MuscularActivationClass
                 self%an(3*(i-1)+1) = self%activation_nonSat(i)
                 if (allocated(self%unit(i)%terminalSpikeTrain)) then                    
                     sizeTrain = size(self%unit(i)%terminalSpikeTrain)                    
-                    if (abs(t - self%unit(i)%terminalSpikeTrain(sizeTrain)) < 1e-6) then   
+                    if (abs(t - self%unit(i)%terminalSpikeTrain(sizeTrain)) < 1e-6) then
                         self%an(3*(i-1)+3) = self%diracDeltaValue(i)
                     else
-                        self%an(3*(i-1)+3) =  0.0
+                        self%an(3*(i-1)+3) = 0.0
                     end if   
                 else
-                    self%an(3*(i-1)+3) =  0.0
+                    self%an(3*(i-1)+3) = 0.0
                 end if
             end do  
 
              ! Create a Sparse Matrix for performance purposes (init_MotorUnitPool%GSp)
-            stat = mkl_sparse_d_create_csr(self%ActMatrixSp, &
-                                           self%spIndexing, &
-                                           self%spRows, &
-                                           self%spCols, &
-                                           self%spRowStart, &
-                                           self%spRowEnd, &
-                                           self%spColIdx, &
-                                           self%spValues)
+            ! stat = mkl_sparse_d_create_csr(self%ActMatrixSp, &
+            !                                self%spIndexing, &
+            !                                self%spRows, &
+            !                                self%spCols, &
+            !                                self%spRowStart, &
+            !                                self%spRowEnd, &
+            !                                self%spColIdx, &
+            !                                self%spValues)
           
 
             stat = mkl_sparse_d_mv(self%spOperation, &

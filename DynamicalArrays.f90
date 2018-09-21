@@ -21,7 +21,13 @@
               clist(isize+1) = element
 
               deallocate(list)
-              call move_alloc(clist, list)
+              
+              allocate(list(isize+1))
+              
+              do i=1,isize + 1
+                list(i) = clist(i)
+              end do
+              deallocate(clist)
 
           else
               allocate(list(1))
@@ -45,13 +51,18 @@
               isize = size(list)
               allocate(clist(isize+1))
               do i=1,isize          
-              clist(i) = list(i)
+                clist(i) = list(i)
               end do
+
               clist(isize+1) = element
 
               deallocate(list)
-              call move_alloc(clist, list)
-
+              allocate(list(isize+1))
+              
+              do i=1,isize + 1
+                list(i) = clist(i)
+              end do
+              deallocate(clist)
           else
               allocate(list(1))
               list(1) = element

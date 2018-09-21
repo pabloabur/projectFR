@@ -239,13 +239,23 @@ module InterneuronPoolClass
                 end do
             end do
 
+            ! stat = mkl_sparse_d_create_csr(self%GSp, &
+            !                                self%spIndexing, &
+            !                                self%spRows, &
+            !                                self%spCols, &
+            !                                self%spRowStart, &
+            !                                self%spRowEnd, &
+            !                                self%spColIdx, &
+            !                                self%spValues)
+
+
             stat = mkl_sparse_d_mv(self%spOperation, &
-                               self%spAlpha, &
-                               self%GSp, &
-                               self%spDescr, &
-                               V, &
-                               self%spBeta, &
-                               matInt)
+                                   self%spAlpha, &
+                                   self%GSp, &
+                                   self%spDescr, &
+                                   V, &
+                                   self%spBeta, &
+                                   matInt)
 
             !matInt = matmul(self%G, V)
             
@@ -294,7 +304,7 @@ module InterneuronPoolClass
         class(InterneuronPool) , intent(inout) :: self
         integer :: i
 
-        deallocate(self%poolSomaSpikes)
+        if (allocated(self%poolSomaSpikes)) deallocate(self%poolSomaSpikes)
 
         do i = 1, self%Nnumber
             call self%unit(i)%reset()
@@ -305,6 +315,9 @@ module InterneuronPoolClass
                          i*self%unit(i)%compNumber) = &
                          self%unit(i)%v_mV
         end do
+
+        print *, 'Interneuron pool reseted'
+        ! read(*,*)
     end subroutine
 
 end module InterneuronPoolClass
