@@ -63,13 +63,13 @@ program DynamicProperties
         declineFactorMN = real(1, wp)/6, declineFactorRC = real(3.5, wp)/3
     !character(len=3), parameter :: nS = '75', nFR = '75', &
     !    nFF = '150', nRC = '600', nCM = '400', nMN = '300' ! nS+nFR+nFF
-    character(len=3), parameter :: nS = '1', nFR = '1', &
-        nFF = '2', nRC = '17', nCM = '100', nMN = '4' ! nS+nFR+nFF
+    character(len=3), parameter :: nS = '3', nFR = '3', &
+        nFF = '6', nRC = '24', nCM = '400', nMN = '12' ! nS+nFR+nFF
 
     call init_random_seed()
 
     conf = Configuration(filename)
-    conf%simDuration_ms = 1000
+    conf%simDuration_ms = 500
 
     !Changing configuration file
     paramTag = 'Number_CMExt'
@@ -416,11 +416,11 @@ program DynamicProperties
     value2 = ''
     call conf%changeConfigurationParameter(paramTag, value1, value2)
     paramTag = 'NoiseFunction_MG'
-    value1 = '200'
+    value1 = '0'
     value2 = ''
     call conf%changeConfigurationParameter(paramTag, value1, value2)
     paramTag = 'gmax:Noise>MG-@dendrite|excitatory'
-    value1 = '10'
+    value1 = '5'
     value2 = ''
     call conf%changeConfigurationParameter(paramTag, value1, value2)
 
@@ -438,7 +438,7 @@ program DynamicProperties
     value2 = ''
     call conf%changeConfigurationParameter(paramTag, value1, value2)
     GammaOrder = 7
-    FR = 0!80 once made them fire at 22-28
+    FR = 60!80 once made them fire at 22-28
 
     ! Removing influence of stimulus (required)
     paramTag = 'stimIntensity_PTN'
