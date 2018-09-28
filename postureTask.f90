@@ -74,8 +74,8 @@ module postureTaskClass
             allocate(init_postureTask%ankleOmega_rad_s(timeLength))
             init_postureTask%ankleOmega_rad_s(:) = 0.0
 
-            init_postureTask%mass = 50.0
-            init_postureTask%height = 1.0
+            init_postureTask%mass = 60.0
+            init_postureTask%height = 0.85
 
             init_postureTask%momentOfInertia = (init_postureTask%mass*init_postureTask%height**2)/3.0
 
@@ -110,7 +110,7 @@ module postureTaskClass
             
             call self%computeTorque(t)
 
-            if (t > 2000.0) then
+            if (t > 4000.0) then
                 dthetadt = self%ankleOmega_rad_s(timeIndex)
                 domegadt = self%ankleTorque_Nm(timeIndex)/self%momentOfInertia
                 self%ankleOmega_rad_s(timeIndex + 1) = self%ankleOmega_rad_s(timeIndex) + &

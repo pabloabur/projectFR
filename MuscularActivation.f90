@@ -212,14 +212,14 @@ module MuscularActivationClass
             end do  
 
              ! Create a Sparse Matrix for performance purposes (init_MotorUnitPool%GSp)
-            ! stat = mkl_sparse_d_create_csr(self%ActMatrixSp, &
-            !                                self%spIndexing, &
-            !                                self%spRows, &
-            !                                self%spCols, &
-            !                                self%spRowStart, &
-            !                                self%spRowEnd, &
-            !                                self%spColIdx, &
-            !                                self%spValues)
+            stat = mkl_sparse_d_create_csr(self%ActMatrixSp, &
+                                           self%spIndexing, &
+                                           self%spRows, &
+                                           self%spCols, &
+                                           self%spRowStart, &
+                                           self%spRowEnd, &
+                                           self%spColIdx, &
+                                           self%spValues)
           
 
             stat = mkl_sparse_d_mv(self%spOperation, &
@@ -235,8 +235,8 @@ module MuscularActivationClass
             ! \f{equation}{
             ! a_{sat} = \frac{1-e^{-b.a_{nSat}}}{1+e^{-b.a_{nSat}}}
             ! \f}
-            self%activation_Sat(:) = 2.0 / (1.0 + exp(self%activation_nonSat)) - 1.0     
-                 
+            self%activation_Sat(:) = 2.0 / (1.0 + exp(self%activation_nonSat)) - 1.0
+            stat = mkl_sparse_destroy(self%ActMatrixSp)
         end subroutine
 
         subroutine reset(self)
