@@ -27,6 +27,7 @@ module MotorUnitPoolClass
     use MuscleNoHillClass
     use MuscleHillClass
     use MuscleSpindleClass
+    use GolgiTendonOrganClass
     use mkl_spblas
     use, intrinsic :: iso_c_binding, only: c_int, c_double
     implicit none
@@ -54,6 +55,7 @@ module MotorUnitPoolClass
         type(MuscleNoHill) :: NoHillMuscle
         type(MuscleHill) :: HillMuscle
         type(MuscleSpindle) :: spindle
+        type(GolgiTendonOrgan) :: GTO
         character(len=80) :: hillModel
         type(matrix_descr) :: spDescr
         integer(c_int) :: spIndexing, spRows, spCols, spNumberOfElements, spOperation
@@ -93,9 +95,7 @@ module MotorUnitPoolClass
         integer(c_int) :: i, j
         character(len = 2) ::  neuronKind
         integer :: simDurationSteps, lastIndex, stat
-        
-
-        
+               
         init_MotorUnitPool%t = 0.0
 
         ! ## Indicates that is Motor Unit pool.
@@ -267,6 +267,8 @@ module MotorUnitPoolClass
         ! Spindle
         init_MotorUnitPool%spindle = MuscleSpindle(init_MotorUnitPool%conf, init_MotorUnitPool%pool)
 
+        ! GTO
+        init_MotorUnitPool%GTO = GolgiTendonOrgan(init_MotorUnitPool%conf, init_MotorUnitPool%pool)
 
         ! ##
         print '(A)', 'Motor Unit Pool ' // trim(pool) // ' built'
@@ -294,14 +296,14 @@ module MotorUnitPoolClass
         end do 
 
         ! Create a Sparse Matrix for performance purposes (init_MotorUnitPool%GSp)
-        ! stat = mkl_sparse_d_create_csr(self%GSp, &
-        !                                self%spIndexing, &
-        !                                self%spRows, &
-        !                                self%spCols, &
-        !                                self%spRowStart, &
-        !                                self%spRowEnd, &
-        !                                self%spColIdx, &
-        !                                self%spValues)      
+        stat = mkl_sparse_d_create_csr(self%GSp, &
+                                       self%spIndexing, &
+                                       self%spRows, &
+                                       self%spCols, &
+                                       self%spRowStart, &
+                                       self%spRowEnd, &
+                                       self%spColIdx, &
+                                       self%spValues)
         
         stat = mkl_sparse_d_mv(self%spOperation, &
                                self%spAlpha, &
@@ -311,13 +313,14 @@ module MotorUnitPoolClass
                                self%spBeta, &
                                matInt)
         
-        ! matInt = matmul(self%G, V)        
+        ! matInt = matmul(self%G, V)
         
         dVdt = (self%iIonic + matInt + self%iInjected &
-                + self%EqCurrent_nA) * self%capacitanceInv       
+                + self%EqCurrent_nA) * self%capacitanceInv
 
         if (allocated(matInt)) deallocate(matInt)
 
+        stat = mkl_sparse_destroy(self%Gsp)
     end function
 
     subroutine atualizeMotorUnitPool(self, t, dynGamma, statGamma)
@@ -334,7 +337,7 @@ module MotorUnitPoolClass
         real(wp), dimension(:), allocatable :: k1, k2, k3, k4
         integer :: i
         real(wp) :: vmax, vmin
-        real(wp) :: length, velocity, acceleration
+        real(wp) :: length, velocity, acceleration, tendonForce
         
         allocate(k1(self%totalNumberOfCompartments))
         allocate(k2(self%totalNumberOfCompartments))
@@ -342,44 +345,47 @@ module MotorUnitPoolClass
         allocate(k4(self%totalNumberOfCompartments))
         
         vmin = -30.0
-        vmax = 120.0      
+        vmax = 120.0
 
-        k1 = self%dVdt(t, self%v_mV)        
+        k1 = self%dVdt(t, self%v_mV)
         k2 = self%dVdt(t + self%conf%timeStepByTwo_ms, self%v_mV + self%conf%timeStepByTwo_ms * k1)
         k3 = self%dVdt(t + self%conf%timeStepByTwo_ms, self%v_mV + self%conf%timeStepByTwo_ms * k2)
         k4 = self%dVdt(t + self%conf%timeStep_ms, self%v_mV + self%conf%timeStep_ms * k3)
-        
-        
-        
+                
         self%v_mV = self%v_mV + self%conf%timeStepBySix_ms * (k1+ 2*k2 + 2*k3 + k4)
         
-        self%v_mV = merge(self%v_mV, vmax, self%v_mV.lt.vmax)
-        self%v_mV = merge(self%v_mV, vmin, self%v_mV.gt.vmin)
+        self%v_mV = merge(self%v_mV, vmax, self%v_mV < vmax)
+        self%v_mV = merge(self%v_mV, vmin, self%v_mV > vmin)
         
-        do i = 1, self%MUnumber 
+        do i = 1, self%MUnumber
             call self%unit(i)%atualizeMotorUnit(t, self%v_mV((i-1)*self%unit(i)%compNumber+1:i*self%unit(i)%compNumber))
         end do
         
         self%Activation%unit => self%unit(:)
         
         call self%Activation%atualizeActivationSignal(t)
-        if (trim(self%hillModel).eq.'No') then 
+        if (trim(self%hillModel).eq.'No') then
             call self%NoHillMuscle%atualizeForce(self%Activation%activation_Sat)
             length = self%NoHillMuscle%lengthNorm
             velocity = self%NoHillMuscle%velocityNorm
             acceleration = self%NoHillMuscle%accelerationNorm
+            tendonForce = self%NoHillMuscle%force(nint(t/self%conf%timeStep_ms))
         else
             call self%HillMuscle%atualizeForce(self%Activation%activation_Sat)
             length = self%HillMuscle%lengthNorm
             velocity = self%HillMuscle%velocityNorm
             acceleration = self%HillMuscle%accelerationNorm
+            tendonForce = self%HillMuscle%tendonForce_N(nint(t/self%conf%timeStep_ms))
         end if
-
         
         call self%spindle%atualizeMuscleSpindle(t, length,&
                                                 velocity, &
                                                 acceleration,& 
-                                                dynGamma, statGamma)
+                                                dynGamma, &
+                                                statGamma)
+
+        call self%GTO%atualizeGolgiTendonOrgan(t, tendonForce)
+
         deallocate(k1)
         deallocate(k2)
         deallocate(k3)
@@ -441,9 +447,9 @@ module MotorUnitPoolClass
                 endInd = initInd + numberOfNewSpikesSoma(i) - 1
                 self%poolSomaSpikes(initInd:endInd,1) = self%unit(i)%somaSpikeTrain
                 self%poolSomaSpikes(initInd:endInd,2) = i
-                initInd = endInd+1                
+                initInd = endInd + 1                
             end if
-        end do 
+        end do
 
         initInd = 1
         do i = 1, self%MUnumber
@@ -451,9 +457,9 @@ module MotorUnitPoolClass
                 endInd = initInd + numberOfNewSpikesLastComp(i) - 1
                 self%poolLastCompSpikes(initInd:endInd,1) = self%unit(i)%lastCompSpikeTrain
                 self%poolLastCompSpikes(initInd:endInd,2) = i
-                initInd = endInd+1                
+                initInd = endInd + 1
             end if
-        end do 
+        end do
     end subroutine
 
     real(wp) function getMotorUnitPoolInstantEMG(self, t) result(emg)

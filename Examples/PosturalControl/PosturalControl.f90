@@ -18,7 +18,7 @@ program PosturalControl
     real(wp) :: tf
     integer :: timeLength
     integer :: i, j
-    real(wp), dimension(:), allocatable :: t, gII_V_mV, IaIn_V_mV
+    real(wp), dimension(:), allocatable :: t, gII_V_mV, IaIn_V_mV,  IbIn_V_mV, IbFR
     real(wp) :: tic, toc
     type(gpf) :: gp
     real(wp) :: FR
@@ -51,8 +51,10 @@ program PosturalControl
     t = [(dt*(i-1), i=1, timeLength)]
     allocate(gII_V_mV(timeLength))
     allocate(IaIn_V_mV(timeLength))
-    
-    FR = 23.0
+    allocate(IbIn_V_mV(timeLength))
+    allocate(IbFR(timeLength))
+
+    FR = 20.0
     GammaOrder = 25
     
     filename = 'GammaFallTime.txt'
@@ -60,7 +62,7 @@ program PosturalControl
 
     subject = 1
     do while (subject <= 10)
-        allocate(afferentPools(8))
+        allocate(afferentPools(12))
     
         pool = 'Ia'
         muscle = 'SOL'
@@ -94,6 +96,22 @@ program PosturalControl
         muscle = 'TA'
         afferentPools(8) = AfferentPool(conf, pool, muscle)
 
+        pool = 'Ib'
+        muscle = 'SOL'
+        afferentPools(9) = AfferentPool(conf, pool, muscle)
+
+        pool = 'Ib'
+        muscle = 'MG'
+        afferentPools(10) = AfferentPool(conf, pool, muscle)
+
+        pool = 'Ib'
+        muscle = 'LG'
+        afferentPools(11) = AfferentPool(conf, pool, muscle)
+
+        pool = 'Ib'
+        muscle = 'TA'
+        afferentPools(12) = AfferentPool(conf, pool, muscle)
+
         allocate(neuralTractPools(1))
         pool = 'CMExt'
         neuralTractPools(1) = NeuralTract(conf, pool)
@@ -113,7 +131,7 @@ program PosturalControl
 
         body = postureTask(conf, motorUnitPools)
         
-        allocate(interneuronPools(2))
+        allocate(interneuronPools(3))
         pool = 'gII'
         group = 'ext'
         interneuronPools(1) = InterneuronPool(conf, pool, group)
@@ -121,6 +139,10 @@ program PosturalControl
         pool = 'IaIn'
         group = 'ext'
         interneuronPools(2) = InterneuronPool(conf, pool, group)
+
+        pool = 'IbIn'
+        group = 'ext'
+        interneuronPools(3) = InterneuronPool(conf, pool, group)
 
         synapticNoisePools = synapseFactory(conf, neuralTractPools, &
                                             motorUnitPools, &
@@ -136,6 +158,11 @@ program PosturalControl
         print '(a, F15.6)', 'gleak', interneuronPools(2)%unit(1)%Compartments(1)%gLeak_muS
         print '(a, F15.6)', 'diameter', interneuronPools(2)%unit(1)%Compartments(1)%diameter_mum
         print '(a, F15.6)', 'capacitance', interneuronPools(2)%unit(1)%Compartments(1)%capacitance_nF
+
+        print '(a, F15.6)', 'length', interneuronPools(3)%unit(1)%Compartments(1)%length_mum
+        print '(a, F15.6)', 'gleak', interneuronPools(3)%unit(1)%Compartments(1)%gLeak_muS
+        print '(a, F15.6)', 'diameter', interneuronPools(3)%unit(1)%Compartments(1)%diameter_mum
+        print '(a, F15.6)', 'capacitance', interneuronPools(3)%unit(1)%Compartments(1)%capacitance_nF
         call random_number(dynGamma)
         dynGamma = 28+8*dynGamma
         call random_number(statGamma)
@@ -158,13 +185,19 @@ program PosturalControl
                 call motorUnitPools(4)%atualizeMotorUnitPool(t(i), 0.0_wp, 0.0_wp)
                 call interneuronPools(1)%atualizeInterneuronPool(t(i))
                 call interneuronPools(2)%atualizeInterneuronPool(t(i))
+                call interneuronPools(3)%atualizeInterneuronPool(t(i))
                 gII_V_mV(i) = interneuronPools(1)%v_mV(1)
                 IaIn_V_mV(i) = interneuronPools(2)%v_mV(1)
+                IbIn_V_mV(i) = interneuronPools(3)%v_mV(1)
                 call body%atualizeBody(t(i))
                 do j = 1, 4
                     call afferentPools(j)%atualizeAfferentPool(t(i), motorUnitPools(j)%spindle%IaFR_Hz)
                     call afferentPools(j+4)%atualizeAfferentPool(t(i), motorUnitPools(j)%spindle%IIFR_Hz)
+                    call afferentPools(j+8)%atualizeAfferentPool(t(i), &
+                                motorUnitPools(j)%GTO%IbFR_Hz)
+                    !print *, motorUnitPools(j)%GTO%IbFR_Hz
                 end do
+                IbFR(i) = motorUnitPools(2)%GTO%IbFR_Hz
                 if (abs(body%ankleAngle_rad(i)) > pi/6.0) then
                     print '(A, 1X, F15.6, 1X, A)', 'Body fell after ', t(i)/1000.0, ' seconds'
                     continueFlag = .true.
@@ -207,15 +240,26 @@ program PosturalControl
             ! call gp%plot(afferentPools(5)%poolTerminalSpikes(:,1), &
             ! afferentPools(5)%poolTerminalSpikes(:,2), 'with points pt 5 lc rgb "#0008B0"')
             
-            ! call gp%title('Membrane Potential gII')
-            ! call gp%xlabel('t (ms))')
-            ! call gp%ylabel('V (mV)')
-            ! call gp%plot(t, gII_V_mV, 'with line lw 2 lc rgb "#0008B0"')
+            call gp%title('Membrane Potential gII')
+            call gp%xlabel('t (ms))')
+            call gp%ylabel('V (mV)')
+            call gp%plot(t, gII_V_mV, 'with line lw 2 lc rgb "#0008B0"')
 
-            ! call gp%title('Membrane Potential IaIn')
-            ! call gp%xlabel('t (ms))')
-            ! call gp%ylabel('V (mV)')
-            ! call gp%plot(t, IaIn_V_mV, 'with line lw 2 lc rgb "#0008B0"')
+            call gp%title('Membrane Potential IaIn')
+            call gp%xlabel('t (ms))')
+            call gp%ylabel('V (mV)')
+            call gp%plot(t, IaIn_V_mV, 'with line lw 2 lc rgb "#0008B0"')
+
+            call gp%title('FR Ib mg')
+            call gp%xlabel('t (ms))')
+            call gp%ylabel('FR (Hz)')
+            call gp%plot(t, IbFR, 'with line lw 2 lc rgb "#0008B0"')
+
+            call gp%title('Membrane Potential IbIn')
+            call gp%xlabel('t (ms))')
+            call gp%ylabel('V (mV)')
+            call gp%plot(t, IbIn_V_mV, 'with line lw 2 lc rgb "#0008B0"')
+
 
             ! call gp%title('MN spike instants at the terminal')
             ! call gp%xlabel('t (s))')
@@ -228,33 +272,42 @@ program PosturalControl
             ! call gp%ylabel('Force (N)')
             ! call gp%plot(t, motorUnitPools(1)%HillMuscle%force, 'with line lw 2 lc rgb "#0008B0"')
 
-            ! call gp%title('Ankle torque')
-            ! call gp%xlabel('t (ms))')
-            ! call gp%ylabel('torque (N.m)')
-            ! call gp%plot(t, body%ankleTorque_Nm, 'with line lw 2 lc rgb "#0008B0"')
+            call gp%title('soleus force')
+            call gp%xlabel('t (ms))')
+            call gp%ylabel('torque (N.m)')
+            call gp%plot(t, motorUnitPools(2)%HillMuscle%tendonForce_N, 'with line lw 2 lc rgb "#0008B0"')
 
-            ! call gp%title('Ankle angle')
-            ! call gp%xlabel('t (ms))')
-            ! call gp%ylabel('angle (degree)')
-            ! call gp%plot(t, body%ankleAngle_rad*180.0/pi, 'with line lw 2 lc rgb "#0008B0"')
+            call gp%title('Ankle torque')
+            call gp%xlabel('t (ms))')
+            call gp%ylabel('torque (N.m)')
+            call gp%plot(t, body%ankleTorque_Nm, 'with line lw 2 lc rgb "#0008B0"')
+
+            call gp%title('Ankle angle')
+            call gp%xlabel('t (ms)')
+            call gp%ylabel('angle (degree)')
+            call gp%plot(t, body%ankleAngle_rad*180.0/pi, 'with line lw 2 lc rgb "#0008B0"')
 
             do j = 1, size(neuralTractPools)
                 call neuralTractPools(j)%reset()
-            end do            
+            end do
+
             do j = 1, 4
                 call motorUnitPools(j)%reset()
             end do            
-            do j = 1, 8
+
+            do j = 1, 12
                 call afferentPools(j)%reset()
             end do     
+
             call interneuronPools(1)%reset()       
-            call interneuronPools(2)%reset()       
+            call interneuronPools(2)%reset()    
+            call interneuronPools(3)%reset()       
             call body%reset()
             i = 1
             trial = trial + 1
         end do
         
-        write(1, '(F15.6, 1X, F15.6,1X,F15.6, 1X, I2, 1X, I2)') ([t(i), dynGamma, statGamma]), ([subject, trial])
+        write(1, '(F15.6, 1X, F15.6, 1X, F15.6, 1X, I2, 1X, I2)') ([t(i), dynGamma, statGamma]), ([subject, trial])
         subject = subject + 1
         deallocate(afferentPools)
         deallocate(motorUnitPools)

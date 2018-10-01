@@ -239,14 +239,14 @@ module InterneuronPoolClass
                 end do
             end do
 
-            ! stat = mkl_sparse_d_create_csr(self%GSp, &
-            !                                self%spIndexing, &
-            !                                self%spRows, &
-            !                                self%spCols, &
-            !                                self%spRowStart, &
-            !                                self%spRowEnd, &
-            !                                self%spColIdx, &
-            !                                self%spValues)
+            stat = mkl_sparse_d_create_csr(self%GSp, &
+                                           self%spIndexing, &
+                                           self%spRows, &
+                                           self%spCols, &
+                                           self%spRowStart, &
+                                           self%spRowEnd, &
+                                           self%spColIdx, &
+                                           self%spValues)
 
 
             stat = mkl_sparse_d_mv(self%spOperation, &
@@ -263,6 +263,7 @@ module InterneuronPoolClass
 
             dVdt =  (self%iIonic + matInt + self%iInjected + self%EqCurrent_nA) * &
                     self%capacitanceInv
+            stat = mkl_sparse_destroy(self%GSp)
         end function
 
     subroutine listSpikes(self)
