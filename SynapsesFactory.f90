@@ -59,7 +59,7 @@ module SynapsesFactoryModule
             integer :: numberOfSynapses, numberOfSynapticNoise
             integer :: poolOut, unitOut, synapseIn, poolIn, unitIn, compartmentIn, synapseComp
             character(len = 80) :: neuralSource, paramTag, paramChar
-            real(wp) :: tau, var, gmax, Pconn, conn, delay, declineFactor
+            real(wp) :: tau, var, gmax, Pconn, conn, delay, declineFactor, gmaxAux
             character(len=80) :: dyn
             integer :: pos, i, newIndex, j
             real(wp) :: randomNumber
@@ -421,11 +421,13 @@ module SynapsesFactoryModule
                                                 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                                                 if (probabilityDecay) then
                                                     if (declineFactor<1e5) then
+                                                        gmaxAux = gmax
                                                         neuronsDistance = abs(motorUnitPools(poolIn)%&
                                                         unit(unitIn)%position_mm &
                                                                     - interneuronPools(poolOut)%unit(unitOut)%position_mm)
                                                         weight = exp(-(neuronsDistance)**2/(2*declineFactor**2))
-                                                        gmax = gmax * weight
+                                                        !weight = declineFactor / (declineFactor + neuronsDistance**2)
+                                                        gmaxAux = gmaxAux * weight
                                                         Pconn = conn * weight
                                                     else
                                                         weight = 1
@@ -442,7 +444,7 @@ module SynapsesFactoryModule
 
                                                                 call motorUnitPools(poolIn)%unit(unitIn)%&
                                                                 Compartments(compartmentIn)%SynapsesIn(synapseComp)%&
-                                                                addConductance(gmax, delay, dyn, var, tau)
+                                                                addConductance(gmaxAux, delay, dyn, var, tau)
 
                                                                 if (allocated(interneuronPools(poolOut)%&
                                                                     unit(unitOut)%transmitSpikesThroughSynapses)) then
@@ -513,6 +515,7 @@ module SynapsesFactoryModule
                                                     if (randomNumber <= conn) then
                                                         do synapseComp = 1, size(motorUnitPools(poolIn)%unit(unitIn)%&
                                                                                 Compartments(compartmentIn)%SynapsesIn)
+                                                            gmaxAux = gmax
                                                             if (motorUnitPools(poolIn)%unit(unitIn)%Compartments(compartmentIn)%&
                                                                 SynapsesIn(synapseComp)%synapseKind ==&
                                                                 interneuronPools(poolOut)%unit(unitOut)%&
@@ -524,11 +527,12 @@ module SynapsesFactoryModule
                                                                                 - interneuronPools(poolOut)%unit(unitOut)%&
                                                                                 position_mm)
                                                                     weight = exp(-(neuronsDistance)**2/(2*declineFactor**2))
-                                                                    gmax = gmax * weight
+                                                                    !weight = declineFactor / (declineFactor + neuronsDistance**2)
+                                                                    gmaxAux = gmaxAux * weight
                                                                 end if
                                                                 call motorUnitPools(poolIn)%unit(unitIn)%&
                                                                 Compartments(compartmentIn)%SynapsesIn(synapseComp)%&
-                                                                addConductance(gmax, delay, dyn, var, tau)
+                                                                addConductance(gmaxAux, delay, dyn, var, tau)
                                                                 
                                                                 if (allocated(interneuronPools(poolOut)%&
                                                                     unit(unitOut)%transmitSpikesThroughSynapses)) then
@@ -736,10 +740,12 @@ module SynapsesFactoryModule
                                                 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                                                 if (probabilityDecay) then
                                                     if (declineFactor<1e5) then
+                                                        gmaxAux = gmax
                                                         neuronsDistance = abs(interneuronPools(poolIn)%unit(unitIn)%position_mm&
                                                             - motorUnitPools(poolOut)%unit(unitOut)%position_mm)
                                                         weight = exp(-(neuronsDistance)**2/(2*declineFactor**2))
-                                                        gmax = gmax * weight
+                                                        !weight = declineFactor / (declineFactor + neuronsDistance**2)
+                                                        gmaxAux = gmaxAux * weight
                                                         Pconn = conn * weight
                                                     else
                                                         weight = 1
@@ -756,7 +762,7 @@ module SynapsesFactoryModule
                                                                 
                                                                 call interneuronPools(poolIn)%unit(unitIn)%&
                                                                 Compartments(compartmentIn)%SynapsesIn(synapseComp)%&
-                                                                addConductance(gmax, delay, dyn, var, tau)
+                                                                addConductance(gmaxAux, delay, dyn, var, tau)
                                                                 
                                                                 if (allocated(motorUnitPools(poolOut)%&
                                                                     unit(unitOut)%transmitSpikesThroughSynapses)) then
@@ -827,6 +833,7 @@ module SynapsesFactoryModule
                                                     if (randomNumber <= conn) then
                                                         do synapseComp = 1, size(interneuronPools(poolIn)%unit(unitIn)%&
                                                                                 Compartments(compartmentIn)%SynapsesIn)
+                                                            gmaxAux = gmax
                                                             if (interneuronPools(poolIn)%unit(unitIn)%Compartments(compartmentIn)%&
                                                                 SynapsesIn(synapseComp)%synapseKind ==&
                                                                 motorUnitPools(poolOut)%unit(unitOut)%&
@@ -837,11 +844,12 @@ module SynapsesFactoryModule
                                                                                 position_mm&
                                                                                 - motorUnitPools(poolOut)%unit(unitOut)%position_mm)
                                                                     weight = exp(-(neuronsDistance)**2/(2*declineFactor**2))
-                                                                    gmax = gmax * weight
+                                                                    !weight = declineFactor / (declineFactor + neuronsDistance**2)
+                                                                    gmaxAux = gmaxAux * weight
                                                                 end if
                                                                 call interneuronPools(poolIn)%unit(unitIn)%&
                                                                 Compartments(compartmentIn)%SynapsesIn(synapseComp)%&
-                                                                addConductance(gmax, delay, dyn, var, tau)
+                                                                addConductance(gmaxAux, delay, dyn, var, tau)
                                                                 
                                                                 if (allocated(motorUnitPools(poolOut)%&
                                                                     unit(unitOut)%transmitSpikesThroughSynapses)) then
