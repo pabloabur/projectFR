@@ -1,22 +1,22 @@
-! '''
-!     Neuromuscular simulator in Fortran.
-!     Copyright (C) 2018  Renato Naville Watanabe
-!                         Pablo Alejandro    
-!     This program is free software: you can redistribute it and/or modify
-!     it under the terms of the GNU General Public License as published by
-!     the Free Software Foundation, either version 3 of the License, or
-!     any later version.
-
-!     This program is distributed in the hope that it will be useful,
-!     but WITHOUT ANY WARRANTY; without even the implied warranty of
-!     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-!     GNU General Public License for more details.
-
-!     You should have received a copy of the GNU General Public License
-!     along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-!     Contact: renato.watanabe@ufabc.edu.br
-! '''
+! '''                                                                                                                                     
+!     Neuromuscular simulator in Fortran.                                                                                                 
+!     Copyright (C) 2018  Renato Naville Watanabe                                                                                         
+!                         Pablo Alejandro                                                                                                 
+!     This program is free software: you can redistribute it and/or modify                                                                
+!     it under the terms of the GNU General Public License as published by                                                                
+!     the Free Software Foundation, either version 3 of the License, or                                                                   
+!     any later version.                                                                                                                  
+                                                                                                                                          
+!     This program is distributed in the hope that it will be useful,                                                                     
+!     but WITHOUT ANY WARRANTY; without even the implied warranty of                                                                      
+!     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                                                                       
+!     GNU General Public License for more details.                                                                                        
+                                                                                                                                          
+!     You should have received a copy of the GNU General Public License                                                                   
+!     along with this program.  If not, see <http://www.gnu.org/licenses/>.                                                               
+                                                                                                                                          
+!     Contact: renato.watanabe@ufabc.edu.br                                                                                               
+! ''' 
 
 program StaticProperties
     use MotorUnitPoolClass
@@ -53,19 +53,19 @@ program StaticProperties
     character(len=80) :: paramTag
     character(len=80) :: value1, value2
     ! Input parameters
-    logical, parameter :: probDecay = .false.
+    logical, parameter :: probDecay = .true.
     real(wp), parameter :: declineFactorMN = real(1, wp)/6, declineFactorRC = real(3.5, wp)/3
-    real(wp), parameter :: FFConducStrength = 0.0275_wp ! Simple weight decay
-    !real(wp), parameter :: FFConducStrength = 0.025_wp ! Decay of probability of connection (Pconn) with distance
+    !real(wp), parameter :: FFConducStrength = 0.0275_wp ! Simple weight decay
+    real(wp), parameter :: FFConducStrength = 0.025_wp ! Decay of probability of connection (Pconn) with distance
     !real(wp), parameter :: FFConducStrength = 0.04_wp ! Decay of weight and Pconn with distance
     !real(wp), parameter :: FFConducStrength = 0.055_wp ! Sparse connections and weight decay
     !real(wp), parameter :: FFConducStrength = 0.06_wp ! Sparse connections, weight and Pcon decay
-    character(len=3), parameter :: stimAmp = '90', nS = '75', nFR = '75', &
+    character(len=3), parameter :: stimAmp = '80', nS = '75', nFR = '75', &
         nFF = '150', nRC = '600'
     !character(len=3), parameter :: stimAmp = '0', nS = '50', nFR = '0', &
     !    nFF = '0', nRC = '100'
-    integer, dimension(8), parameter :: fs = [10, 20, 30, 40, 50, 60, 70, 80]
-    !integer, dimension(1), parameter :: fs = [60]
+    !integer, dimension(8), parameter :: fs = [10, 20, 30, 40, 50, 60, 70, 80]
+    integer, dimension(3), parameter :: fs = [10, 20, 30]
 
     call init_random_seed()
 
@@ -429,7 +429,9 @@ program StaticProperties
     group = 'ext'    
     allocate(interneuronPools(1))
     interneuronPools(1) = InterneuronPool(conf, pool, group)
+
     allocate(afferentPools(0))
+
     synapticNoisePools = synapseFactory(conf, neuralTractPools, &
                                         motorUnitPools, &
                                         interneuronPools, &
@@ -467,7 +469,7 @@ program StaticProperties
             !motorUnitPools(1)%iInjected(:) = 70.0
             do j = 1, size(interneuronPools)
                 call interneuronPools(j)%atualizeInterneuronPool(t(i))
-                !RCv_mV(i) = interneuronPools(j)%v_mV(49)
+                RCv_mV(i) = interneuronPools(j)%v_mV(1)
             end do
             do j = 1, size(motorUnitPools)
                 call motorUnitPools(j)%atualizeMotorUnitPool(t(i), 32.0_wp, 32.0_wp)
@@ -484,11 +486,11 @@ program StaticProperties
         !call gp%plot(motorUnitPools(1)%poolSomaSpikes(:,1), &
         !motorUnitPools(1)%poolSomaSpikes(:,2), 'with points pt 5 lc rgb "#0008B0"')
 
-        !call gp%title('RC spike instants at the soma')
-        !call gp%xlabel('t (s))')
-        !call gp%ylabel('Interneuron index')
-        !call gp%plot(interneuronPools(1)%poolSomaSpikes(:,1), &
-        !interneuronPools(1)%poolSomaSpikes(:,2), 'with points pt 5 lc rgb "#0008B0"')
+        call gp%title('RC spike instants at the soma')
+        call gp%xlabel('t (s))')
+        call gp%ylabel('Interneuron index')
+        call gp%plot(interneuronPools(1)%poolSomaSpikes(:,1), &
+        interneuronPools(1)%poolSomaSpikes(:,2), 'with points pt 5 lc rgb "#0008B0"')
 
         !call gp%title('PTN stimulus')
         !call gp%xlabel('t (ms))')
@@ -500,10 +502,10 @@ program StaticProperties
         !call gp%ylabel('Descending command index')
         !call gp%plot(t, MNv_mV, 'with line lw 2 lc rgb "#0008B0"')  
 
-        !call gp%title('Membrane potential of the soma of the RC')
-        !call gp%xlabel('t (ms))')
-        !call gp%ylabel('Potential (mV)')
-        !call gp%plot(t, RCv_mV, 'with line lw 2 lc rgb "#0008B0"')  
+        call gp%title('Membrane potential of the soma of the RC')
+        call gp%xlabel('t (ms))')
+        call gp%ylabel('Potential (mV)')
+        call gp%plot(t, RCv_mV, 'with line lw 2 lc rgb "#0008B0"')  
 
         write(filename, '("output", I2, ".dat")') fs(k)
         open(1, file=filename, status = 'replace')

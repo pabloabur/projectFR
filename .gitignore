@@ -30,7 +30,6 @@
 *.exe
 *.out
 *.app
-*.sh
 
 ### Linux ###
 *~
@@ -44,8 +43,3 @@
 # Jupyter notebooks
 ForceVariability.ipynb
 .ipynb_checkpoints/
-
-# Bynaries
-DynamicProperties
-FrequencyAnalysis
-make.sh

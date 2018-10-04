@@ -427,7 +427,7 @@ module SynapsesFactoryModule
                                                                     - interneuronPools(poolOut)%unit(unitOut)%position_mm)
                                                         weight = exp(-(neuronsDistance)**2/(2*declineFactor**2))
                                                         !weight = declineFactor / (declineFactor + neuronsDistance**2)
-                                                        gmaxAux = gmaxAux * weight
+                                                        !gmaxAux = gmaxAux * weight
                                                         Pconn = conn * weight
                                                     else
                                                         weight = 1
@@ -745,7 +745,7 @@ module SynapsesFactoryModule
                                                             - motorUnitPools(poolOut)%unit(unitOut)%position_mm)
                                                         weight = exp(-(neuronsDistance)**2/(2*declineFactor**2))
                                                         !weight = declineFactor / (declineFactor + neuronsDistance**2)
-                                                        gmaxAux = gmaxAux * weight
+                                                        !gmaxAux = gmaxAux * weight
                                                         Pconn = conn * weight
                                                     else
                                                         weight = 1
