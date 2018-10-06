@@ -40,8 +40,7 @@ program ForcedPSD
     real(wp), dimension(:), allocatable :: t, MNv_mV, RCv_mV, &
         synapticInput, V
     real(wp), allocatable :: Vs(:,:)
-    real(wp) :: sigmaSquared,  sigmaSquaredi,  chiSquared, timeAverage, &
-        squaredTimeAverage
+    real(wp) :: sigmaSquared,  sigmaSquaredi,  chiSquared
     real(wp) :: tic, toc
     type(gpf) :: gp
     real(wp) :: FR
@@ -63,13 +62,17 @@ program ForcedPSD
     logical, parameter :: probDecay = .false.
     real(wp), parameter :: FFConducStrength = 0.0275_wp, & 
         declineFactorMN = real(1, wp)/6, declineFactorRC = real(3.5, wp)/3
-    character(len=3), parameter :: nS = '100', nFR = '0', &
-        nFF = '0', nRC = '200', nCM = '400', nMN = '100' ! nS+nFR+nFF
+    !character(len=3), parameter :: nS = '300', nFR = '0', &
+    !    nFF = '0', nRC = '600', nCM = '400', nMN = '300' ! nS+nFR+nFF
+    character(len=3), parameter :: nS = '300', nFR = '0', &
+        nFF = '0', nRC = '0', nCM = '400', nMN = '300' ! nS+nFR+nFF
+    integer :: sampleSize = 101
+    integer :: startMNIndex = 100
 
     call init_random_seed()
 
     conf = Configuration(filename)
-    conf%simDuration_ms = 100000
+    conf%simDuration_ms = 3000!30000!100000
 
     !Changing configuration file
     paramTag = 'Number_CMExt'
@@ -366,11 +369,11 @@ program ForcedPSD
         ! Columnar length
         paramTag = 'position:MG-'
         value1 = '0'
-        value2 = '2'
+        value2 = '6'
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'position:RC_ext-'
         value1 = '0'
-        value2 = '2'
+        value2 = '6'
         call conf%changeConfigurationParameter(paramTag, value1, value2)
 
         ! ! RC spontaneous activity 
@@ -455,10 +458,10 @@ program ForcedPSD
     pool = 'MG'
     motorUnitPools(1) = MotorUnitPool(conf, pool)    
 
-    allocate(interneuronPools(1))
-    pool = 'RC'
-    group = 'ext'    
-    interneuronPools(1) = InterneuronPool(conf, pool, group)
+    allocate(interneuronPools(0))
+    !pool = 'RC'
+    !group = 'ext'    
+    !interneuronPools(1) = InterneuronPool(conf, pool, group)
 
     allocate(afferentPools(0))
 
@@ -477,57 +480,55 @@ program ForcedPSD
     allocate(RCv_mV(timeLength))
     allocate(synapticInput(timeLength))
     allocate(force(timeLength))
-    allocate(Vs(timeLength,size(motorUnitPools(1)%unit)))
+    allocate(Vs(timeLength,sampleSize)) ! According to slice takenSize
 
     t = [(dt*(i-1), i=1, timeLength)]
     
-    ! Synchrony measure computed according to Golomb, Hansel and Mato (2001)
-    V(:) = 0.0
-
     print *, 'Running simulation'
     call cpu_time(tic)
 
     do i = 1, size(t)
         do j = 1, size(motorUnitPools(1)%unit)
-            motorUnitPools(1)%iInjected(2*(j)) = 0.07949495_wp*(j-1) + 4.70_wp +&
-                                                    0.001818182*(j-1) + 1.0_wp
+            motorUnitPools(1)%iInjected(2*(j)) = 0.02735_wp*(j-1) + 4.55_wp ! Without RC
+            !motorUnitPools(1)%iInjected(2*(j)) = 0.0291_wp*(j-1) + 5.3_wp ! With RC
         end do
         do j = 1, size(neuralTractPools)
             call neuralTractPools(j)%atualizePool(t(i), FR, GammaOrder)
         end do
-        do j = 1, size(synapticNoisePools)
-            call synapticNoisePools(j)%atualizePool(t(i))
-        end do
-        do j = 1, size(interneuronPools)
-            call interneuronPools(j)%atualizeInterneuronPool(t(i))
-            RCv_mV(i) = interneuronPools(j)%v_mV(1)        
-        end do
+        !do j = 1, size(synapticNoisePools)
+        !    call synapticNoisePools(j)%atualizePool(t(i))
+        !end do
+        !do j = 1, size(interneuronPools)
+        !    call interneuronPools(j)%atualizeInterneuronPool(t(i))
+        !    RCv_mV(i) = interneuronPools(j)%v_mV(1)        
+        !end do
         do j = 1, size(motorUnitPools)
             call motorUnitPools(j)%atualizeMotorUnitPool(t(i), 32.0_wp, 32.0_wp)
             MNv_mV(i) = motorUnitPools(j)%v_mV(2*(100))
             synapticInput(i) = motorUnitPools(j)%iIonic(1)
-            do k=1, size(motorUnitPools(j)%unit)
-                Vs(i,k) = motorUnitPools(j)%v_mV(2*(k))
+            ! Slice with desired MNs
+            do k=startMNIndex, startMNIndex+sampleSize-1
+                Vs(i,k-99) = motorUnitPools(j)%v_mV(2*(k))
             end do
         end do
     end do
 
     call motorUnitPools(1)%listSpikes()
     call neuralTractPools(1)%listSpikes()
-    call interneuronPools(1)%listSpikes()
+    !call interneuronPools(1)%listSpikes()
 
     do i = 1, timeLength
         force(i) = motorUnitPools(1)%NoHillMuscle%force(i)
     end do
 
-    filename = "inputV_I.dat"
+    filename = "datNoRC/inputV_I.dat"
     open(1, file=filename, status = 'replace')
     do i = 1, timeLength
         write(1, '(F15.6, 1X, F15.6)') MNv_mV(i), synapticInput(i)
     end do
     close(1)
 
-    filename = "MNspk.dat"
+    filename = "datNoRC/MNspk.dat"
     open(1, file=filename, status = 'replace')
     do i = 1, size(motorUnitPools(1)%poolSomaSpikes, 1)
         write(1, '(F15.6, 1X, F15.1)') motorUnitPools(1)%poolSomaSpikes(i,1), &
@@ -551,7 +552,7 @@ program ForcedPSD
     !end do
     !close(1)
 
-    filename = "force.dat"
+    filename = "datNoRC/force.dat"
     open(1, file=filename, status = 'replace')
     do i = 1, timeLength
            write(1, '(F15.2)') force(i)
@@ -562,40 +563,28 @@ program ForcedPSD
     print '(F15.6, A)', toc - tic, ' seconds'
     
     !!!!!!! Measuring synchrony
+    ! Synchrony measure computed according to Golomb, Hansel and Mato (2001)
     ! Global part
-    do i=1, size(t)
-        V(i) = sum(Vs(i,:))
-    end do
-    V = V/size(motorUnitPools(1)%unit)
+    V = sum(Vs, dim=2)/sampleSize
+    sigmaSquared = sum(V(40000:)**2)/size(t) - (sum(V(40000:))/size(t))**2
+    print *, sigmaSquared
 
-    timeAverage = 0
-    do i=1, size(V)
-        timeAverage = timeAverage + V(i)**2
-    end do
-    timeAverage = timeAverage/size(t)
-
-    squaredTimeAverage = 0
-    do i=1, size(V)
-        squaredTimeAverage = squaredTimeAverage + V(i)
-    end do
-    squaredTimeAverage = squaredTimeAverage/size(t)
-    squaredTimeAverage = squaredTimeAverage**2
-    sigmaSquared = timeAverage - squaredTimeAverage
     ! Individual part
     sigmaSquaredi = 0
-    do i=1, size(motorUnitPools(1)%unit)
-        sigmaSquaredi = sigmaSquaredi + 1/size(t)*sum(Vs(:,i)**2)-&
-            1/(size(t)**2)*sum(Vs(:,i))**2
+    do i=1, sampleSize
+        sigmaSquaredi = sigmaSquaredi + sum(Vs(40000:,i)**2)/size(t)-&
+            (sum(Vs(40000:,i))/size(t))**2
     end do
-    sigmaSquaredi = sigmaSquaredi/size(motorUnitPools(1)%unit)
+    sigmaSquaredi = sigmaSquaredi/sampleSize
+    print *, sigmaSquaredi
 
     ! Chi squared
     chiSquared = sigmaSquared/sigmaSquaredi
-    print *, chiSquared
+    print *, sqrt(chiSquared)
 
-    call gp%title('Membrane potential of the soma of the MN #1')
-    call gp%xlabel('t (ms))')
-    call gp%ylabel('Volts (mV)')
-    call gp%plot(t, MNv_mV, 'with line lw 2 lc rgb "#0008B0"') 
+    !call gp%title('Membrane potential of the soma of the MN #1')
+    !call gp%xlabel('t (ms))')
+    !call gp%ylabel('Volts (mV)')
+    !call gp%plot(t, MNv_mV, 'with line lw 2 lc rgb "#0008B0"') 
 
 end program ForcedPSD
