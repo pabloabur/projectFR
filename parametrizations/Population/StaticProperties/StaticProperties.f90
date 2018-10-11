@@ -56,16 +56,16 @@ program StaticProperties
     logical, parameter :: probDecay = .true.
     real(wp), parameter :: declineFactorMN = real(1, wp)/6, declineFactorRC = real(3.5, wp)/3
     !real(wp), parameter :: FFConducStrength = 0.0275_wp ! Simple weight decay
-    real(wp), parameter :: FFConducStrength = 0.025_wp ! Decay of probability of connection (Pconn) with distance
+    !real(wp), parameter :: FFConducStrength = 0.025_wp ! Decay of probability of connection (Pconn) with distance
     !real(wp), parameter :: FFConducStrength = 0.04_wp ! Decay of weight and Pconn with distance
-    !real(wp), parameter :: FFConducStrength = 0.055_wp ! Sparse connections and weight decay
+    real(wp), parameter :: FFConducStrength = 0.055_wp ! Sparse connections and weight decay
     !real(wp), parameter :: FFConducStrength = 0.06_wp ! Sparse connections, weight and Pcon decay
     character(len=3), parameter :: stimAmp = '80', nS = '75', nFR = '75', &
         nFF = '150', nRC = '600'
     !character(len=3), parameter :: stimAmp = '0', nS = '50', nFR = '0', &
     !    nFF = '0', nRC = '100'
-    !integer, dimension(8), parameter :: fs = [10, 20, 30, 40, 50, 60, 70, 80]
-    integer, dimension(3), parameter :: fs = [10, 20, 30]
+    integer, dimension(7), parameter :: fs = [10, 20, 30, 40, 50, 60, 70]
+    !integer, dimension(3), parameter :: fs = [30, 30, 30]
 
     call init_random_seed()
 
@@ -241,27 +241,27 @@ program StaticProperties
 
         ! Connectivity
         paramTag = 'Con:RC_ext->MG-S@dendrite|inhibitory'
-        value1 = '100'
+        value1 = '70'!'100'
         value2 = ''
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'Con:RC_ext->MG-FR@dendrite|inhibitory'
-        value1 = '100'
+        value1 = '70'!'100'
         value2 = ''
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'Con:RC_ext->MG-FF@dendrite|inhibitory'
-        value1 = '100'
+        value1 = '70'!'100'
         value2 = ''
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'Con:MG-S>RC_ext-@soma|excitatory'
-        value1 = '100'
+        value1 = '41'!'100'
         value2 = ''
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'Con:MG-FR>RC_ext-@soma|excitatory'
-        value1 = '100'
+        value1 = '41'!'100'
         value2 = ''
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'Con:MG-FF>RC_ext-@soma|excitatory'
-        value1 = '100'
+        value1 = '41'!'100'
         value2 = ''
         call conf%changeConfigurationParameter(paramTag, value1, value2)
 
@@ -360,11 +360,11 @@ program StaticProperties
         ! Columnar length
         paramTag = 'position:MG-'
         value1 = '0'
-        value2 = '7'
+        value2 = '6'
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'position:RC_ext-'
         value1 = '0'
-        value2 = '7'
+        value2 = '6'
         call conf%changeConfigurationParameter(paramTag, value1, value2)
 
         ! RC spontaneous activity
@@ -373,7 +373,7 @@ program StaticProperties
         value2 = ''
         call conf%changeconfigurationparameter(paramtag, value1, value2)
         paramtag = 'NoiseFunction_RC_ext'
-        value1 = '7'
+        value1 = '0'! it was '7', but in the experiment there was none
         value2 = ''
         call conf%changeconfigurationparameter(paramtag, value1, value2)
     else 
@@ -469,7 +469,7 @@ program StaticProperties
             !motorUnitPools(1)%iInjected(:) = 70.0
             do j = 1, size(interneuronPools)
                 call interneuronPools(j)%atualizeInterneuronPool(t(i))
-                RCv_mV(i) = interneuronPools(j)%v_mV(1)
+                !RCv_mV(i) = interneuronPools(j)%v_mV(301)
             end do
             do j = 1, size(motorUnitPools)
                 call motorUnitPools(j)%atualizeMotorUnitPool(t(i), 32.0_wp, 32.0_wp)
@@ -486,11 +486,11 @@ program StaticProperties
         !call gp%plot(motorUnitPools(1)%poolSomaSpikes(:,1), &
         !motorUnitPools(1)%poolSomaSpikes(:,2), 'with points pt 5 lc rgb "#0008B0"')
 
-        call gp%title('RC spike instants at the soma')
-        call gp%xlabel('t (s))')
-        call gp%ylabel('Interneuron index')
-        call gp%plot(interneuronPools(1)%poolSomaSpikes(:,1), &
-        interneuronPools(1)%poolSomaSpikes(:,2), 'with points pt 5 lc rgb "#0008B0"')
+        !call gp%title('RC spike instants at the soma')
+        !call gp%xlabel('t (s))')
+        !call gp%ylabel('Interneuron index')
+        !call gp%plot(interneuronPools(1)%poolSomaSpikes(:,1), &
+        !interneuronPools(1)%poolSomaSpikes(:,2), 'with points pt 5 lc rgb "#0008B0"')
 
         !call gp%title('PTN stimulus')
         !call gp%xlabel('t (ms))')
@@ -502,10 +502,10 @@ program StaticProperties
         !call gp%ylabel('Descending command index')
         !call gp%plot(t, MNv_mV, 'with line lw 2 lc rgb "#0008B0"')  
 
-        call gp%title('Membrane potential of the soma of the RC')
-        call gp%xlabel('t (ms))')
-        call gp%ylabel('Potential (mV)')
-        call gp%plot(t, RCv_mV, 'with line lw 2 lc rgb "#0008B0"')  
+        !call gp%title('Membrane potential of the soma of the RC')
+        !call gp%xlabel('t (ms))')
+        !call gp%ylabel('Potential (mV)')
+        !call gp%plot(t, RCv_mV, 'with line lw 2 lc rgb "#0008B0"')  
 
         write(filename, '("output", I2, ".dat")') fs(k)
         open(1, file=filename, status = 'replace')

@@ -37,7 +37,7 @@ program ForcedPSD
     type(Configuration) :: conf
     integer :: timeLength
     integer :: i, j, k
-    real(wp), dimension(:), allocatable :: t, MNv_mV, RCv_mV, &
+    real(wp), dimension(:), allocatable :: t, MNv_mV, MNv_mV100, MNv_mV300, RCv_mV, &
         synapticInput, V
     real(wp), allocatable :: Vs(:,:)
     real(wp) :: sigmaSquared,  sigmaSquaredi,  chiSquared
@@ -72,7 +72,7 @@ program ForcedPSD
     call init_random_seed()
 
     conf = Configuration(filename)
-    conf%simDuration_ms = 3000!30000!100000
+    conf%simDuration_ms = 500!30000!100000
 
     !Changing configuration file
     paramTag = 'Number_CMExt'
@@ -476,6 +476,8 @@ program ForcedPSD
     
     allocate(t(timeLength))
     allocate(MNv_mV(timeLength))
+    allocate(MNv_mV100(timeLength))
+    allocate(MNv_mV300(timeLength))
     allocate(V(timeLength))
     allocate(RCv_mV(timeLength))
     allocate(synapticInput(timeLength))
@@ -489,22 +491,29 @@ program ForcedPSD
 
     do i = 1, size(t)
         do j = 1, size(motorUnitPools(1)%unit)
-            motorUnitPools(1)%iInjected(2*(j)) = 0.02735_wp*(j-1) + 4.55_wp ! Without RC
+            !if (j<151) then
+                motorUnitPools(1)%iInjected(2*(j)) = 0.02514284677755809*j+5.628049211848576!0.022*(22-1) + 5.80 ! Without descending command
+            !motorUnitPools(1)%iInjected(2*(j)) = 0.0277592*(j-1) + 3.80 ! Without RC
             !motorUnitPools(1)%iInjected(2*(j)) = 0.0291_wp*(j-1) + 5.3_wp ! With RC
+            !else 
+            !    motorUnitPools(1)%iInjected(2*(j)) = 0.0299*(j-151) + 9.078!9.25 ! Without descending command
+            !end if
         end do
-        do j = 1, size(neuralTractPools)
-            call neuralTractPools(j)%atualizePool(t(i), FR, GammaOrder)
-        end do
+        !do j = 1, size(neuralTractPools)
+        !    call neuralTractPools(j)%atualizePool(t(i), FR, GammaOrder)
+        !end do
         !do j = 1, size(synapticNoisePools)
         !    call synapticNoisePools(j)%atualizePool(t(i))
         !end do
         !do j = 1, size(interneuronPools)
         !    call interneuronPools(j)%atualizeInterneuronPool(t(i))
-        !    RCv_mV(i) = interneuronPools(j)%v_mV(1)        
+        !!    RCv_mV(i) = interneuronPools(j)%v_mV(1)        
         !end do
         do j = 1, size(motorUnitPools)
             call motorUnitPools(j)%atualizeMotorUnitPool(t(i), 32.0_wp, 32.0_wp)
-            MNv_mV(i) = motorUnitPools(j)%v_mV(2*(100))
+            MNv_mV(i) = motorUnitPools(j)%v_mV(2*(1))
+            MNv_mV100(i) = motorUnitPools(j)%v_mV(2*(150))
+            MNv_mV300(i) = motorUnitPools(j)%v_mV(2*(300))
             synapticInput(i) = motorUnitPools(j)%iIonic(1)
             ! Slice with desired MNs
             do k=startMNIndex, startMNIndex+sampleSize-1
@@ -514,21 +523,25 @@ program ForcedPSD
     end do
 
     call motorUnitPools(1)%listSpikes()
-    call neuralTractPools(1)%listSpikes()
+    !call neuralTractPools(1)%listSpikes()
     !call interneuronPools(1)%listSpikes()
 
     do i = 1, timeLength
         force(i) = motorUnitPools(1)%NoHillMuscle%force(i)
     end do
 
-    filename = "datNoRC/inputV_I.dat"
+    !filename = "datNoRC/inputV_I.dat"
+    !filename = "inputV_I.dat"
+    filename = "test/inputV_I.dat"
     open(1, file=filename, status = 'replace')
     do i = 1, timeLength
         write(1, '(F15.6, 1X, F15.6)') MNv_mV(i), synapticInput(i)
     end do
     close(1)
 
-    filename = "datNoRC/MNspk.dat"
+    !filename = "datNoRC/MNspk.dat"
+    !filename = "MNspk.dat"
+    filename = "test/MNspk.dat"
     open(1, file=filename, status = 'replace')
     do i = 1, size(motorUnitPools(1)%poolSomaSpikes, 1)
         write(1, '(F15.6, 1X, F15.1)') motorUnitPools(1)%poolSomaSpikes(i,1), &
@@ -552,7 +565,9 @@ program ForcedPSD
     !end do
     !close(1)
 
-    filename = "datNoRC/force.dat"
+    !filename = "datNoRC/force.dat"
+    !filename = "force.dat"
+    filename = "test/force.dat"
     open(1, file=filename, status = 'replace')
     do i = 1, timeLength
            write(1, '(F15.2)') force(i)
@@ -566,25 +581,43 @@ program ForcedPSD
     ! Synchrony measure computed according to Golomb, Hansel and Mato (2001)
     ! Global part
     V = sum(Vs, dim=2)/sampleSize
-    sigmaSquared = sum(V(40000:)**2)/size(t) - (sum(V(40000:))/size(t))**2
-    print *, sigmaSquared
+    sigmaSquared = sum(V(2000:)**2)/size(t) - (sum(V(2000:))/size(t))**2
+
+    !filename = "V.dat"
+    filename = "test/V.dat"
+    open(1, file=filename, status = 'replace')
+    do i = 1, timeLength
+           write(1, '(F15.2)') V(i)
+    end do
+    close(1)
 
     ! Individual part
     sigmaSquaredi = 0
     do i=1, sampleSize
-        sigmaSquaredi = sigmaSquaredi + sum(Vs(40000:,i)**2)/size(t)-&
-            (sum(Vs(40000:,i))/size(t))**2
+        sigmaSquaredi = sigmaSquaredi + sum(Vs(2000:,i)**2)/size(t)-&
+            (sum(Vs(2000:,i))/size(t))**2
     end do
     sigmaSquaredi = sigmaSquaredi/sampleSize
-    print *, sigmaSquaredi
 
     ! Chi squared
     chiSquared = sigmaSquared/sigmaSquaredi
+    print *, '----------- Chi --------------'
     print *, sqrt(chiSquared)
+    print *, '------------------------------'
 
-    !call gp%title('Membrane potential of the soma of the MN #1')
+    !call gp%title('MN1')
     !call gp%xlabel('t (ms))')
     !call gp%ylabel('Volts (mV)')
     !call gp%plot(t, MNv_mV, 'with line lw 2 lc rgb "#0008B0"') 
+
+    !call gp%title('MN100')
+    !call gp%xlabel('t (ms))')
+    !call gp%ylabel('Volts (mV)')
+    !call gp%plot(t, MNv_mV100, 'with line lw 2 lc rgb "#0008B0"') 
+
+    !call gp%title('MN300')
+    !call gp%xlabel('t (ms))')
+    !call gp%ylabel('Volts (mV)')
+    !call gp%plot(t, MNv_mV300, 'with line lw 2 lc rgb "#0008B0"') 
 
 end program ForcedPSD
