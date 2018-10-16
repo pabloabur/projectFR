@@ -35,6 +35,7 @@ program ForcedPSD
     implicit none 
     !integer, parameter :: wp = kind(1.0d0)
     type(Configuration) :: conf
+    real(wp), parameter :: pi = 4 * atan(1.0_wp)    
     integer :: timeLength
     integer :: i, j, k
     real(wp), dimension(:), allocatable :: t, MNv_mV, MNv_mV100, MNv_mV300, RCv_mV, &
@@ -62,17 +63,18 @@ program ForcedPSD
     logical, parameter :: probDecay = .false.
     real(wp), parameter :: FFConducStrength = 0.0275_wp, & 
         declineFactorMN = real(1, wp)/6, declineFactorRC = real(3.5, wp)/3
-    !character(len=3), parameter :: nS = '300', nFR = '0', &
-    !    nFF = '0', nRC = '600', nCM = '400', nMN = '300' ! nS+nFR+nFF
     character(len=3), parameter :: nS = '300', nFR = '0', &
-        nFF = '0', nRC = '0', nCM = '400', nMN = '300' ! nS+nFR+nFF
+        nFF = '0', nRC = '600', nCM = '400', nMN = '300' ! nS+nFR+nFF
+    !character(len=3), parameter :: nS = '300', nFR = '0', &
+    !    nFF = '0', nRC = '0', nCM = '400', nMN = '300' ! nS+nFR+nFF
     integer :: sampleSize = 101
     integer :: startMNIndex = 100
+    real(wp) :: gc, gld, gls, Vth, Irh
 
     call init_random_seed()
 
     conf = Configuration(filename)
-    conf%simDuration_ms = 500!30000!100000
+    conf%simDuration_ms = 30000!100000
 
     !Changing configuration file
     paramTag = 'Number_CMExt'
@@ -458,10 +460,10 @@ program ForcedPSD
     pool = 'MG'
     motorUnitPools(1) = MotorUnitPool(conf, pool)    
 
-    allocate(interneuronPools(0))
-    !pool = 'RC'
-    !group = 'ext'    
-    !interneuronPools(1) = InterneuronPool(conf, pool, group)
+    allocate(interneuronPools(1))
+    pool = 'RC'
+    group = 'ext'    
+    interneuronPools(1) = InterneuronPool(conf, pool, group)
 
     allocate(afferentPools(0))
 
@@ -491,29 +493,54 @@ program ForcedPSD
 
     do i = 1, size(t)
         do j = 1, size(motorUnitPools(1)%unit)
-            !if (j<151) then
-                motorUnitPools(1)%iInjected(2*(j)) = 0.02514284677755809*j+5.628049211848576!0.022*(22-1) + 5.80 ! Without descending command
-            !motorUnitPools(1)%iInjected(2*(j)) = 0.0277592*(j-1) + 3.80 ! Without RC
-            !motorUnitPools(1)%iInjected(2*(j)) = 0.0291_wp*(j-1) + 5.3_wp ! With RC
-            !else 
-            !    motorUnitPools(1)%iInjected(2*(j)) = 0.0299*(j-151) + 9.078!9.25 ! Without descending command
+            gls = motorUnitPools(1)%unit(j)%compartments(1)%gLeak_muS
+            gld = motorUnitPools(1)%unit(j)%compartments(2)%gLeak_muS
+            ! cytR is 70 for all MNs
+            gc = 200.0_wp/(&
+                70_wp*motorUnitPools(1)%unit(j)%compartments(2)%length_mum/&
+                    (pi*(motorUnitPools(1)%unit(j)%compartments(2)%diameter_mum/2)**2)+&
+                70_wp*motorUnitPools(1)%unit(j)%compartments(1)%length_mum/&
+                    (pi*(motorUnitPools(1)%unit(j)%compartments(1)%diameter_mum/2)**2))
+            Vth = motorUnitPools(1)%unit(j)%threshold_mV
+            Irh = Vth*(gls+gld*gc/(gld+gc))
+            ! Without RC
+            !! 10 Hz
+            !motorUnitPools(1)%iInjected(2*(j)) = (-0.050_wp/299*(j-1)+0.61_wp)*Irh
+            !! 20 Hz
+            !motorUnitPools(1)%iInjected(2*(j)) = (-0.055_wp/299*(j-1)+0.63_wp)*Irh
+            ! With RC
+            !! 10 Hz
+            !if (j<100) then
+            !    motorUnitPools(1)%iInjected(2*(j)) = (0.02_wp/98*(j-1)+0.73_wp)*Irh
+            !else if (j>200) then
+            !    motorUnitPools(1)%iInjected(2*(j)) = (-0.06_wp/99*(j-201)+0.68_wp)*Irh
+            !else
+            !    motorUnitPools(1)%iInjected(2*(j)) = (-0.09_wp/299*(j-1)+0.75_wp)*Irh
             !end if
+            !! 20 Hz
+            if (j<100) then
+                motorUnitPools(1)%iInjected(2*(j)) = (0.02_wp/98*(j-1)+0.78_wp)*Irh
+            else if (j>200) then
+                motorUnitPools(1)%iInjected(2*(j)) = (-0.11_wp/99*(j-201)+0.76_wp)*Irh
+            else
+                motorUnitPools(1)%iInjected(2*(j)) = (-0.09_wp/299*(j-1)+0.83_wp)*Irh
+            end if
         end do
-        !do j = 1, size(neuralTractPools)
-        !    call neuralTractPools(j)%atualizePool(t(i), FR, GammaOrder)
-        !end do
-        !do j = 1, size(synapticNoisePools)
-        !    call synapticNoisePools(j)%atualizePool(t(i))
-        !end do
-        !do j = 1, size(interneuronPools)
-        !    call interneuronPools(j)%atualizeInterneuronPool(t(i))
-        !!    RCv_mV(i) = interneuronPools(j)%v_mV(1)        
-        !end do
+        do j = 1, size(neuralTractPools)
+            call neuralTractPools(j)%atualizePool(t(i), FR, GammaOrder)
+        end do
+        do j = 1, size(synapticNoisePools)
+            call synapticNoisePools(j)%atualizePool(t(i))
+        end do
+        do j = 1, size(interneuronPools)
+            call interneuronPools(j)%atualizeInterneuronPool(t(i))
+        !    RCv_mV(i) = interneuronPools(j)%v_mV(1)        
+        end do
         do j = 1, size(motorUnitPools)
             call motorUnitPools(j)%atualizeMotorUnitPool(t(i), 32.0_wp, 32.0_wp)
-            MNv_mV(i) = motorUnitPools(j)%v_mV(2*(1))
-            MNv_mV100(i) = motorUnitPools(j)%v_mV(2*(150))
-            MNv_mV300(i) = motorUnitPools(j)%v_mV(2*(300))
+            !MNv_mV(i) = motorUnitPools(j)%v_mV(2*(1))
+            !MNv_mV100(i) = motorUnitPools(j)%v_mV(2*(150))
+            !MNv_mV300(i) = motorUnitPools(j)%v_mV(2*(300))
             synapticInput(i) = motorUnitPools(j)%iIonic(1)
             ! Slice with desired MNs
             do k=startMNIndex, startMNIndex+sampleSize-1
