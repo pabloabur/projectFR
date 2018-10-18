@@ -402,7 +402,7 @@ program AHP
     synapticNoisePools = synapseFactory(conf, neuralTractPools, &
                                         motorUnitPools, &
                                         interneuronPools, &
-                                        afferentPools)!, probDecay)
+                                        afferentPools, probDecay)
     
     tf = conf%simDuration_ms
     dt = conf%timeStep_ms

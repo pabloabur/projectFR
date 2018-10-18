@@ -46,7 +46,7 @@ program DynamicProperties
     real(wp) :: FR
     integer :: GammaOrder 
     character(len = 80) :: pool, group
-    character(len = 80) :: filename = '../conf.rmto'
+    character(len = 80) :: filename = '../../conf.rmto'
     type(MotorUnitPool), dimension(:), allocatable, target :: motorUnitPools
     type(NeuralTract), dimension(:), allocatable :: neuralTractPools    
     type(InterneuronPool), dimension(:), allocatable, target :: interneuronPools    
@@ -57,10 +57,10 @@ program DynamicProperties
     character(len=80) :: value1, value2
     ! Input parameters
     logical, parameter :: probDecay = .false.
-    real(wp), parameter :: FFConducStrength = 0.3_wp, & 
+    real(wp), parameter :: FFConducStrength = 0.0275_wp, & 
         declineFactorMN = real(1, wp)/6, declineFactorRC = real(3.5, wp)/3
-    character(len=3), parameter :: stimAmp = '0', nS = '75', nFR = '75', &
-        nFF = '150', nRC = '300'
+    character(len=3), parameter :: stimAmp = '70', nS = '75', nFR = '75', &
+        nFF = '150', nRC = '600'
     integer, parameter :: frequency1 = 5
     ! values for frequency2 are already substracted to yield proper modulation
     integer, dimension(4), parameter :: frequency2 = [5, 15, 28, 45]
@@ -68,6 +68,7 @@ program DynamicProperties
     call init_random_seed()
 
     conf = Configuration(filename)
+    conf%simDuration_ms = 1000
 
     !Changing configuration file
     paramTag = 'MUnumber_MG-S'
@@ -356,11 +357,11 @@ program DynamicProperties
         ! Columnar length
         paramTag = 'position:MG-'
         value1 = '0'
-        value2 = '7'
+        value2 = '6'
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'position:RC_ext-'
         value1 = '0'
-        value2 = '7'
+        value2 = '6'
         call conf%changeConfigurationParameter(paramTag, value1, value2)
     else
         print *, 'Wrong parametrization option'
@@ -430,7 +431,7 @@ program DynamicProperties
     synapticNoisePools = synapseFactory(conf, neuralTractPools, &
                                         motorUnitPools, &
                                         interneuronPools, &
-                                        afferentPools)!, probDecay)
+                                        afferentPools, probDecay)
     
     tf = conf%simDuration_ms
     dt = conf%timeStep_ms
@@ -490,20 +491,20 @@ program DynamicProperties
         call interneuronPools(1)%reset()
         call synapticNoisePools(1)%reset()
 
-        call gp%title('Membrane potential of the soma of the RC #1')
-        call gp%xlabel('t (ms))')
-        call gp%ylabel('Membrane potential (mV)')
-        call gp%plot(t, RCv_mV, 'with line lw 2 lc rgb "#0008B0"') 
+        !call gp%title('Membrane potential of the soma of the RC #1')
+        !call gp%xlabel('t (ms))')
+        !call gp%ylabel('Membrane potential (mV)')
+        !call gp%plot(t, RCv_mV, 'with line lw 2 lc rgb "#0008B0"') 
 
-        call gp%title('Membrane potential of the soma of the MN #1')
-        call gp%xlabel('t (ms))')
-        call gp%ylabel('Membrane potential (mV)')
-        call gp%plot(t, MNv_mV, 'with line lw 2 lc rgb "#0008B0"')
+        !call gp%title('Membrane potential of the soma of the MN #1')
+        !call gp%xlabel('t (ms))')
+        !call gp%ylabel('Membrane potential (mV)')
+        !call gp%plot(t, MNv_mV, 'with line lw 2 lc rgb "#0008B0"')
 
-        call gp%title('PTN stimulus')
-        call gp%xlabel('t (ms))')
-        call gp%ylabel('Stimulus (mA)')
-        call gp%plot(t, motorUnitPools(1)%unit(1)%nerveStimulus_mA, 'with line lw 2 lc rgb "#0008B0"')
+        !call gp%title('PTN stimulus')
+        !call gp%xlabel('t (ms))')
+        !call gp%ylabel('Stimulus (mA)')
+        !call gp%plot(t, motorUnitPools(1)%unit(1)%nerveStimulus_mA, 'with line lw 2 lc rgb "#0008B0"')
     end do
     
     call cpu_time(toc)

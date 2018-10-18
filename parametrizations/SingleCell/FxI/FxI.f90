@@ -18,7 +18,7 @@ program FxI
     real(wp), parameter :: pi = 4 * atan(1.0_wp)    
     integer :: timeLength
     integer :: i, j, k, l
-    real(wp), dimension(:), allocatable :: t, RCv_mV
+    real(wp), dimension(:), allocatable :: t, RCv_mV, m, h, n, q
     type(gpf) :: gp
     character(len = 80) :: pool, group
     character(len = 80) :: filename = '../../conf.rmto'
@@ -414,7 +414,7 @@ program FxI
     synapticNoisePools = synapseFactory(conf, neuralTractPools, &
                                         motorUnitPools, &
                                         interneuronPools, &
-                                        afferentPools)!, probDecay)
+                                        afferentPools, probDecay)
     
     tf = conf%simDuration_ms
     dt = conf%timeStep_ms
@@ -422,6 +422,10 @@ program FxI
     
     allocate(t(timeLength))
     allocate(RCv_mV(timeLength))
+    allocate(m(timeLength))
+    allocate(h(timeLength))
+    allocate(n(timeLength))
+    allocate(q(timeLength))
 
     t = [(dt*(i-1), i=1, timeLength)]
 
@@ -436,6 +440,10 @@ program FxI
             do j = 1, size(interneuronPools)
                 call interneuronPools(j)%atualizeInterneuronPool(t(i))
                 RCv_mV(i) = interneuronPools(j)%v_mV(1)        
+                n(i) = interneuronPools(j)%unit(1)%compartments(1)%Channels(1)%condState(1)%value
+                q(i) = interneuronPools(j)%unit(1)%compartments(1)%Channels(2)%condState(1)%value       
+                m(i) = interneuronPools(j)%unit(1)%compartments(1)%Channels(3)%condState(1)%value
+                h(i) = interneuronPools(j)%unit(1)%compartments(1)%Channels(3)%condState(2)%value
             end do
         end do
 
@@ -510,5 +518,17 @@ program FxI
     call gp%xlabel('current')
     call gp%ylabel('firing rate')
     call gp%plot(currents, th, 'with line lw 2 lc rgb "#0008B0"') 
+    
+    call gp%title('m(t)')
+    call gp%plot(t, m, 'with line lw 2 lc rgb "#0008B0"') 
+    
+    call gp%title('h(t)')
+    call gp%plot(t, h, 'with line lw 2 lc rgb "#0008B0"') 
+    
+    call gp%title('n(t)')
+    call gp%plot(t, n, 'with line lw 2 lc rgb "#0008B0"') 
+    
+    call gp%title('q(t)')
+    call gp%plot(t, q, 'with line lw 2 lc rgb "#0008B0"') 
     
 end program FxI

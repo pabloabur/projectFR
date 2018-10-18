@@ -241,27 +241,27 @@ program StaticProperties
 
         ! Connectivity
         paramTag = 'Con:RC_ext->MG-S@dendrite|inhibitory'
-        value1 = '70'!'100'
+        value1 = '100'!70
         value2 = ''
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'Con:RC_ext->MG-FR@dendrite|inhibitory'
-        value1 = '70'!'100'
+        value1 = '100'!70
         value2 = ''
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'Con:RC_ext->MG-FF@dendrite|inhibitory'
-        value1 = '70'!'100'
+        value1 = '100'!'70'
         value2 = ''
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'Con:MG-S>RC_ext-@soma|excitatory'
-        value1 = '41'!'100'
+        value1 = '100'!'41'
         value2 = ''
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'Con:MG-FR>RC_ext-@soma|excitatory'
-        value1 = '41'!'100'
+        value1 = '100'!'41'
         value2 = ''
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'Con:MG-FF>RC_ext-@soma|excitatory'
-        value1 = '41'!'100'
+        value1 = '100'!'41'
         value2 = ''
         call conf%changeConfigurationParameter(paramTag, value1, value2)
 
