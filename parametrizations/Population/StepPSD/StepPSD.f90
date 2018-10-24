@@ -38,8 +38,8 @@ program StepPSD
     real(wp), parameter :: pi = 4 * atan(1.0_wp)    
     integer :: timeLength
     integer :: i, j, k
-    real(wp), dimension(:), allocatable :: t, MNv_mV, MNv_mV100, MNv_mV300, RCv_mV, &
-        synapticInput, V
+    real(wp), dimension(:), allocatable :: t, MNDend_mV, MNSoma_mV, RCv_mV, &
+        synapticInput, commomDriveG, V
     real(wp), allocatable :: Vs(:,:)
     real(wp) :: sigmaSquared,  sigmaSquaredi,  chiSquared
     real(wp) :: tic, toc
@@ -69,15 +69,15 @@ program StepPSD
         nFF = '0', nRC = '0', nCM = '400', nMN = '300' ! nS+nFR+nFF
     integer :: sampleSize = 101
     integer :: startMNIndex = 100
-    integer, parameter :: pulseWidth_ms = 5
+    integer, parameter :: pulseWidth_ms = 20
     integer, parameter :: frequency_Hz = 10
     real(wp), parameter :: pulsePeriod_ms = real(1, wp)/frequency_Hz*1e3
-    integer :: pulseWidthLen, pulsePeriodLen, pulseCycles
+    integer :: pulseWidth_i, pulsePeriod_i, pulseCycles
 
     call init_random_seed()
 
     conf = Configuration(filename)
-    conf%simDuration_ms = 1000!30000!100000
+    conf%simDuration_ms = 6000!30000!100000
 
     !Changing configuration file
     paramTag = 'Number_CMExt'
@@ -415,7 +415,7 @@ program StepPSD
     value2 = ''
     call conf%changeConfigurationParameter(paramTag, value1, value2)
     paramTag = 'NoiseGammaOrder_MG'
-    value1 = '1.6'
+    value1 = '7'
     value2 = ''
     call conf%changeConfigurationParameter(paramTag, value1, value2)
     paramTag = 'NoiseTarget_MG'
@@ -423,15 +423,12 @@ program StepPSD
     value2 = ''
     call conf%changeConfigurationParameter(paramTag, value1, value2)
     paramTag = 'NoiseFunction_MG'
-    value1 = '20'
+    value1 = '625'
     value2 = ''
     call conf%changeConfigurationParameter(paramTag, value1, value2)
     paramTag = 'gmax:Noise>MG-@dendrite|excitatory'
-    value1 = '10'
-    value2 = ''
-    call conf%changeConfigurationParameter(paramTag, value1, value2)
-    paramTag = 'Con:Noise>MG-@dendrite|excitatory'
-    value1 = '75'
+    value1 = '0.04'
+    !value1 = '2.1' ! Compensated value (for closed loop)
     value2 = ''
     call conf%changeConfigurationParameter(paramTag, value1, value2)
 
@@ -456,6 +453,41 @@ program StepPSD
     value2 = ''
     call conf%changeConfigurationParameter(paramTag, value1, value2)
 
+    ! MNs FR type used for computing the 
+    ! synaptic conductance caused by commom drive
+    paramTag = 'MUnumber_MG-FR'
+    value1 = '1'
+    value2 = ''
+    call conf%changeConfigurationParameter(paramTag, value1, value2)
+    paramTag = 'Con:RC_ext->MG-FR@dendrite|inhibitory'
+    value1 = '0'
+    value2 = ''
+    call conf%changeConfigurationParameter(paramTag, value1, value2)
+    paramTag = 'Con:MG-FR>RC_ext-@soma|excitatory'
+    value1 = '0'
+    value2 = ''
+    call conf%changeConfigurationParameter(paramTag, value1, value2)
+    paramTag = 'gmax:RC_ext->MG-FR@dendrite|inhibitory'
+    value1 = '0'
+    value2 = ''
+    call conf%changeConfigurationParameter(paramTag, value1, value2)
+    paramTag = 'gmax:MG-FR>RC_ext-@soma|excitatory'
+    value1 = '0'
+    value2 = ''
+    call conf%changeConfigurationParameter(paramTag, value1, value2)
+    paramTag = 'Con:CMExt->MG-FR@dendrite|excitatory'
+    value1 = '100'
+    value2 = ''
+    call conf%changeConfigurationParameter(paramTag, value1, value2)
+    paramTag = 'twitchPeak:MG-FR'
+    value1 = '0'
+    value2 = '0'
+    call conf%changeConfigurationParameter(paramTag, value1, value2)
+    paramTag = 'EMGAmplitude:MG-FR'
+    value1 = '0'
+    value2 = '0'
+    call conf%changeConfigurationParameter(paramTag, value1, value2)
+
     print *, 'Building neural elements'
     allocate(neuralTractPools(1))
     pool = 'CMExt'
@@ -465,10 +497,10 @@ program StepPSD
     pool = 'MG'
     motorUnitPools(1) = MotorUnitPool(conf, pool)    
 
-    allocate(interneuronPools(1))
-    pool = 'RC'
-    group = 'ext'    
-    interneuronPools(1) = InterneuronPool(conf, pool, group)
+    allocate(interneuronPools(0))
+    !pool = 'RC'
+    !group = 'ext'    
+    !interneuronPools(1) = InterneuronPool(conf, pool, group)
 
     allocate(afferentPools(0))
 
@@ -483,25 +515,27 @@ program StepPSD
     
     allocate(t(timeLength))
     allocate(FR(timeLength))
-    allocate(MNv_mV(timeLength))
-    allocate(MNv_mV100(timeLength))
-    allocate(MNv_mV300(timeLength))
+    allocate(MNDend_mV(timeLength))
+    allocate(MNSoma_mV(timeLength))
     allocate(V(timeLength))
     allocate(RCv_mV(timeLength))
     allocate(synapticInput(timeLength))
+    allocate(commomDriveG(timeLength))
     allocate(force(timeLength))
     allocate(Vs(timeLength,sampleSize)) ! According to slice takenSize
 
     t = [(dt*(i-1), i=1, timeLength)]
 
     FR(:) = 0_wp
-    pulseCycles = int(conf%simDuration_ms/pulsePeriod_ms)
-    pulsePeriodLen = int(pulsePeriod_ms/dt)
-    pulseWidthLen = int(pulseWidth_ms/dt)
+    pulseCycles = int(tf/pulsePeriod_ms)
+    pulsePeriod_i = int(pulsePeriod_ms/dt)
+    pulseWidth_i = int(pulseWidth_ms/dt)
+    if (pulseWidth_i.ge.pulsePeriod_i) then
+        print *, "Pulse width larger or equal pulse period"
+        stop (1)
+    end if
     do i = 1, pulseCycles
-        print *, (i-1)*pulsePeriodLen+2
-        print *, pulseCycles*i
-        FR((i-1)*pulsePeriodLen+2:pulseCycles*i) = 100_wp
+        FR((i-1)*pulsePeriod_i+pulsePeriod_i-pulseWidth_i:pulsePeriod_i*i) = 140_wp
     end do
     
     print *, 'Running simulation'
@@ -520,10 +554,10 @@ program StepPSD
         !end do
         do j = 1, size(motorUnitPools)
             call motorUnitPools(j)%atualizeMotorUnitPool(t(i), 32.0_wp, 32.0_wp)
-            !MNv_mV(i) = motorUnitPools(j)%v_mV(2*(1))
-            !MNv_mV100(i) = motorUnitPools(j)%v_mV(2*(150))
-            !MNv_mV300(i) = motorUnitPools(j)%v_mV(2*(300))
+            MNDend_mV(i) = motorUnitPools(j)%v_mV(2*(1)-1)
+            MNSoma_mV(i) = motorUnitPools(j)%v_mV(2*(1))
             synapticInput(i) = motorUnitPools(j)%iIonic(1)
+            commomDriveG(i) = motorUnitPools(j)%iIonic(301)
             ! Slice with desired MNs
             do k=startMNIndex, startMNIndex+sampleSize-1
                 Vs(i,k-99) = motorUnitPools(j)%v_mV(2*(k))
@@ -532,6 +566,7 @@ program StepPSD
     end do
 
     call motorUnitPools(1)%listSpikes()
+    call motorUnitPools(1)%getMotorUnitPoolEMG()
     !call neuralTractPools(1)%listSpikes()
     !call interneuronPools(1)%listSpikes()
 
@@ -539,18 +574,24 @@ program StepPSD
         force(i) = motorUnitPools(1)%NoHillMuscle%force(i)
     end do
 
-    !filename = "datNoRC/inputV_I.dat"
-    filename = "inputV_I.dat"
-    !filename = "test/inputV_I.dat"
+    filename = "datNoRC/inputV_I.dat"
+    !filename = "inputV_I.dat"
     open(1, file=filename, status = 'replace')
     do i = 1, timeLength
-        write(1, '(F15.6, 1X, F15.6)') MNv_mV(i), synapticInput(i)
+        write(1, '(F15.6, 1X, F15.6)') MNDend_mV(i), synapticInput(i)
     end do
     close(1)
 
-    !filename = "datNoRC/MNspk.dat"
-    filename = "MNspk.dat"
-    !filename = "test/MNspk.dat"
+    filename = "datNoRC/g_emg.dat"
+    !filename = "g_emg.dat"
+    open(1, file=filename, status = 'replace')
+    do i = 1, timeLength
+        write(1, '(F15.6, 1X, F15.6)') commomDriveG(i), motorUnitPools(1)%emg(i)
+    end do
+    close(1)
+
+    filename = "datNoRC/MNspk.dat"
+    !filename = "MNspk.dat"
     open(1, file=filename, status = 'replace')
     do i = 1, size(motorUnitPools(1)%poolSomaSpikes, 1)
         write(1, '(F15.6, 1X, F15.1)') motorUnitPools(1)%poolSomaSpikes(i,1), &
@@ -558,25 +599,8 @@ program StepPSD
     end do
     close(1)
 
-    !filename = "NTspk.dat"
-    !open(1, file=filename, status = 'replace')
-    !do i = 1, size(neuralTractPools(1)%poolTerminalSpikes, 1)
-    !    write(1, '(F15.6, 1X, F15.1)') neuralTractPools(1)%poolTerminalSpikes(i,1), &
-    !        neuralTractPools(1)%poolTerminalSpikes(i,2)
-    !end do
-    !close(1)
-
-    !filename = "INspk.dat"
-    !open(1, file=filename, status = 'replace')
-    !do i = 1, size(interneuronPools(1)%poolSomaSpikes, 1)
-    !    write(1, '(F15.6, 1X, F15.1)') interneuronPools(1)%poolSomaSpikes(i,1), &
-    !        interneuronPools(1)%poolSomaSpikes(i,2)
-    !end do
-    !close(1)
-
-    !filename = "datNoRC/force.dat"
-    filename = "force.dat"
-    !filename = "test/force.dat"
+    filename = "datNoRC/force.dat"
+    !filename = "force.dat"
     open(1, file=filename, status = 'replace')
     do i = 1, timeLength
            write(1, '(F15.2)') force(i)
@@ -593,7 +617,6 @@ program StepPSD
     sigmaSquared = sum(V(2000:)**2)/size(t) - (sum(V(2000:))/size(t))**2
 
     filename = "V.dat"
-    !filename = "test/V.dat"
     open(1, file=filename, status = 'replace')
     do i = 1, timeLength
            write(1, '(F15.2)') V(i)
@@ -614,19 +637,20 @@ program StepPSD
     print *, sqrt(chiSquared)
     print *, '------------------------------'
 
-    call gp%title('MN1')
-    call gp%xlabel('t (ms))')
-    call gp%ylabel('Volts (mV)')
-    call gp%plot(t, FR, 'with line lw 2 lc rgb "#0008B0"') 
-
-    !call gp%title('MN100')
+    !call gp%title('MN1')
     !call gp%xlabel('t (ms))')
     !call gp%ylabel('Volts (mV)')
-    !call gp%plot(t, MNv_mV100, 'with line lw 2 lc rgb "#0008B0"') 
+    !call gp%plot(t, FR, 'with line lw 2 lc rgb "#0008B0"') 
 
-    !call gp%title('MN300')
+    !call gp%title('Voltage at soma of MN 1')
     !call gp%xlabel('t (ms))')
     !call gp%ylabel('Volts (mV)')
-    !call gp%plot(t, MNv_mV300, 'with line lw 2 lc rgb "#0008B0"') 
+    !call gp%plot(t, MNSoma_mV, 'with line lw 2 lc rgb "#0008B0"') 
+
+    !call gp%title('MN spike instants at the soma')
+    !call gp%xlabel('t (s))')
+    !call gp%ylabel('Motoneuron index')
+    !call gp%plot(motorUnitPools(1)%poolSomaSpikes(:,1), &
+    !motorUnitPools(1)%poolSomaSpikes(:,2), 'with points pt 5 lc rgb "#0008B0"')
 
 end program StepPSD
