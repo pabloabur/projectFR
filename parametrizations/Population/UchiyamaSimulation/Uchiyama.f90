@@ -524,6 +524,8 @@ program ForcedPSD
         call neuralTractPools(1)%reset()
         call motorUnitPools(1)%reset()
         call interneuronPools(1)%reset()
+        call synapticNoisePools(1)%reset()
+        call synapticNoisePools(2)%reset()
     end do
 
     call cpu_time(toc)

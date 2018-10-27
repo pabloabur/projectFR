@@ -441,7 +441,9 @@ program RecruitmentOrder
     do i = 1, size(t)
         ! Injected current in the soma of MNs
         do j = 1, size(motorUnitPools(1)%unit)
-            motorUnitPools(1)%iInjected(2*(j)) = 90.0_wp!90.0_wp/50.0_wp*t(j)
+            if (i.ne.1) then
+                motorUnitPools(1)%iInjected(2*(j)) = 90.0_wp/50.0_wp*t(j)
+            end if
         end do
 
         ! Updating elements

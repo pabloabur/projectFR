@@ -22,6 +22,8 @@ program AHP
     type(gpf) :: gp
     character(len = 80) :: pool, group
     character(len = 80) :: filename = '../../conf.rmto'
+    character(len = 35) :: path = '/home/pablo/osf/Master-Thesis-Data/'
+    character(len = 25) :: folderName = 'AHP/'
     type(MotorUnitPool), dimension(:), allocatable, target :: motorUnitPools
     type(NeuralTract), dimension(:), allocatable :: neuralTractPools    
     type(InterneuronPool), dimension(:), allocatable, target :: interneuronPools    
@@ -402,7 +404,7 @@ program AHP
     synapticNoisePools = synapseFactory(conf, neuralTractPools, &
                                         motorUnitPools, &
                                         interneuronPools, &
-                                        afferentPools)!, probDecay)
+                                        afferentPools, probDecay)
     
     tf = conf%simDuration_ms
     dt = conf%timeStep_ms
@@ -425,9 +427,11 @@ program AHP
         end do
     end do
 
-    call gp%title('Membrane potential of the soma of the RC #1')
-    call gp%xlabel('t (ms))')
-    call gp%ylabel('Membrane potential (mV)')
-    call gp%plot(t, RCv_mV, 'with line lw 2 lc rgb "#0008B0"') 
+    filename = path // trim(folderName) // trim("RCSpikes.dat")
+    open(1, file=filename, status = 'replace')
+    do i = 1, size(t)
+        write(1, '(F8.3, 1X, F15.10)') t(i), RCv_mV(i)
+    end do
+    close(1)
     
 end program AHP
