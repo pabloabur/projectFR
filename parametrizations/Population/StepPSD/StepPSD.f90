@@ -329,6 +329,8 @@ program StepPSD
     ! MNs from a SOL pool used for computing the 
     ! synaptic conductance caused by commom drive
     ! Parameters were set directly on conf file
+    ! Those were quantities, CMext connectivity,
+    ! RC-MN/MN-RC connectivities and increased threshold
     pool = 'SOL'
     motorUnitPools(2) = MotorUnitPool(conf, pool)    
 
