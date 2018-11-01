@@ -22,6 +22,7 @@ program EPSP
     type(gpf) :: gp
     character(len = 80) :: pool, group
     character(len = 80) :: filename = '../../conf.rmto'
+    character(len = 80) :: path = '/home/pablo/osf/Master-Thesis-Data/cell/EPSP/'
     type(MotorUnitPool), dimension(:), allocatable, target :: motorUnitPools
     type(NeuralTract), dimension(:), allocatable :: neuralTractPools    
     type(InterneuronPool), dimension(:), allocatable, target :: interneuronPools    
@@ -34,10 +35,10 @@ program EPSP
     real(wp) :: tf
     ! Input parameters
     logical, parameter :: probDecay = .false.
-    real(wp), parameter :: FFConducStrength = 0.3_wp, & 
+    real(wp), parameter :: FFConducStrength = 0.0175_wp, & 
         declineFactorMN = real(1, wp)/6, declineFactorRC = real(3.5, wp)/3
-    character(len=3), parameter :: nS = '1', nFR = '1', &
-        nFF = '1', nRC = '1', nCM = '0', nMN = '3' ! nS+nFR+nFF
+    character(len=3), parameter :: nS = '0', nFR = '1', &
+        nFF = '0', nRC = '1', nCM = '0', nMN = '1' ! nS+nFR+nFF
 
     call init_random_seed()
 
@@ -339,11 +340,11 @@ program EPSP
         ! Columnar length
         paramTag = 'position:MG-'
         value1 = '0'
-        value2 = '7'
+        value2 = '0'
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'position:RC_ext-'
         value1 = '0'
-        value2 = '7'
+        value2 = '0'
         call conf%changeConfigurationParameter(paramTag, value1, value2)
     else
         print *, 'Wrong parametrization option'
@@ -404,7 +405,7 @@ program EPSP
     synapticNoisePools = synapseFactory(conf, neuralTractPools, &
                                         motorUnitPools, &
                                         interneuronPools, &
-                                        afferentPools)!, probDecay)
+                                        afferentPools, probDecay)
     
     tf = conf%simDuration_ms
     dt = conf%timeStep_ms
@@ -418,9 +419,9 @@ program EPSP
 
     do i = 1, size(t)
         if (t(i)>10.and.t(i)<10.5) then
-            motorUnitPools(1)%iInjected(6) = 45.0
+            motorUnitPools(1)%iInjected(2) = 45.0
         else
-            motorUnitPools(1)%iInjected(6) = 0.0
+            motorUnitPools(1)%iInjected(2) = 0.0
         end if
         do j = 1, size(interneuronPools)
             call interneuronPools(j)%atualizeInterneuronPool(t(i))
@@ -428,18 +429,24 @@ program EPSP
         end do
         do j = 1, size(motorUnitPools)
             call motorUnitPools(j)%atualizeMotorUnitPool(t(i), 32.0_wp, 32.0_wp)
-            MNv_mV(i) = motorUnitPools(j)%v_mV(6)
+            MNv_mV(i) = motorUnitPools(j)%v_mV(2)
         end do
     end do
 
-    call gp%title('Membrane potential of the soma of the RC #1')
-    call gp%xlabel('t (ms))')
-    call gp%ylabel('Membrane potential (mV)')
-    call gp%plot(t, RCv_mV, 'with line lw 2 lc rgb "#0008B0"') 
+    filename = trim(path) // 'EPSP.dat'
+    open(1, file=filename, status = 'replace')
+    do i = 1, size(t)
+        write(1, '(F15.6, 1X, F15.1, 1X, F15.2)') t(i), RCv_mV(i)
+    end do
+    close(1)
+    !call gp%title('Membrane potential of the soma of the RC #1')
+    !call gp%xlabel('t (ms))')
+    !call gp%ylabel('Membrane potential (mV)')
+    !call gp%plot(t, RCv_mV, 'with line lw 2 lc rgb "#0008B0"') 
 
-    call gp%title('Membrane potential of the soma of the MN #1')
-    call gp%xlabel('t (ms))')
-    call gp%ylabel('Membrane potential (mV)')
-    call gp%plot(t, MNv_mV, 'with line lw 2 lc rgb "#0008B0"')
+    !call gp%title('Membrane potential of the soma of the MN #1')
+    !call gp%xlabel('t (ms))')
+    !call gp%ylabel('Membrane potential (mV)')
+    !call gp%plot(t, MNv_mV, 'with line lw 2 lc rgb "#0008B0"')
     
 end program EPSP
