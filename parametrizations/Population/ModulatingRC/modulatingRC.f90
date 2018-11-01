@@ -137,15 +137,15 @@ program modulatingRC
 
         ! Conductances
         paramTag = 'gmax:RC_ext->MG-S@dendrite|inhibitory'
-        value1 = '0.065'!'0.260'!!'0.130'
+        value1 = '0.130'!'0.260'!'0.065'!
         value2 = ''
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'gmax:RC_ext->MG-FR@dendrite|inhibitory'
-        value1 = '0.0595'!'0.238'!!'0.119'
+        value1 = '0.119'!'0.238'!'0.0595'!
         value2 = ''
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'gmax:RC_ext->MG-FF@dendrite|inhibitory'
-        value1 = '0.0405'!'0.162'!!'0.081'
+        value1 = '0.081'!'0.162'!'0.0405'!
         value2 = ''
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'gmax:MG-S>RC_ext-@soma|excitatory'
