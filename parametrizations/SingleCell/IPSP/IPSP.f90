@@ -22,6 +22,8 @@ program IPSP
     type(gpf) :: gp
     character(len = 80) :: pool, group
     character(len = 80) :: filename = '../../conf.rmto'
+    character(len = 45) :: path = '/home/pablo/osf/Master-Thesis-Data/cell/'
+    character(len = 25) :: folderName = 'IPSP/'
     type(MotorUnitPool), dimension(:), allocatable, target :: motorUnitPools
     type(NeuralTract), dimension(:), allocatable :: neuralTractPools    
     type(InterneuronPool), dimension(:), allocatable, target :: interneuronPools    
@@ -214,8 +216,8 @@ program IPSP
     else if (param.eq.'final') then
         ! Threshold
         paramTag = 'threshold:RC_ext-'
-        value1 = '18.9089'
-        value2 = '18.9089'
+        value1 = '22.9608'
+        value2 = '22.9608'
         call conf%changeConfigurationParameter(paramTag, value1, value2)
 
         ! Connectivity
@@ -246,7 +248,7 @@ program IPSP
 
         ! Conductances
         paramTag = 'gmax:RC_ext->MG-S@dendrite|inhibitory'
-        value1 = '0.130'
+        value1 = '0.128'
         value2 = ''
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'gmax:RC_ext->MG-FR@dendrite|inhibitory'
@@ -254,7 +256,7 @@ program IPSP
         value2 = ''
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'gmax:RC_ext->MG-FF@dendrite|inhibitory'
-        value1 = '0.081'
+        value1 = '0.094'
         value2 = ''
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'gmax:MG-S>RC_ext-@soma|excitatory'
@@ -280,8 +282,8 @@ program IPSP
         value2 = '218.2168'
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'res@soma:RC_ext-'
-        value1 = '7000'
-        value2 = '7000'
+        value1 = '8500'
+        value2 = '8500'
         call conf%changeConfigurationParameter(paramTag, value1, value2)
 
         ! Ks
@@ -414,7 +416,7 @@ program IPSP
     synapticNoisePools = synapseFactory(conf, neuralTractPools, &
                                         motorUnitPools, &
                                         interneuronPools, &
-                                        afferentPools)!, probDecay)
+                                        afferentPools, probDecay)
     
     tf = conf%simDuration_ms
     dt = conf%timeStep_ms
@@ -444,18 +446,26 @@ program IPSP
         end do
     end do
 
-    call gp%title('Membrane potential of the soma of the MN #1')
-    call gp%xlabel('t (ms))')
-    call gp%ylabel('Membrane potential (mV)')
-    call gp%plot(t, MNSv_mV, 'with line lw 2 lc rgb "#0008B0"')
-    
-    call gp%title('Membrane potential of the soma of the MN #1')
-    call gp%xlabel('t (ms))')
-    call gp%ylabel('Membrane potential (mV)')
-    call gp%plot(t, MNFRv_mV, 'with line lw 2 lc rgb "#0008B0"')
+    !call gp%title('Membrane potential of the soma of the MN #1')
+    !call gp%xlabel('t (ms))')
+    !call gp%ylabel('Membrane potential (mV)')
+    !call gp%plot(t, MNSv_mV, 'with line lw 2 lc rgb "#0008B0"')
+    !
+    !call gp%title('Membrane potential of the soma of the MN #1')
+    !call gp%xlabel('t (ms))')
+    !call gp%ylabel('Membrane potential (mV)')
+    !call gp%plot(t, MNFRv_mV, 'with line lw 2 lc rgb "#0008B0"')
 
-    call gp%title('Membrane potential of the soma of the MN #1')
-    call gp%xlabel('t (ms))')
-    call gp%ylabel('Membrane potential (mV)')
-    call gp%plot(t, MNFFv_mV, 'with line lw 2 lc rgb "#0008B0"')
+    !call gp%title('Membrane potential of the soma of the MN #1')
+    !call gp%xlabel('t (ms))')
+    !call gp%ylabel('Membrane potential (mV)')
+    !call gp%plot(t, MNFFv_mV, 'with line lw 2 lc rgb "#0008B0"')
+
+    filename = trim(path) // trim(folderName) // trim("IPSP.dat")
+    open(1, file=filename, status = 'replace')
+    do i = 1, size(t)
+        write(1, '(F8.3, 1X, F15.10, 1X, F15.10, 1X, F15.10)') t(i), MNSv_mV(i), &
+            MNFRv_mV(i), MNFFv_mV(i)
+    end do
+    close(1)
 end program IPSP

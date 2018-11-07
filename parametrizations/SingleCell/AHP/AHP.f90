@@ -22,7 +22,7 @@ program AHP
     type(gpf) :: gp
     character(len = 80) :: pool, group
     character(len = 80) :: filename = '../../conf.rmto'
-    character(len = 35) :: path = '/home/pablo/osf/Master-Thesis-Data/'
+    character(len = 45) :: path = '/home/pablo/osf/Master-Thesis-Data/cell/'
     character(len = 25) :: folderName = 'AHP/'
     type(MotorUnitPool), dimension(:), allocatable, target :: motorUnitPools
     type(NeuralTract), dimension(:), allocatable :: neuralTractPools    
@@ -216,8 +216,8 @@ program AHP
     else if (param.eq.'final') then
         ! Threshold
         paramTag = 'threshold:RC_ext-'
-        value1 = '18.9089'
-        value2 = '18.9089'
+        value1 = '22.9608'
+        value2 = '22.9608'
         call conf%changeConfigurationParameter(paramTag, value1, value2)
 
         ! Connectivity
@@ -282,8 +282,8 @@ program AHP
         value2 = '218.2168'
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'res@soma:RC_ext-'
-        value1 = '7000'
-        value2 = '7000'
+        value1 = '8500'
+        value2 = '8500'
         call conf%changeConfigurationParameter(paramTag, value1, value2)
 
         ! Ks
@@ -427,7 +427,7 @@ program AHP
         end do
     end do
 
-    filename = path // trim(folderName) // trim("RCSpikes.dat")
+    filename = trim(path) // trim(folderName) // trim("AHP.dat")
     open(1, file=filename, status = 'replace')
     do i = 1, size(t)
         write(1, '(F8.3, 1X, F15.10)') t(i), RCv_mV(i)

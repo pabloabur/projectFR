@@ -22,6 +22,8 @@ program FxI
     type(gpf) :: gp
     character(len = 80) :: pool, group
     character(len = 80) :: filename = '../../conf.rmto'
+    character(len = 45) :: path = '/home/pablo/osf/Master-Thesis-Data/cell/'
+    character(len = 25) :: folderName = 'FxI/'
     type(MotorUnitPool), dimension(:), allocatable, target :: motorUnitPools
     type(NeuralTract), dimension(:), allocatable :: neuralTractPools    
     type(InterneuronPool), dimension(:), allocatable, target :: interneuronPools    
@@ -226,8 +228,8 @@ program FxI
     else if (param.eq.'final') then
         ! Threshold
         paramTag = 'threshold:RC_ext-'
-        value1 = '18.9089'
-        value2 = '18.9089'
+        value1 = '22.9608'
+        value2 = '22.9608'
         call conf%changeConfigurationParameter(paramTag, value1, value2)
 
         ! Connectivity
@@ -292,8 +294,8 @@ program FxI
         value2 = '218.2168'
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'res@soma:RC_ext-'
-        value1 = '7000'
-        value2 = '7000'
+        value1 = '8500'
+        value2 = '8500'
         call conf%changeConfigurationParameter(paramTag, value1, value2)
 
         ! Ks
@@ -439,7 +441,9 @@ program FxI
             end if
             do j = 1, size(interneuronPools)
                 call interneuronPools(j)%atualizeInterneuronPool(t(i))
-                RCv_mV(i) = interneuronPools(j)%v_mV(1)        
+                if (currents(k).eq.12) then
+                    RCv_mV(i) = interneuronPools(j)%v_mV(1)
+                end if
                 n(i) = interneuronPools(j)%unit(1)%compartments(1)%Channels(1)%condState(1)%value
                 q(i) = interneuronPools(j)%unit(1)%compartments(1)%Channels(2)%condState(1)%value       
                 m(i) = interneuronPools(j)%unit(1)%compartments(1)%Channels(3)%condState(1)%value
@@ -498,37 +502,50 @@ program FxI
         th(k) = firingRate_pps(4)
     end do
 
+    !call gp%title('1')
+    !call gp%xlabel('current')
+    !call gp%ylabel('firing rate')
+    !call gp%plot(currents, st, 'with line lw 2 lc rgb "#0008B0"') 
+    !
+    !call gp%title('2')
+    !call gp%xlabel('current')
+    !call gp%ylabel('firing rate')
+    !call gp%plot(currents, nd, 'with line lw 2 lc rgb "#0008B0"') 
+    !
+    !call gp%title('3')
+    !call gp%xlabel('current')
+    !call gp%ylabel('firing rate')
+    !call gp%plot(currents, rd, 'with line lw 2 lc rgb "#0008B0"') 
+    !
+    !call gp%title('4')
+    !call gp%xlabel('current')
+    !call gp%ylabel('firing rate')
+    !call gp%plot(currents, th, 'with line lw 2 lc rgb "#0008B0"') 
+    !
+    !call gp%title('m(t)')
+    !call gp%plot(t, m, 'with line lw 2 lc rgb "#0008B0"') 
+    !
+    !call gp%title('h(t)')
+    !call gp%plot(t, h, 'with line lw 2 lc rgb "#0008B0"') 
+    !
+    !call gp%title('n(t)')
+    !call gp%plot(t, n, 'with line lw 2 lc rgb "#0008B0"') 
+    !
+    !call gp%title('q(t)')
+    !call gp%plot(t, q, 'with line lw 2 lc rgb "#0008B0"') 
+    
+    filename = trim(path) // trim(folderName) // trim("FxI.dat")
+    open(1, file=filename, status = 'replace')
+    do i = 1, size(currents)
+        write(1, '(F7.4, 1X, F8.4, 1X, F8.4, 1X, F8.4, 1X, F8.4)') currents(i), st(i), nd(i), rd(i), th(i)
+    end do
+    close(1)
 
-    call gp%title('1')
-    call gp%xlabel('current')
-    call gp%ylabel('firing rate')
-    call gp%plot(currents, st, 'with line lw 2 lc rgb "#0008B0"') 
-    
-    call gp%title('2')
-    call gp%xlabel('current')
-    call gp%ylabel('firing rate')
-    call gp%plot(currents, nd, 'with line lw 2 lc rgb "#0008B0"') 
-    
-    call gp%title('3')
-    call gp%xlabel('current')
-    call gp%ylabel('firing rate')
-    call gp%plot(currents, rd, 'with line lw 2 lc rgb "#0008B0"') 
-    
-    call gp%title('4')
-    call gp%xlabel('current')
-    call gp%ylabel('firing rate')
-    call gp%plot(currents, th, 'with line lw 2 lc rgb "#0008B0"') 
-    
-    call gp%title('m(t)')
-    call gp%plot(t, m, 'with line lw 2 lc rgb "#0008B0"') 
-    
-    call gp%title('h(t)')
-    call gp%plot(t, h, 'with line lw 2 lc rgb "#0008B0"') 
-    
-    call gp%title('n(t)')
-    call gp%plot(t, n, 'with line lw 2 lc rgb "#0008B0"') 
-    
-    call gp%title('q(t)')
-    call gp%plot(t, q, 'with line lw 2 lc rgb "#0008B0"') 
+    filename = trim(path) // trim(folderName) // trim("FxI_RC.dat")
+    open(1, file=filename, status = 'replace')
+    do i = 1, size(t)
+        write(1, '(F8.3, 1X, F15.10)') t(i), RCv_mV(i)
+    end do
+    close(1)
     
 end program FxI

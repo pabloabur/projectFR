@@ -35,9 +35,9 @@ program EPSP
     real(wp) :: tf
     ! Input parameters
     logical, parameter :: probDecay = .false.
-    real(wp), parameter :: FFConducStrength = 0.0175_wp, & 
+    real(wp), parameter :: FFConducStrength = 0.0275_wp, & 
         declineFactorMN = real(1, wp)/6, declineFactorRC = real(3.5, wp)/3
-    character(len=3), parameter :: nS = '0', nFR = '1', &
+    character(len=3), parameter :: nS = '1', nFR = '0', &
         nFF = '0', nRC = '1', nCM = '0', nMN = '1' ! nS+nFR+nFF
 
     call init_random_seed()
@@ -281,8 +281,8 @@ program EPSP
         value2 = '218.2168'
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'res@soma:RC_ext-'
-        value1 = '7000'
-        value2 = '7000'
+        value1 = '8500'
+        value2 = '8500'
         call conf%changeConfigurationParameter(paramTag, value1, value2)
 
         ! Ks
@@ -436,7 +436,7 @@ program EPSP
     filename = trim(path) // 'EPSP.dat'
     open(1, file=filename, status = 'replace')
     do i = 1, size(t)
-        write(1, '(F15.6, 1X, F15.1, 1X, F15.2)') t(i), RCv_mV(i)
+        write(1, '(F10.5, 1X, F10.5)') t(i), RCv_mV(i)
     end do
     close(1)
     !call gp%title('Membrane potential of the soma of the RC #1')
