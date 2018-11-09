@@ -43,7 +43,9 @@ program McCurdyHammConnectivity
     type(gpf) :: gp
     integer :: GammaOrder 
     character(len = 80) :: pool, group
-    character(len = 80) :: filename = '../../conf.rmto'
+    character(len = 100) :: filename = '../../conf.rmto'
+    character(len = 100) :: path = '/home/pablo/osf/Master-Thesis-Data/population/'
+    character(len = 100) :: folderName = 'McHamm/false_decay/trial1/'
     type(MotorUnitPool), dimension(:), allocatable, target :: motorUnitPools
     type(NeuralTract), dimension(:), allocatable :: neuralTractPools    
     type(InterneuronPool), dimension(:), allocatable, target :: interneuronPools    
@@ -56,7 +58,7 @@ program McCurdyHammConnectivity
     real(wp) :: dt
     real(wp) :: tf
     logical, parameter :: probDecay = .false.
-    real(wp), parameter :: FFConducStrength = 0.0275_wp, & 
+    real(wp), parameter :: FFConducStrength = 0.08_wp, &!0.0275_wp, & 
         declineFactorMN = real(1, wp)/6, declineFactorRC = real(3.5, wp)/3
     character(len=3), parameter :: nS = '75', nFR = '75', &
         nFF = '150', nRC = '600', nCM = '0', nMN = '300' ! nS+nFR+nFF
@@ -253,8 +255,8 @@ program McCurdyHammConnectivity
     else if (param.eq.'final') then
         ! Threshold
         paramTag = 'threshold:RC_ext-'
-        value1 = '18.9089'
-        value2 = '18.9089'
+        value1 = '22.9608'
+        value2 = '22.9608'
         call conf%changeConfigurationParameter(paramTag, value1, value2)
 
         ! Connectivity
@@ -285,7 +287,7 @@ program McCurdyHammConnectivity
 
         ! Conductances
         paramTag = 'gmax:RC_ext->MG-S@dendrite|inhibitory'
-        value1 = '0.130'
+        value1 = '0.128'
         value2 = ''
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'gmax:RC_ext->MG-FR@dendrite|inhibitory'
@@ -293,7 +295,7 @@ program McCurdyHammConnectivity
         value2 = ''
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'gmax:RC_ext->MG-FF@dendrite|inhibitory'
-        value1 = '0.081'
+        value1 = '0.094'
         value2 = ''
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'gmax:MG-S>RC_ext-@soma|excitatory'
@@ -319,8 +321,8 @@ program McCurdyHammConnectivity
         value2 = '218.2168'
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'res@soma:RC_ext-'
-        value1 = '7000'
-        value2 = '7000'
+        value1 = '8500'
+        value2 = '8500'
         call conf%changeConfigurationParameter(paramTag, value1, value2)
 
         ! Ks
@@ -387,7 +389,7 @@ program McCurdyHammConnectivity
 
         ! ! RC spontaneous activity 
         paramtag = 'gmax:Noise>RC_ext-@soma|excitatory'
-        value1 = '0.028'
+        value1 = '0.03015'
         value2 = ''
         call conf%changeconfigurationparameter(paramtag, value1, value2)
         paramtag = 'NoiseFunction_RC_ext'
@@ -486,14 +488,17 @@ program McCurdyHammConnectivity
                 RC_mV(i, j) = interneuronPools(1)%v_mV(j)
             end do
         end do
-        do j = 1, MNNumber
-            positions(j) = motorUnitPools(1)%unit(j)%position_mm
-        end do
+        if (i==1) then
+            do j = 1, MNNumber
+                positions(j) = motorUnitPools(1)%unit(j)%position_mm
+            end do
+        end if
 
         call motorUnitPools(1)%listSpikes()
         call interneuronPools(1)%listSpikes()
 
         write(filename, '("MNV", I3, ".dat")') stimulatedMNs(k)
+        filename = trim(path) // trim(folderName) // filename
         open(1, file=filename, status = 'replace')
         do i = 1, timeLength
             do j = 1, MNNumber
@@ -503,7 +508,7 @@ program McCurdyHammConnectivity
         end do
         close(1)
 
-        filename = "positions.dat"
+        filename = trim(path) // trim(folderName) // "positions.dat"
         open(1, file=filename, status = 'replace')
         do i = 1, MNNumber
                write(1, '(F15.2)') positions(i)

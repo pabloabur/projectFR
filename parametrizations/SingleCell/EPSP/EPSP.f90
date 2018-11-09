@@ -215,8 +215,8 @@ program EPSP
     else if (param.eq.'final') then
         ! Threshold
         paramTag = 'threshold:RC_ext-'
-        value1 = '18.9089'
-        value2 = '18.9089'
+        value1 = '22.9608'
+        value2 = '22.9608'
         call conf%changeConfigurationParameter(paramTag, value1, value2)
 
         ! Connectivity
@@ -247,7 +247,7 @@ program EPSP
 
         ! Conductances
         paramTag = 'gmax:RC_ext->MG-S@dendrite|inhibitory'
-        value1 = '0.130'
+        value1 = '0.128'
         value2 = ''
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'gmax:RC_ext->MG-FR@dendrite|inhibitory'
@@ -255,7 +255,7 @@ program EPSP
         value2 = ''
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'gmax:RC_ext->MG-FF@dendrite|inhibitory'
-        value1 = '0.081'
+        value1 = '0.094'
         value2 = ''
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'gmax:MG-S>RC_ext-@soma|excitatory'
@@ -354,7 +354,7 @@ program EPSP
     !!!!!!!!!!!!!!!! RC
     ! Turning off spontaneous activity
     paramtag = 'gmax:Noise>RC_ext-@soma|excitatory'
-    value1 = '0.08'
+    value1 = '0.03015'
     value2 = ''
     call conf%changeconfigurationparameter(paramtag, value1, value2)
     paramtag = 'NoiseFunction_RC_ext'

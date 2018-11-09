@@ -248,7 +248,7 @@ program AHP
 
         ! Conductances
         paramTag = 'gmax:RC_ext->MG-S@dendrite|inhibitory'
-        value1 = '0.130'
+        value1 = '0.128'
         value2 = ''
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'gmax:RC_ext->MG-FR@dendrite|inhibitory'
@@ -256,7 +256,7 @@ program AHP
         value2 = ''
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'gmax:RC_ext->MG-FF@dendrite|inhibitory'
-        value1 = '0.081'
+        value1 = '0.094'
         value2 = ''
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'gmax:MG-S>RC_ext-@soma|excitatory'
@@ -341,11 +341,11 @@ program AHP
         ! Columnar length
         paramTag = 'position:MG-'
         value1 = '0'
-        value2 = '7'
+        value2 = '6'
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'position:RC_ext-'
         value1 = '0'
-        value2 = '7'
+        value2 = '6'
         call conf%changeConfigurationParameter(paramTag, value1, value2)
     else
         print *, 'Wrong parametrization option'
@@ -355,11 +355,11 @@ program AHP
     !!!!!!!!!!!!!!!! RC
     ! Turning off spontaneous activity
     paramtag = 'gmax:Noise>RC_ext-@soma|excitatory'
-    value1 = '0.08'
+    value1 = '0.03015'
     value2 = ''
     call conf%changeconfigurationparameter(paramtag, value1, value2)
     paramtag = 'NoiseFunction_RC_ext'
-    value1 = '0'
+    value1 = '0'!'7'
     value2 = ''
     call conf%changeconfigurationparameter(paramtag, value1, value2)
     ! Dynamics of MN-RC synapse

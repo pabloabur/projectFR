@@ -341,11 +341,11 @@ program AHP
         ! Columnar length
         paramTag = 'position:MG-'
         value1 = '0'
-        value2 = '7'
+        value2 = '6'
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'position:RC_ext-'
         value1 = '0'
-        value2 = '7'
+        value2 = '6'
         call conf%changeConfigurationParameter(paramTag, value1, value2)
     else
         print *, 'Wrong parametrization option'
