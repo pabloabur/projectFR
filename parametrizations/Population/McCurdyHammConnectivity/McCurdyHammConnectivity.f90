@@ -45,7 +45,7 @@ program McCurdyHammConnectivity
     character(len = 80) :: pool, group
     character(len = 100) :: filename = '../../conf.rmto'
     character(len = 100) :: path = '/home/pablo/osf/Master-Thesis-Data/population/'
-    character(len = 100) :: folderName = 'McHamm/false_decay/trial1/'
+    character(len = 100) :: folderName = 'McHamm/false_decay/trial4/'
     type(MotorUnitPool), dimension(:), allocatable, target :: motorUnitPools
     type(NeuralTract), dimension(:), allocatable :: neuralTractPools    
     type(InterneuronPool), dimension(:), allocatable, target :: interneuronPools    
@@ -58,13 +58,14 @@ program McCurdyHammConnectivity
     real(wp) :: dt
     real(wp) :: tf
     logical, parameter :: probDecay = .false.
-    real(wp), parameter :: FFConducStrength = 0.08_wp, &!0.0275_wp, & 
+    real(wp), parameter :: FFConducStrength = 0.035_wp, &
         declineFactorMN = real(1, wp)/6, declineFactorRC = real(3.5, wp)/3
     character(len=3), parameter :: nS = '75', nFR = '75', &
         nFF = '150', nRC = '600', nCM = '0', nMN = '300' ! nS+nFR+nFF
     integer, parameter :: MNNumber = 300
     integer, parameter :: RCNumber = 600
-    integer, parameter :: MNs = 14
+    integer, parameter :: MNs = 14 ! This variable to represent
+                                   ! MN selected for stimulation
     integer :: availableMNs(MNNumber), stimulatedMNs(MNs)
     real(wp) :: rgn
     
@@ -488,7 +489,7 @@ program McCurdyHammConnectivity
                 RC_mV(i, j) = interneuronPools(1)%v_mV(j)
             end do
         end do
-        if (i==1) then
+        if (k==1) then
             do j = 1, MNNumber
                 positions(j) = motorUnitPools(1)%unit(j)%position_mm
             end do

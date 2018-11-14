@@ -53,12 +53,12 @@ program StaticProperties
     character(len=80) :: paramTag
     character(len=80) :: value1, value2
     ! Input parameters
-    logical, parameter :: probDecay = .true.
+    logical, parameter :: probDecay = .false.
     real(wp), parameter :: declineFactorMN = real(1, wp)/6, declineFactorRC = real(3.5, wp)/3
-    !real(wp), parameter :: FFConducStrength = 0.0275_wp ! Simple weight decay
+    real(wp), parameter :: FFConducStrength = 0.06_wp ! Simple weight decay
     !real(wp), parameter :: FFConducStrength = 0.025_wp ! Decay of probability of connection (Pconn) with distance
     !real(wp), parameter :: FFConducStrength = 0.04_wp ! Decay of weight and Pconn with distance
-    real(wp), parameter :: FFConducStrength = 0.055_wp ! Sparse connections and weight decay
+    !real(wp), parameter :: FFConducStrength = 0.055_wp ! Sparse connections and weight decay
     !real(wp), parameter :: FFConducStrength = 0.06_wp ! Sparse connections, weight and Pcon decay
     character(len=3), parameter :: stimAmp = '80', nS = '75', nFR = '75', &
         nFF = '150', nRC = '600'
