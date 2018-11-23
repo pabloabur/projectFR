@@ -43,7 +43,9 @@ program StaticProperties
     real(wp) :: tic, toc
     type(gpf) :: gp
     character(len = 80) :: pool, group
-    character(len = 80) :: filename = '../../conf.rmto'
+    character(len = 100) :: filename = '../../conf.rmto'
+    character(len = 100) :: path = '/home/pablo/osf/Master-Thesis-Data/population/'
+    character(len = 100) :: folderName = 'Static/false_decay/trial1/'
     type(MotorUnitPool), dimension(:), allocatable, target :: motorUnitPools
     type(NeuralTract), dimension(:), allocatable :: neuralTractPools    
     type(InterneuronPool), dimension(:), allocatable, target :: interneuronPools    
@@ -55,17 +57,14 @@ program StaticProperties
     ! Input parameters
     logical, parameter :: probDecay = .false.
     real(wp), parameter :: declineFactorMN = real(1, wp)/6, declineFactorRC = real(3.5, wp)/3
-    real(wp), parameter :: FFConducStrength = 0.06_wp ! Simple weight decay
+    real(wp), parameter :: FFConducStrength = 0.033_wp ! Simple weight decay
     !real(wp), parameter :: FFConducStrength = 0.025_wp ! Decay of probability of connection (Pconn) with distance
     !real(wp), parameter :: FFConducStrength = 0.04_wp ! Decay of weight and Pconn with distance
     !real(wp), parameter :: FFConducStrength = 0.055_wp ! Sparse connections and weight decay
     !real(wp), parameter :: FFConducStrength = 0.06_wp ! Sparse connections, weight and Pcon decay
     character(len=3), parameter :: stimAmp = '80', nS = '75', nFR = '75', &
         nFF = '150', nRC = '600'
-    !character(len=3), parameter :: stimAmp = '0', nS = '50', nFR = '0', &
-    !    nFF = '0', nRC = '100'
     integer, dimension(7), parameter :: fs = [10, 20, 30, 40, 50, 60, 70]
-    !integer, dimension(3), parameter :: fs = [30, 30, 30]
 
     call init_random_seed()
 
@@ -235,8 +234,8 @@ program StaticProperties
     else if (param.eq.'final') then
         ! Threshold
         paramTag = 'threshold:RC_ext-'
-        value1 = '18.9089'
-        value2 = '18.9089'
+        value1 = '22.9608'
+        value2 = '22.9608'
         call conf%changeConfigurationParameter(paramTag, value1, value2)
 
         ! Connectivity
@@ -267,7 +266,7 @@ program StaticProperties
 
         ! Conductances
         paramTag = 'gmax:RC_ext->MG-S@dendrite|inhibitory'
-        value1 = '0.130'
+        value1 = '0.128'
         value2 = ''
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'gmax:RC_ext->MG-FR@dendrite|inhibitory'
@@ -275,7 +274,7 @@ program StaticProperties
         value2 = ''
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'gmax:RC_ext->MG-FF@dendrite|inhibitory'
-        value1 = '0.081'
+        value1 = '0.094'
         value2 = ''
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'gmax:MG-S>RC_ext-@soma|excitatory'
@@ -301,8 +300,8 @@ program StaticProperties
         value2 = '218.2168'
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'res@soma:RC_ext-'
-        value1 = '7000'
-        value2 = '7000'
+        value1 = '8500'
+        value2 = '8500'
         call conf%changeConfigurationParameter(paramTag, value1, value2)
 
         ! Ks
@@ -369,7 +368,7 @@ program StaticProperties
 
         ! RC spontaneous activity
         paramtag = 'gmax:Noise>RC_ext-@soma|excitatory'
-        value1 = '0.028'
+        value1 = '0.03015'
         value2 = ''
         call conf%changeconfigurationparameter(paramtag, value1, value2)
         paramtag = 'NoiseFunction_RC_ext'
@@ -377,7 +376,8 @@ program StaticProperties
         value2 = ''
         call conf%changeconfigurationparameter(paramtag, value1, value2)
     else 
-        print *, 'passed'
+        print *, 'Wrong parametrization option'
+        stop (1)
     endif
     
     ! Stimulus
@@ -508,6 +508,7 @@ program StaticProperties
         !call gp%plot(t, RCv_mV, 'with line lw 2 lc rgb "#0008B0"')  
 
         write(filename, '("output", I2, ".dat")') fs(k)
+        filename = trim(path) // trim(folderName) // filename
         open(1, file=filename, status = 'replace')
         do i = 1, size(interneuronPools(1)%poolSomaSpikes, 1)
             write(1, '(F15.6, 1X, F15.1)') interneuronPools(1)%poolSomaSpikes(i,1), &

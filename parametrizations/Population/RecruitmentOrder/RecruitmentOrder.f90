@@ -39,8 +39,11 @@ program RecruitmentOrder
     integer :: i, j
     real(wp), dimension(:), allocatable :: t
     real(wp) :: tic, toc
+    type(gpf) :: gp
     character(len = 80) :: pool, group
     character(len = 80) :: filename = '../../conf.rmto'
+    character(len = 100) :: path = '/home/pablo/osf/Master-Thesis-Data/population/'
+    character(len = 100) :: folderName = 'recruitment/false_decay/'
     type(MotorUnitPool), dimension(:), allocatable, target :: motorUnitPools
     type(NeuralTract), dimension(:), allocatable :: neuralTractPools    
     type(InterneuronPool), dimension(:), allocatable, target :: interneuronPools    
@@ -53,7 +56,7 @@ program RecruitmentOrder
     real(wp) :: dt
     real(wp) :: tf
     logical, parameter :: probDecay = .false.
-    real(wp), parameter :: FFConducStrength = 0.0275_wp, & 
+    real(wp), parameter :: FFConducStrength = 0.033_wp, & 
         declineFactorMN = real(1, wp)/6, declineFactorRC = real(3.5, wp)/3
     character(len=3), parameter :: nS = '75', nFR = '75', &
         nFF = '150', nRC = '600', nCM = '0', nMN = '300' ! nS+nFR+nFF
@@ -233,8 +236,8 @@ program RecruitmentOrder
     else if (param.eq.'final') then
         ! Threshold
         paramTag = 'threshold:RC_ext-'
-        value1 = '18.9089'
-        value2 = '18.9089'
+        value1 = '22.9608'
+        value2 = '22.9608'
         call conf%changeConfigurationParameter(paramTag, value1, value2)
 
         ! Connectivity
@@ -265,7 +268,7 @@ program RecruitmentOrder
 
         ! Conductances
         paramTag = 'gmax:RC_ext->MG-S@dendrite|inhibitory'
-        value1 = '0.130'
+        value1 = '0.128'
         value2 = ''
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'gmax:RC_ext->MG-FR@dendrite|inhibitory'
@@ -273,7 +276,7 @@ program RecruitmentOrder
         value2 = ''
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'gmax:RC_ext->MG-FF@dendrite|inhibitory'
-        value1 = '0.081'
+        value1 = '0.094'
         value2 = ''
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'gmax:MG-S>RC_ext-@soma|excitatory'
@@ -299,8 +302,8 @@ program RecruitmentOrder
         value2 = '218.2168'
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'res@soma:RC_ext-'
-        value1 = '7000'
-        value2 = '7000'
+        value1 = '8500'
+        value2 = '8500'
         call conf%changeConfigurationParameter(paramTag, value1, value2)
 
         ! Ks
@@ -367,7 +370,7 @@ program RecruitmentOrder
 
         ! ! RC spontaneous activity 
         paramtag = 'gmax:Noise>RC_ext-@soma|excitatory'
-        value1 = '0.028'
+        value1 = '0.03015'
         value2 = ''
         call conf%changeconfigurationparameter(paramtag, value1, value2)
         paramtag = 'NoiseFunction_RC_ext'
@@ -416,10 +419,10 @@ program RecruitmentOrder
     pool = 'MG'
     motorUnitPools(1) = MotorUnitPool(conf, pool)    
 
-    allocate(interneuronPools(1))
-    pool = 'RC'
-    group = 'ext'    
-    interneuronPools(1) = InterneuronPool(conf, pool, group)
+    allocate(interneuronPools(0))
+    !pool = 'RC'
+    !group = 'ext'    
+    !interneuronPools(1) = InterneuronPool(conf, pool, group)
 
     allocate(afferentPools(0))
 
@@ -441,8 +444,9 @@ program RecruitmentOrder
     do i = 1, size(t)
         ! Injected current in the soma of MNs
         do j = 1, size(motorUnitPools(1)%unit)
-            if (i.ne.1) then
-                motorUnitPools(1)%iInjected(2*(j)) = 90.0_wp/50.0_wp*t(j)
+            if (i.ne.1) then ! If there is a value in the first
+                             ! iteration, program throws error
+                motorUnitPools(1)%iInjected(2*(j)) = 90.0_wp/50.0_wp*t(i)
             end if
         end do
 
@@ -453,13 +457,25 @@ program RecruitmentOrder
         do j = 1, size(motorUnitPools)
             call motorUnitPools(j)%atualizeMotorUnitPool(t(i), 32.0_wp, 32.0_wp)
         end do
-        do j = 1, size(interneuronPools)
-            call interneuronPools(j)%atualizeInterneuronPool(t(i))
-        end do
+        !do j = 1, size(interneuronPools)
+        !    call interneuronPools(j)%atualizeInterneuronPool(t(i))
+        !end do
     end do
 
     call motorUnitPools(1)%listSpikes()
-    call interneuronPools(1)%listSpikes()
+    !call interneuronPools(1)%listSpikes()
+
+    call gp%title('MN spike instants at the soma')
+    call gp%xlabel('t (s))')
+    call gp%ylabel('Motoneuron index')
+    call gp%plot(motorUnitPools(1)%poolSomaSpikes(:,1), &
+    motorUnitPools(1)%poolSomaSpikes(:,2), 'with points pt 5 lc rgb "#0008B0"')
+
+    !call gp%title('RC spike instants at the soma')
+    !call gp%xlabel('t (s))')
+    !call gp%ylabel('Interneuron index')
+    !call gp%plot(interneuronPools(1)%poolSomaSpikes(:,1), &
+    !interneuronPools(1)%poolSomaSpikes(:,2), 'with points pt 5 lc rgb "#0008B0"')
 
     filename = "MNspk.dat"
     open(1, file=filename, status = 'replace')
@@ -469,13 +485,13 @@ program RecruitmentOrder
     end do
     close(1)
     
-    filename = "INspk.dat"
-    open(1, file=filename, status = 'replace')
-    do i = 1, size(interneuronPools(1)%poolSomaSpikes, 1)
-        write(1, '(F15.6, 1X, F15.1)') interneuronPools(1)%poolSomaSpikes(i,1), &
-            interneuronPools(1)%poolSomaSpikes(i,2)
-    end do
-    close(1)
+    !filename = "INspk.dat"
+    !open(1, file=filename, status = 'replace')
+    !do i = 1, size(interneuronPools(1)%poolSomaSpikes, 1)
+    !    write(1, '(F15.6, 1X, F15.1)') interneuronPools(1)%poolSomaSpikes(i,1), &
+    !        interneuronPools(1)%poolSomaSpikes(i,2)
+    !end do
+    !close(1)
 
     call cpu_time(toc)
     print '(F15.6, A)', toc - tic, ' seconds'

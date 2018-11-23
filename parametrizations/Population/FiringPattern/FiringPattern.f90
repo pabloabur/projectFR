@@ -47,6 +47,8 @@ program FiringPattern
     integer :: GammaOrder 
     character(len = 80) :: pool, group
     character(len = 80) :: filename = '../../conf.rmto'
+    character(len = 100) :: path = '/home/pablo/osf/Master-Thesis-Data/population/'
+    character(len = 100) :: folderName = 'firing/false_decay/'
     type(MotorUnitPool), dimension(:), allocatable, target :: motorUnitPools
     type(NeuralTract), dimension(:), allocatable :: neuralTractPools    
     type(InterneuronPool), dimension(:), allocatable, target :: interneuronPools    
@@ -57,7 +59,7 @@ program FiringPattern
     character(len=80) :: value1, value2
     ! Input parameters
     logical, parameter :: probDecay = .false.
-    real(wp), parameter :: FFConducStrength = 0.0275_wp, & 
+    real(wp), parameter :: FFConducStrength = 0.033_wp, & 
         declineFactorMN = real(1, wp)/6, declineFactorRC = real(3.5, wp)/3
     character(len=3), parameter :: nS = '75', nFR = '75', &
         nFF = '150', nRC = '600'
@@ -230,8 +232,8 @@ program FiringPattern
     else if (param.eq.'final') then
         ! Threshold
         paramTag = 'threshold:RC_ext-'
-        value1 = '18.9089'
-        value2 = '18.9089'
+        value1 = '22.9608'
+        value2 = '22.9608'
         call conf%changeConfigurationParameter(paramTag, value1, value2)
 
         ! Connectivity
@@ -262,7 +264,7 @@ program FiringPattern
 
         ! Conductances
         paramTag = 'gmax:RC_ext->MG-S@dendrite|inhibitory'
-        value1 = '0.130'
+        value1 = '0.128'
         value2 = ''
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'gmax:RC_ext->MG-FR@dendrite|inhibitory'
@@ -270,7 +272,7 @@ program FiringPattern
         value2 = ''
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'gmax:RC_ext->MG-FF@dendrite|inhibitory'
-        value1 = '0.081'
+        value1 = '0.094'
         value2 = ''
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'gmax:MG-S>RC_ext-@soma|excitatory'
@@ -296,8 +298,8 @@ program FiringPattern
         value2 = '218.2168'
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'res@soma:RC_ext-'
-        value1 = '7000'
-        value2 = '7000'
+        value1 = '8500'
+        value2 = '8500'
         call conf%changeConfigurationParameter(paramTag, value1, value2)
 
         ! Ks
@@ -364,7 +366,7 @@ program FiringPattern
 
         ! RC spontaneous activity 
         paramtag = 'gmax:Noise>RC_ext-@soma|excitatory'
-        value1 = '0.028'
+        value1 = '0.03015'
         value2 = ''
         call conf%changeconfigurationparameter(paramtag, value1, value2)
         paramtag = 'NoiseFunction_RC_ext'
@@ -476,31 +478,32 @@ program FiringPattern
         call interneuronPools(1)%listSpikes()
 
         write(filename, '("output", I1, ".dat")') k
+        filename = trim(path) // trim(folderName) // filename
         open(1, file=filename, status = 'replace')
         do i = 1, size(interneuronPools(1)%poolSomaSpikes, 1)
-            write(1, '(F15.6, 1X, F15.1, 1X, F15.2)') interneuronPools(1)%poolSomaSpikes(i,1), &
+            write(1, '(F15.6, 1X, F15.1)') interneuronPools(1)%poolSomaSpikes(i,1), &
                 interneuronPools(1)%poolSomaSpikes(i,2)
         end do
         close(1)
 
+        call gp%title('Membrane potential of the soma of the RC #1')
+        call gp%xlabel('t (ms))')
+        call gp%ylabel('Membrane potential (mV)')
+        call gp%plot(t, RCv_mV, 'with line lw 2 lc rgb "#0008B0"') 
+
+        call gp%title('Membrane potential of the soma of the MN #1')
+        call gp%xlabel('t (ms))')
+        call gp%ylabel('Membrane potential (mV)')
+        call gp%plot(t, MNv_mV, 'with line lw 2 lc rgb "#0008B0"')
+
+        call gp%title('PTN stimulus')
+        call gp%xlabel('t (ms))')
+        call gp%ylabel('Stimulus (mA)')
+        call gp%plot(t, motorUnitPools(1)%unit(1)%nerveStimulus_mA, 'with line lw 2 lc rgb "#0008B0"')
+
         call motorUnitPools(1)%reset()
         call interneuronPools(1)%reset()
         call synapticNoisePools(1)%reset()
-
-        !call gp%title('Membrane potential of the soma of the RC #1')
-        !call gp%xlabel('t (ms))')
-        !call gp%ylabel('Membrane potential (mV)')
-        !call gp%plot(t, RCv_mV, 'with line lw 2 lc rgb "#0008B0"') 
-
-        !call gp%title('Membrane potential of the soma of the MN #1')
-        !call gp%xlabel('t (ms))')
-        !call gp%ylabel('Membrane potential (mV)')
-        !call gp%plot(t, MNv_mV, 'with line lw 2 lc rgb "#0008B0"')
-
-        !call gp%title('PTN stimulus')
-        !call gp%xlabel('t (ms))')
-        !call gp%ylabel('Stimulus (mA)')
-        !call gp%plot(t, motorUnitPools(1)%unit(1)%nerveStimulus_mA, 'with line lw 2 lc rgb "#0008B0"')
     end do
     
     call cpu_time(toc)
