@@ -42,10 +42,10 @@ program RecruitmentOrder
     type(gpf) :: gp
     real(wp), dimension(:), allocatable :: FR
     character(len = 80) :: pool, group
-    integer :: GammaOrder 
+    integer, dimension(6) :: GammaOrder 
     character(len = 100) :: filename = '../../conf.rmto'
     character(len = 100) :: path = '/home/pablo/osf/Master-Thesis-Data/population/'
-    character(len = 100) :: folderName = 'recruitment/false_decay/trial3/'
+    character(len = 100) :: folderName = 'recruitment/false_decay/trial2/'
     type(MotorUnitPool), dimension(:), allocatable, target :: motorUnitPools
     type(NeuralTract), dimension(:), allocatable :: neuralTractPools    
     type(InterneuronPool), dimension(:), allocatable, target :: interneuronPools    
@@ -54,6 +54,7 @@ program RecruitmentOrder
     character(len=5) :: param
     character(len=80) :: paramTag
     character(len=80) :: value1, value2
+    real(wp), dimension(:), allocatable :: force
     ! Input parameters
     real(wp) :: dt
     real(wp) :: tf
@@ -67,7 +68,7 @@ program RecruitmentOrder
     call init_random_seed()
 
     conf = Configuration(filename)
-    conf%simDuration_ms = 1300
+    conf%simDuration_ms = 1000
 
     call get_command_argument(1, param)
     if (param.eq.'c') then
@@ -274,7 +275,7 @@ program RecruitmentOrder
     value2 = ''
 
     !!!!!!!!!!!!!!!! Descending commands parameters
-    GammaOrder = 2
+    GammaOrder = [7, 5, 4, 3, 2, 1]
 
     ! Removing influence of stimulus (required)
     paramTag = 'stimIntensity_PTN'
@@ -313,15 +314,12 @@ program RecruitmentOrder
     
     allocate(t(timeLength))
     allocate(FR(timeLength))
+    allocate(force(timeLength))
 
     t = [(dt*(i-1), i=1, timeLength)]
 
     do i = 1, size(t)
-        if (t(i)<1000_wp) then!(t(i)<20_wp) then!
-            FR(i) = 1400_wp/1000.0_wp*t(i)!40.0_wp/20.0_wp*t(i)!
-        else
-            FR(i) = 1400_wp
-        end if
+        FR(i) = 1500_wp/1000.0_wp*t(i)
     end do
         
     print *, 'Running simulation'
@@ -331,11 +329,7 @@ program RecruitmentOrder
         !if (i>1) then ! If there is a value in the first
         !              ! iteration, program throws error
         !    do j = 1, size(motorUnitPools(1)%unit)
-        !        if (t(i)<1000_wp) then!(t(i)<20_wp) then!
-        !            motorUnitPools(1)%iInjected(2*(j)) = 40.0_wp/1000.0_wp*t(i)!40.0_wp/20.0_wp*t(i)!
-        !        else
-        !            motorUnitPools(1)%iInjected(2*(j)) = 40.0_wp
-        !        end if
+        !        motorUnitPools(1)%iInjected(2*(j)) = 40.0_wp/1000.0_wp*t(i)
         !    end do
         !end if
 
@@ -344,7 +338,7 @@ program RecruitmentOrder
         !    call synapticNoisePools(j)%atualizePool(t(i))
         !end do
         do j = 1, size(neuralTractPools)
-            call neuralTractPools(j)%atualizePool(t(i), FR(i), GammaOrder)
+            call neuralTractPools(j)%atualizePool(t(i), FR(i), GammaOrder(1))
         end do
         do j = 1, size(motorUnitPools)
             call motorUnitPools(j)%atualizeMotorUnitPool(t(i), 32.0_wp, 32.0_wp)
@@ -362,6 +356,10 @@ program RecruitmentOrder
         call interneuronPools(1)%listSpikes()
     end if
 
+    do i = 1, size(t)
+        force(i) = motorUnitPools(1)%NoHillMuscle%force(i)
+    end do
+
     !call gp%title('MN spike instants at the soma')
     !call gp%xlabel('t (s))')
     !call gp%ylabel('Motoneuron index')
@@ -373,6 +371,17 @@ program RecruitmentOrder
     !call gp%ylabel('Interneuron index')
     !call gp%plot(interneuronPools(1)%poolSomaSpikes(:,1), &
     !interneuronPools(1)%poolSomaSpikes(:,2), 'with points pt 5 lc rgb "#0008B0"')
+
+    if (param.eq.'c') then
+        filename = trim(path) // trim(folderName) // "forcec.dat"
+    else if (param.eq.'o') then
+        filename = trim(path) // trim(folderName) // "forceo.dat"
+    end if
+    open(1, file=filename, status = 'replace')
+    do i = 1, size(t)
+        write(1, '(F15.6, 1X, F15.6)') t(i), force(i)
+    end do
+    close(1)
 
     if (param.eq.'c') then
         filename = trim(path) // trim(folderName) // "MNc.dat"
