@@ -36,10 +36,14 @@ program PosturalControl
     logical :: continueFlag
     real(wp) :: dynGamma, statGamma
     integer :: subject, trial
+    character*198 buf
 
 
     call init_random_seed()
     print *, filename
+    call mkl_get_version_string(buf)
+    write(*,'(a)') buf
+
     conf = Configuration(filename)
 
     tf = conf%simDuration_ms
@@ -54,7 +58,7 @@ program PosturalControl
     allocate(IbIn_V_mV(timeLength))
     allocate(IbFR(timeLength))
 
-    FR = 20.0
+    FR = 75
     GammaOrder = 25
     
     filename = 'GammaFallTime.txt'
@@ -164,19 +168,24 @@ program PosturalControl
         print '(a, F15.6)', 'diameter', interneuronPools(3)%unit(1)%Compartments(1)%diameter_mum
         print '(a, F15.6)', 'capacitance', interneuronPools(3)%unit(1)%Compartments(1)%capacitance_nF
         call random_number(dynGamma)
-        dynGamma = 28+8*dynGamma
+        dynGamma = 28 + 8*dynGamma
         call random_number(statGamma)
         statGamma = 28 + 8*statGamma
         print '(A, F15.6)', 'Dynamic Gamma = ',  dynGamma
         print '(A, F15.6)', 'Static Gamma = ', statGamma
         continueFlag = .true.
         trial = 1
-        do while (continueFlag .and. trial <= 10)
+        do while (continueFlag .and. trial <= 3)
             continueFlag = .false.
             tic =  dsecnd()
             i = 1            
             do while (i <= size(t))
                 do j = 1, size(neuralTractPools)
+                    ! if (t(i) > 1000 .and. t(i) < 4000) then 
+                    !     FR = 26.3 + 10.0 * (body%ankleTorque_Nm(nint(t(i)/conf%timeStep_ms)))
+                    ! end if
+                    ! FR = 62
+                    !if (t(i) > 1000 .and. t(i) < 4001) print *, 'FR = ', FR
                     call neuralTractPools(j)%atualizePool(t(i), FR, GammaOrder)
                 end do
                 do j = 1, 3
@@ -194,19 +203,19 @@ program PosturalControl
                     call afferentPools(j)%atualizeAfferentPool(t(i), motorUnitPools(j)%spindle%IaFR_Hz)
                     call afferentPools(j+4)%atualizeAfferentPool(t(i), motorUnitPools(j)%spindle%IIFR_Hz)
                     call afferentPools(j+8)%atualizeAfferentPool(t(i), &
-                                motorUnitPools(j)%GTO%IbFR_Hz)
+                                                                 motorUnitPools(j)%GTO%IbFR_Hz)
                     !print *, motorUnitPools(j)%GTO%IbFR_Hz
                 end do
-                IbFR(i) = motorUnitPools(2)%GTO%IbFR_Hz
-                if (abs(body%ankleAngle_rad(i)) > pi/6.0) then
+                IbFR(i) = motorUnitPools(2)%spindle%IaFR_Hz
+                if (abs(body%ankleAngle_rad(i)) > pi/9.0) then
                     print '(A, 1X, F15.6, 1X, A)', 'Body fell after ', t(i)/1000.0, ' seconds'
                     continueFlag = .true.
                     write(1, '(F15.6, 1X, F15.6,1X,F15.6, 1X, I2, 1X, I2)') ([t(i), dynGamma, statGamma]), ([subject, trial])
                     i = size(t)
                     call random_number(dynGamma)
-                    dynGamma = 28 + 8*dynGamma
+                    dynGamma = 28 + 5*dynGamma
                     call random_number(statGamma)
-                    statGamma = 28 + 8*statGamma
+                    statGamma = 28 + 5*statGamma
                     print '(A, F15.6)', 'Dynamic Gamma = ', dynGamma
                     print '(A, F15.6)', 'Static Gamma = ', statGamma
                 end if
@@ -217,28 +226,28 @@ program PosturalControl
             print '(F15.6, A)', toc - tic, ' seconds'
             
             ! call neuralTractPools(1)%listSpikes()
-            ! call motorUnitPools(1)%listSpikes()
-            call afferentPools(1)%listSpikes()
-            call afferentPools(5)%listSpikes()
+            call motorUnitPools(2)%listSpikes()
+            call afferentPools(2)%listSpikes()
+            call afferentPools(6)%listSpikes()
             ! !call motorUnitPools(1)%getMotorUnitPoolEMG()
             
-            ! call gp%title('MN spike instants at the soma')
-            ! call gp%xlabel('t (s))')
-            ! call gp%ylabel('Motoneuron index')
-            ! call gp%plot(motorUnitPools(1)%poolSomaSpikes(:,1), &
-            ! motorUnitPools(1)%poolSomaSpikes(:,2), 'with points pt 5 lc rgb "#0008B0"')
+            call gp%title('MN spike instants at the soma')
+            call gp%xlabel('t (s))')
+            call gp%ylabel('Motoneuron index')
+            call gp%plot(motorUnitPools(2)%poolSomaSpikes(:,1), &
+            motorUnitPools(2)%poolSomaSpikes(:,2), 'with points pt 5 lc rgb "#0008B0"')
 
-            ! call gp%title('AF Ia spike instants at the soma')
-            ! call gp%xlabel('t (s))')
-            ! call gp%ylabel('Afferent index')
-            ! call gp%plot(afferentPools(1)%poolTerminalSpikes(:,1), &
-            ! afferentPools(1)%poolTerminalSpikes(:,2), 'with points pt 5 lc rgb "#0008B0"')
+            call gp%title('AF Ia spike instants at the soma')
+            call gp%xlabel('t (s))')
+            call gp%ylabel('Afferent index')
+            call gp%plot(afferentPools(2)%poolTerminalSpikes(:,1), &
+            afferentPools(2)%poolTerminalSpikes(:,2), 'with points pt 5 lc rgb "#0008B0"')
 
-            ! call gp%title('AF II spike instants at the soma')
-            ! call gp%xlabel('t (s))')
-            ! call gp%ylabel('Afferent II index')
-            ! call gp%plot(afferentPools(5)%poolTerminalSpikes(:,1), &
-            ! afferentPools(5)%poolTerminalSpikes(:,2), 'with points pt 5 lc rgb "#0008B0"')
+            call gp%title('AF II spike instants at the soma')
+            call gp%xlabel('t (s))')
+            call gp%ylabel('Afferent II index')
+            call gp%plot(afferentPools(6)%poolTerminalSpikes(:,1), &
+            afferentPools(6)%poolTerminalSpikes(:,2), 'with points pt 5 lc rgb "#0008B0"')
             
             call gp%title('Membrane Potential gII')
             call gp%xlabel('t (ms))')
@@ -250,7 +259,7 @@ program PosturalControl
             call gp%ylabel('V (mV)')
             call gp%plot(t, IaIn_V_mV, 'with line lw 2 lc rgb "#0008B0"')
 
-            call gp%title('FR Ib mg')
+            call gp%title('FR Ia mg')
             call gp%xlabel('t (ms))')
             call gp%ylabel('FR (Hz)')
             call gp%plot(t, IbFR, 'with line lw 2 lc rgb "#0008B0"')
@@ -260,22 +269,41 @@ program PosturalControl
             call gp%ylabel('V (mV)')
             call gp%plot(t, IbIn_V_mV, 'with line lw 2 lc rgb "#0008B0"')
 
+            call gp%title('MN spike instants at the terminal')
+            call gp%xlabel('t (s))')
+            call gp%ylabel('Motoneuron index')
+            call gp%plot(motorUnitPools(2)%poolTerminalSpikes(:,1), &
+            motorUnitPools(2)%poolTerminalSpikes(:,2), 'with points pt 5 lc rgb "#0008B0"')
 
-            ! call gp%title('MN spike instants at the terminal')
-            ! call gp%xlabel('t (s))')
-            ! call gp%ylabel('Motoneuron index')
-            ! call gp%plot(motorUnitPools(1)%poolTerminalSpikes(:,1), &
-            ! motorUnitPools(1)%poolTerminalSpikes(:,2), 'with points pt 5 lc rgb "#0008B0"')
+            call gp%title('SOL force')
+            call gp%xlabel('t (ms))')
+            call gp%ylabel('Force (N)')
+            call gp%plot(t, motorUnitPools(1)%HillMuscle%force, 'with line lw 2 lc rgb "#0008B0"')
 
-            ! call gp%title('Muscle force')
-            ! call gp%xlabel('t (ms))')
-            ! call gp%ylabel('Force (N)')
-            ! call gp%plot(t, motorUnitPools(1)%HillMuscle%force, 'with line lw 2 lc rgb "#0008B0"')
+            call gp%title('SOL LENGTH')
+            call gp%xlabel('t (ms))')
+            call gp%ylabel('Force (N)')
+            call gp%plot(t, motorUnitPools(1)%HillMuscle%length_m, 'with line lw 2 lc rgb "#0008B0"')
 
-            call gp%title('soleus force')
+            call gp%title('MG force')
             call gp%xlabel('t (ms))')
             call gp%ylabel('torque (N.m)')
             call gp%plot(t, motorUnitPools(2)%HillMuscle%tendonForce_N, 'with line lw 2 lc rgb "#0008B0"')
+
+            call gp%title('MG LENGTH')
+            call gp%xlabel('t (ms))')
+            call gp%ylabel('Force (N)')
+            call gp%plot(t, motorUnitPools(2)%HillMuscle%length_m, 'with line lw 2 lc rgb "#0008B0"')
+
+            call gp%title('LG LENGTH')
+            call gp%xlabel('t (ms))')
+            call gp%ylabel('Force (N)')
+            call gp%plot(t, motorUnitPools(3)%HillMuscle%length_m, 'with line lw 2 lc rgb "#0008B0"')
+
+            call gp%title('TA LENGTH')
+            call gp%xlabel('t (ms))')
+            call gp%ylabel('Force (N)')
+            call gp%plot(t, motorUnitPools(4)%HillMuscle%length_m, 'with line lw 2 lc rgb "#0008B0"')
 
             call gp%title('Ankle torque')
             call gp%xlabel('t (ms))')
@@ -303,6 +331,10 @@ program PosturalControl
             call interneuronPools(2)%reset()    
             call interneuronPools(3)%reset()       
             call body%reset()
+            IbFR(:) = 0.0
+            gII_V_mV(:) = 0.0
+            IaIn_V_mV(:) = 0.0
+            IbIn_V_mV(:) = 0.0
             i = 1
             trial = trial + 1
         end do

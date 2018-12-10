@@ -75,9 +75,7 @@ module GolgiTendonOrganClass
         paramTag = 'Number_Ib-' // trim(muscle)
         paramChar = init_GolgiTendonOrgan%conf%parameterSet(paramTag, muscle, 0)
         read(paramChar, *)AFnumber
-        
-        print *, AFnumber
-        
+                
         init_GolgiTendonOrgan%Gg = 60.0 / AFnumber
 
         print '(A)', 'Golgi Tendon Organ from muscle ' // trim(init_GolgiTendonOrgan%muscle) // ' built.'

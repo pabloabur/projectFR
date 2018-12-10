@@ -142,7 +142,7 @@ module SynapsesFactoryModule
                                         // trim(neuralTractPools(poolOut)%unit(unitOut)%SynapsesOut%item(synapseIn)%item(4)%string)
                             dyn = conf%parameterSet(paramTag, neuralTractPools(poolOut)%pool, 0)
                             
-                            if (trim(dyn).ne.'None') then
+                            if (trim(dyn).ne.'None' .and. trim(dyn).ne.'none') then
                                 paramTag = 'var:' // trim(neuralTractPools(poolOut)%pool) // '-' &
                                             // trim(neuralTractPools(poolOut)%unit(unitOut)%neuronKind) // '>'&
                                             // trim(neuralTractPools(poolOut)%unit(unitOut)%&
@@ -363,7 +363,7 @@ module SynapsesFactoryModule
                                         // trim(interneuronPools(poolOut)%unit(unitOut)%SynapsesOut%item(synapseIn)%item(4)%string)
                             dyn = conf%parameterSet(paramTag, interneuronPools(poolOut)%pool, 0)
                             
-                            if (trim(dyn).ne.'None') then
+                            if (trim(dyn).ne.'None' .and. trim(dyn).ne.'none') then
                                 paramTag = 'var:' // trim(interneuronPools(poolOut)%pool) // '-' &
                                             // trim(interneuronPools(poolOut)%unit(unitOut)%neuronKind) // '>'&
                                             // trim(interneuronPools(poolOut)%unit(unitOut)%&
@@ -582,7 +582,7 @@ module SynapsesFactoryModule
                                         // trim(motorUnitPools(poolOut)%unit(unitOut)%SynapsesOut%item(synapseIn)%item(4)%string)
                             dyn = conf%parameterSet(paramTag, motorUnitPools(poolOut)%pool, 0)
                             
-                            if (trim(dyn).ne.'None') then
+                            if (trim(dyn).ne.'None' .and. trim(dyn).ne.'none') then
                                 paramTag = 'var:' // trim(motorUnitPools(poolOut)%pool) // '-' &
                                             // trim(motorUnitPools(poolOut)%unit(unitOut)%neuronKind) // '>'&
                                             // trim(motorUnitPools(poolOut)%unit(unitOut)%&
@@ -798,7 +798,7 @@ module SynapsesFactoryModule
                                         // trim(afferentPools(poolOut)%unit(unitOut)%SynapsesOut%item(synapseIn)%item(4)%string)
                             dyn = conf%parameterSet(paramTag, afferentPools(poolOut)%pool, 0)
                             
-                            if (trim(dyn).ne.'None') then
+                            if (trim(dyn).ne.'None' .and. trim(dyn).ne.'none') then
                                 paramTag = 'var:' // trim(afferentPools(poolOut)%pool) // '-' &
                                             // trim(afferentPools(poolOut)%unit(unitOut)%neuronKind) // '>'&
                                             // trim(afferentPools(poolOut)%unit(unitOut)%&
@@ -1017,7 +1017,7 @@ module SynapsesFactoryModule
                                         // trim(afferentPools(poolOut)%unit(unitOut)%SynapsesOut%item(synapseIn)%item(4)%string)
                             dyn = conf%parameterSet(paramTag, afferentPools(poolOut)%pool, 0)
                             
-                            if (trim(dyn).ne.'None') then
+                            if (trim(dyn).ne.'None' .and. trim(dyn).ne.'none') then
                                 paramTag = 'var:' // trim(afferentPools(poolOut)%pool) // '-' &
                                             // trim(afferentPools(poolOut)%unit(unitOut)%neuronKind) // '>'&
                                             // trim(afferentPools(poolOut)%unit(unitOut)%&
@@ -1242,7 +1242,7 @@ module SynapsesFactoryModule
                                         // trim(NoiseSynapsesOut%item(synapseIn)%item(4)%string)
                             dyn = conf%parameterSet(paramTag, synapticNoisePools(poolOut)%pool, 0)
                                     
-                            if (trim(dyn).ne.'None') then
+                            if (trim(dyn).ne.'None' .and. trim(dyn).ne.'none') then
                                 paramTag = 'var:Noise>'&
                                         // trim(NoiseSynapsesOut%item(synapseIn)%item(1)%string)&
                                         // '-' &
