@@ -58,7 +58,7 @@ program PosturalControl
     allocate(IbIn_V_mV(timeLength))
     allocate(IbFR(timeLength))
 
-    FR = 75
+    FR = 50
     GammaOrder = 25
     
     filename = 'GammaFallTime.txt'

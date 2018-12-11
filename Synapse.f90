@@ -474,6 +474,7 @@ module SynapseClass
             self%Ron = 0.0
             self%Roff = 0.0
             self%t0 = 0.0
+            self%lastUpdateInstant = 0.0
 
         end subroutine
 
