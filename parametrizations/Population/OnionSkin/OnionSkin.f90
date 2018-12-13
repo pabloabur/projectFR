@@ -45,7 +45,7 @@ program OnionSkin
     integer, dimension(10) :: GammaOrder 
     character(len = 100) :: filename = '../../conf.rmto'
     character(len = 100) :: path = '/home/pablo/osf/Master-Thesis-Data/population/'
-    character(len = 100) :: folderName = 'onion/false_decay/trial1/'
+    character(len = 100) :: folderName = 'onion/false_decay/trial2/'
     type(MotorUnitPool), dimension(:), allocatable, target :: motorUnitPools
     type(NeuralTract), dimension(:), allocatable :: neuralTractPools    
     type(InterneuronPool), dimension(:), allocatable, target :: interneuronPools    
@@ -276,7 +276,7 @@ program OnionSkin
 
     !!!!!!!!!!!!!!!! Descending commands parameters
     GammaOrder = [7, 5, 4, 4, 4, 3, 2, 2, 1, 1]
-    FR = [90, 100, 110, 130, 140, 150, 170, 180, 190, 210]
+    FR = [150, 300, 450, 600, 750, 900, 1050, 1200, 1350, 1500]
 
     ! Removing influence of stimulus (required)
     paramTag = 'stimIntensity_PTN'
@@ -327,7 +327,7 @@ program OnionSkin
             !    call synapticNoisePools(j)%atualizePool(t(i))
             !end do
             do j = 1, size(neuralTractPools)
-                call neuralTractPools(j)%atualizePool(t(i), FR(k), GammaOrder(1))
+                call neuralTractPools(j)%atualizePool(t(i), FR(k), GammaOrder(k))
             end do
             do j = 1, size(motorUnitPools)
                 call motorUnitPools(j)%atualizeMotorUnitPool(t(i), 32.0_wp, 32.0_wp)
