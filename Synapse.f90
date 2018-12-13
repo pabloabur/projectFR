@@ -44,7 +44,7 @@ module SynapseClass
         type(CharacterArray) :: dynamics
         real(wp) :: gMaxTot_muS, rInf, tauOn, tauOff
         integer :: numberOfIncomingSynapses  
-        real(wp) :: expFinish, ExpOn, ExpOff
+        real(wp) :: expFinish
         real(wp) :: Non, Ron, Roff, t0
         real(wp), dimension(:), allocatable :: tBeginOfPulse
         logical, dimension(:), allocatable :: conductanceState
@@ -58,6 +58,7 @@ module SynapseClass
         real(wp), dimension(:), allocatable :: synContrib
         type(Queue) :: inQueue, outQueue
         real(wp) :: EqPot_mV, alpha_ms1, beta_ms1, Tmax_mM, tPeak_ms
+        real(wp) :: lastUpdateInstant
 
         contains
             procedure :: computeConductance
@@ -155,12 +156,9 @@ module SynapseClass
             ! ## Is the value of the exponential at the
             ! ## end of the pulse. It is computed as
             ! ## \f$\exp(T_{dur}/\tau_{on})\f$.
-            init_Synapse%expFinish = exp(- init_Synapse%tPeak_ms / init_Synapse%tauOn)
+            init_Synapse%expFinish = exp(-init_Synapse%tPeak_ms / init_Synapse%tauOn)
 
-            init_Synapse%ExpOn = exp(-init_Synapse%timeStep_ms / init_Synapse%tauOn)
-
-            init_Synapse%ExpOff = exp(-init_Synapse%timeStep_ms / init_Synapse%tauOff)
-
+            
             ! ## Sum of the fractions of the individual conductances that are
             ! ## receiving neurotransmitter (during pulse) relative to
             ! ## the \f$G_{max}\f$. (\f$N_{on}=\limits\sum_{i=1}g_{i_{on}}/G_{max}). 
@@ -175,7 +173,9 @@ module SynapseClass
             ! ## the pulse).
             init_Synapse%Roff = 0.0
             ! ## Instant that the last spike arrived to the compartment.
-            init_Synapse%t0 = 0.0           
+            init_Synapse%t0 = 0.0 
+
+            init_Synapse%lastUpdateInstant = 0.0          
 
             init_Synapse%inQueue = Queue()
             init_Synapse%outQueue = Queue()
@@ -276,8 +276,10 @@ module SynapseClass
             logical :: continueFlag
             integer :: newPulse
 
-            self%Ron = self%Ron * self%ExpOn + self%Non * self%rInf * (1.0 - self%ExpOn)
-            self%Roff = self%Roff*self%ExpOff       
+            self%Ron = self%Ron * exp(-(t-self%lastUpdateInstant) / self%tauOn) + &
+                       self%Non * self%rInf * (1.0 - exp(-(t-self%lastUpdateInstant) / self%tauOn))
+            self%Roff = self%Roff*(exp(-(t-self%lastUpdateInstant) / self%tauOff))
+            self%lastUpdateInstant = t
             
             if (allocated(idxBeginPulse)) deallocate(idxBeginPulse)
             continueFlag = .true.
@@ -472,6 +474,7 @@ module SynapseClass
             self%Ron = 0.0
             self%Roff = 0.0
             self%t0 = 0.0
+            self%lastUpdateInstant = 0.0
 
         end subroutine
 

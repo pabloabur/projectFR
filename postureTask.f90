@@ -24,7 +24,7 @@ module postureTaskClass
     use MusclePointerClass
     implicit none
     private
-    integer, parameter :: wp = kind( 1.0d0 )
+    integer, parameter :: wp = kind(1.0d0)
     real(wp), parameter :: pi = 4 * atan(1.0_wp)    
     real(wp), parameter :: g = 9.80655
     public :: postureTask
@@ -77,7 +77,7 @@ module postureTaskClass
             init_postureTask%mass = 60.0
             init_postureTask%height = 0.85
 
-            init_postureTask%momentOfInertia = (init_postureTask%mass*init_postureTask%height**2)/3.0
+            init_postureTask%momentOfInertia = 4.0*(init_postureTask%mass*init_postureTask%height**2)/3.0
 
             init_postureTask%ankleAngle_rad(1) = 5.0*pi/180.0
 
@@ -153,8 +153,15 @@ module postureTaskClass
                 end do
             end if
             
-            self%ankleTorque_Nm(timeIndex) = muscularTorque - 5.81*self%ankleOmega_rad_s(timeIndex) -&
-                                             0.65*self%mass*g*self%height*self%ankleAngle_rad(timeIndex) + &
+            if (mod(t, 500.0_wp) == 0) then
+                print *, 'muscle ', muscularTorque
+                print *, 'passive', -0.65*self%mass*g*self%height*(self%ankleAngle_rad(timeIndex)-3*pi/180)
+                print *, 'gravity', self%mass*g*self%height*sin(self%ankleAngle_rad(timeIndex))
+                print *, 'viscosity', - 5.81*self%ankleOmega_rad_s(timeIndex)
+            end if
+
+            self%ankleTorque_Nm(timeIndex) = muscularTorque - 5.81*self%ankleOmega_rad_s(timeIndex) - &
+                                             0.65*self%mass*g*self%height*(self%ankleAngle_rad(timeIndex)-3*pi/180) + &
                                              self%mass*g*self%height*sin(self%ankleAngle_rad(timeIndex))
         
         end subroutine
