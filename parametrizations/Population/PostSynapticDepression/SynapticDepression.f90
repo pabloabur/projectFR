@@ -60,13 +60,13 @@ program SynapticDepression
     real(wp), parameter :: FFConducStrength = 0.033_wp ! Simple weight decay
     character(len=3), parameter :: stimAmp = '80', nS = '75', nFR = '75', &
         nFF = '150', nRC = '600'
-    integer, dimension(5), parameter :: fs = [3, 10, 33, 50, 100]
+    integer, dimension(4), parameter :: fs = [1, 2, 3, 10]!, 33, 50, 100]
 
     call init_random_seed()
 
     conf = Configuration(filename)
 
-    conf%simDuration_ms = 1000
+    conf%simDuration_ms = 1200
 
     !Changing configuration file
     paramTag = 'MUnumber_MG-S'
@@ -232,11 +232,11 @@ program SynapticDepression
     
     ! Stimulus
     paramTag = 'stimStart_PTN'
-    value1 = '0'
+    value1 = '1'
     value2 = ''
     call conf%changeConfigurationParameter(paramTag, value1, value2)
     paramTag = 'stimStop_PTN'
-    value1 = '1000'
+    value1 = '1200'
     value2 = ''
     call conf%changeConfigurationParameter(paramTag, value1, value2)
     paramTag = 'stimIntensity_PTN'
@@ -258,15 +258,15 @@ program SynapticDepression
 
     ! Dynamics of MN-RC synapse
     paramtag = 'dyn:MG-S>RC_ext-@soma|excitatory'
-    value1 = 'None'
+    value1 = 'Depressing'!'None'
     value2 = ''
     call conf%changeconfigurationparameter(paramtag, value1, value2)
     paramTag = 'dyn:MG-FR>RC_ext-@soma|excitatory'
-    value1 = 'None'
+    value1 = 'Depressing'!'None'
     value2 = ''
     call conf%changeConfigurationParameter(paramTag, value1, value2)
     paramTag = 'dyn:MG-FF>RC_ext-@soma|excitatory'
-    value1 = 'None'
+    value1 = 'Depressing'!'None'
     value2 = ''
     call conf%changeConfigurationParameter(paramTag, value1, value2)
 
@@ -313,7 +313,7 @@ program SynapticDepression
         do i = 1, size(t)
             do j = 1, size(interneuronPools)
                 call interneuronPools(j)%atualizeInterneuronPool(t(i))
-                RCv_mV(i) = interneuronPools(j)%v_mV(301)
+                RCv_mV(i) = interneuronPools(j)%v_mV(1)
             end do
             do j = 1, size(motorUnitPools)
                 call motorUnitPools(j)%atualizeMotorUnitPool(t(i), 32.0_wp, 32.0_wp)
@@ -336,20 +336,20 @@ program SynapticDepression
         call gp%plot(interneuronPools(1)%poolSomaSpikes(:,1), &
         interneuronPools(1)%poolSomaSpikes(:,2), 'with points pt 5 lc rgb "#0008B0"')
 
-        call gp%title('PTN stimulus')
-        call gp%xlabel('t (ms))')
-        call gp%ylabel('Stimulus (mA)')
-        call gp%plot(t, motorUnitPools(1)%unit(1)%nerveStimulus_mA, 'with line lw 2 lc rgb "#0008B0"')  
+        !call gp%title('PTN stimulus')
+        !call gp%xlabel('t (ms))')
+        !call gp%ylabel('Stimulus (mA)')
+        !call gp%plot(t, motorUnitPools(1)%unit(1)%nerveStimulus_mA, 'with line lw 2 lc rgb "#0008B0"')  
 
-        call gp%title('Membrane potential of the soma of the MN #1')
-        call gp%xlabel('t (ms))')
-        call gp%ylabel('Descending command index')
-        call gp%plot(t, MNv_mV, 'with line lw 2 lc rgb "#0008B0"')  
+        !call gp%title('Membrane potential of the soma of the MN #1')
+        !call gp%xlabel('t (ms))')
+        !call gp%ylabel('Descending command index')
+        !call gp%plot(t, MNv_mV, 'with line lw 2 lc rgb "#0008B0"')  
 
-        call gp%title('Membrane potential of the soma of the RC')
-        call gp%xlabel('t (ms))')
-        call gp%ylabel('Potential (mV)')
-        call gp%plot(t, RCv_mV, 'with line lw 2 lc rgb "#0008B0"')  
+        !call gp%title('Membrane potential of the soma of the RC')
+        !call gp%xlabel('t (ms))')
+        !call gp%ylabel('Potential (mV)')
+        !call gp%plot(t, RCv_mV, 'with line lw 2 lc rgb "#0008B0"')  
 
         !write(filename, '("output", I2, ".dat")') fs(k)
         !filename = trim(path) // trim(folderName) // filename
