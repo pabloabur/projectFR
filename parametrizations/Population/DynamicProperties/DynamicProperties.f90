@@ -46,7 +46,9 @@ program DynamicProperties
     real(wp) :: FR
     integer :: GammaOrder 
     character(len = 80) :: pool, group
-    character(len = 80) :: filename = '../../conf.rmto'
+    character(len = 100) :: filename = '../../conf.rmto'
+    character(len = 100) :: path = '/home/pablo/osf/Master-Thesis-Data/population/'
+    character(len = 100) :: folderName = 'dynamic/false_decay/trial1/'
     type(MotorUnitPool), dimension(:), allocatable, target :: motorUnitPools
     type(NeuralTract), dimension(:), allocatable :: neuralTractPools    
     type(InterneuronPool), dimension(:), allocatable, target :: interneuronPools    
@@ -57,7 +59,7 @@ program DynamicProperties
     character(len=80) :: value1, value2
     ! Input parameters
     logical, parameter :: probDecay = .false.
-    real(wp), parameter :: FFConducStrength = 0.0275_wp, & 
+    real(wp), parameter :: FFConducStrength = 0.033_wp, & 
         declineFactorMN = real(1, wp)/6, declineFactorRC = real(3.5, wp)/3
     character(len=3), parameter :: stimAmp = '70', nS = '75', nFR = '75', &
         nFF = '150', nRC = '600'
@@ -68,7 +70,7 @@ program DynamicProperties
     call init_random_seed()
 
     conf = Configuration(filename)
-    conf%simDuration_ms = 1000
+    conf%simDuration_ms = 2000
 
     !Changing configuration file
     paramTag = 'MUnumber_MG-S'
@@ -232,8 +234,8 @@ program DynamicProperties
     else if (param.eq.'final') then
         ! Threshold
         paramTag = 'threshold:RC_ext-'
-        value1 = '18.9089'
-        value2 = '18.9089'
+        value1 = '22.9608'
+        value2 = '22.9608'
         call conf%changeConfigurationParameter(paramTag, value1, value2)
 
         ! Connectivity
@@ -264,7 +266,7 @@ program DynamicProperties
 
         ! Conductances
         paramTag = 'gmax:RC_ext->MG-S@dendrite|inhibitory'
-        value1 = '0.130'
+        value1 = '0.128'
         value2 = ''
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'gmax:RC_ext->MG-FR@dendrite|inhibitory'
@@ -272,7 +274,7 @@ program DynamicProperties
         value2 = ''
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'gmax:RC_ext->MG-FF@dendrite|inhibitory'
-        value1 = '0.081'
+        value1 = '0.094'
         value2 = ''
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'gmax:MG-S>RC_ext-@soma|excitatory'
@@ -298,8 +300,8 @@ program DynamicProperties
         value2 = '218.2168'
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'res@soma:RC_ext-'
-        value1 = '7000'
-        value2 = '7000'
+        value1 = '8500'
+        value2 = '8500'
         call conf%changeConfigurationParameter(paramTag, value1, value2)
 
         ! Ks
@@ -374,7 +376,7 @@ program DynamicProperties
     value2 = ''
     call conf%changeConfigurationParameter(paramTag, value1, value2)
     paramTag = 'stimStop_PTN'
-    value1 = '1000'
+    value1 = '2000'
     value2 = ''
     call conf%changeConfigurationParameter(paramTag, value1, value2)
     paramTag = 'stimIntensity_PTN'
@@ -394,29 +396,33 @@ program DynamicProperties
     value2 = ''
     call conf%changeConfigurationParameter(paramTag, value1, value2)
     paramTag = 'stimModulationStop_PTN'
-    value1 = '1000'
+    value1 = '2000'
     value2 = ''
     call conf%changeConfigurationParameter(paramTag, value1, value2)
 
     ! Dynamics of MN-RC synapse
-    paramtag = 'dyn:MG-S>RC_ext-@soma|excitatory'
-    value1 = 'None'
-    value2 = ''
-    call conf%changeconfigurationparameter(paramtag, value1, value2)
-    paramTag = 'dyn:MG-FR>RC_ext-@soma|excitatory'
-    value1 = 'None'
-    value2 = ''
-    call conf%changeConfigurationParameter(paramTag, value1, value2)
-    paramTag = 'dyn:MG-FF>RC_ext-@soma|excitatory'
-    value1 = 'None'
-    value2 = ''
-    call conf%changeConfigurationParameter(paramTag, value1, value2)
+    !paramtag = 'dyn:MG-S>RC_ext-@soma|excitatory'
+    !value1 = 'None'
+    !value2 = ''
+    !call conf%changeconfigurationparameter(paramtag, value1, value2)
+    !paramTag = 'dyn:MG-FR>RC_ext-@soma|excitatory'
+    !value1 = 'None'
+    !value2 = ''
+    !call conf%changeConfigurationParameter(paramTag, value1, value2)
+    !paramTag = 'dyn:MG-FF>RC_ext-@soma|excitatory'
+    !value1 = 'None'
+    !value2 = ''
+    !call conf%changeConfigurationParameter(paramTag, value1, value2)
 
     ! Removing RC spontaneous activity 
-    paramTag = 'gmax:Noise>RC_ext-@soma|excitatory'
-    value1 = '0'
+    paramtag = 'gmax:Noise>RC_ext-@soma|excitatory'
+    value1 = '0.03015'
     value2 = ''
-    call conf%changeConfigurationParameter(paramTag, value1, value2)
+    call conf%changeconfigurationparameter(paramtag, value1, value2)
+    paramtag = 'NoiseFunction_RC_ext'
+    value1 = '0'! it was '7', but in the experiment there was none
+    value2 = ''
+    call conf%changeconfigurationparameter(paramtag, value1, value2)
 
     print *, 'Building neural elements'
     allocate(neuralTractPools(0))
@@ -466,7 +472,7 @@ program DynamicProperties
             end do
             do j = 1, size(motorUnitPools)
                 call motorUnitPools(j)%atualizeMotorUnitPool(t(i), 32.0_wp, 32.0_wp)
-                MNv_mV(i) = motorUnitPools(j)%v_mV(2)      
+                MNv_mV(i) = motorUnitPools(j)%v_mV(2*(1))      
             end do
         end do
 
@@ -474,6 +480,7 @@ program DynamicProperties
         call interneuronPools(1)%listSpikes()
 
         write(filename, '("output", I1, ".dat")') k
+        filename = trim(path) // trim(folderName) // filename
         open(1, file=filename, status = 'replace')
         do i = 1, size(interneuronPools(1)%poolSomaSpikes, 1)
             write(1, '(F15.6, 1X, F15.1, 1X, F15.2)') interneuronPools(1)%poolSomaSpikes(i,1), &
@@ -481,6 +488,7 @@ program DynamicProperties
         end do
         close(1)
         write(filename, '("stimulus", I1, ".dat")') k
+        filename = trim(path) // trim(folderName) // filename
         open(1, file=filename, status = 'replace')
         do i = 1, size(motorUnitPools(1)%unit(1)%nerveStimulus_mA)
             write(1, '(F15.2)') motorUnitPools(1)%unit(1)%nerveStimulus_mA(i)
