@@ -48,20 +48,19 @@ program DynamicProperties
     character(len = 80) :: pool, group
     character(len = 100) :: filename = '../../conf.rmto'
     character(len = 100) :: path = '/home/pablo/osf/Master-Thesis-Data/population/'
-    character(len = 100) :: folderName = 'dynamic/false_decay/trial1/'
+    character(len = 100) :: folderName = 'dynamic/false_decay/trial9/'
     type(MotorUnitPool), dimension(:), allocatable, target :: motorUnitPools
     type(NeuralTract), dimension(:), allocatable :: neuralTractPools    
     type(InterneuronPool), dimension(:), allocatable, target :: interneuronPools    
     type(SynapticNoise), dimension(:), allocatable:: synapticNoisePools     
     type(AfferentPool), dimension(:), allocatable:: afferentPools     
-    character(len=5) :: param
     character(len=80) :: paramTag
     character(len=80) :: value1, value2
     ! Input parameters
     logical, parameter :: probDecay = .false.
     real(wp), parameter :: FFConducStrength = 0.033_wp, & 
         declineFactorMN = real(1, wp)/6, declineFactorRC = real(3.5, wp)/3
-    character(len=3), parameter :: stimAmp = '70', nS = '75', nFR = '75', &
+    character(len=3), parameter :: stimAmp = '80', nS = '75', nFR = '75', &
         nFF = '150', nRC = '600'
     integer, parameter :: frequency1 = 5
     ! values for frequency2 are already substracted to yield proper modulation
@@ -90,148 +89,6 @@ program DynamicProperties
     value2 = ''
     call conf%changeConfigurationParameter(paramTag, value1, value2)
 
-    call get_command_argument(1, param)
-    if (param.eq.'old') then
-        ! Connectivity
-        paramTag = 'Con:RC_ext->MG-S@dendrite|inhibitory'
-        value1 = '100'
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'Con:RC_ext->MG-FR@dendrite|inhibitory'
-        value1 = '100'
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'Con:RC_ext->MG-FF@dendrite|inhibitory'
-        value1 = '100'
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'Con:MG-S>RC_ext-@soma|excitatory'
-        value1 = '100'
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'Con:MG-FR>RC_ext-@soma|excitatory'
-        value1 = '100'
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'Con:MG-FF>RC_ext-@soma|excitatory'
-        value1 = '100'
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-
-        ! Conductances
-        paramTag = 'gmax:RC_ext->MG-S@dendrite|inhibitory'
-        value1 = '0.44'
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'gmax:RC_ext->MG-FR@dendrite|inhibitory'
-        value1 = '0.3'
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'gmax:RC_ext->MG-FF@dendrite|inhibitory'
-        value1 = '0.24'
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'gmax:MG-S>RC_ext-@soma|excitatory'
-        value1 = '0.15'
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'gmax:MG-FR>RC_ext-@soma|excitatory'
-        value1 = '0.17'
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'gmax:MG-FF>RC_ext-@soma|excitatory'
-        value1 = '0.3'
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-
-        ! Morphology
-        paramTag = 'd@soma:RC_ext-'
-        value1 = '64.77885'
-        value2 = '64.77885'
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'l@soma:RC_ext-'
-        value1 = '285'
-        value2 = '285'
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'res@soma:RC_ext-'
-        value1 = '200'
-        value2 = '200'
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-
-    else if (param.eq.'new') then
-        ! Threshold
-        paramTag = 'threshold:RC_ext-'
-        value1 = '5'
-        value2 = '15'
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-
-        ! Connectivity
-        paramTag = 'Con:RC_ext->MG-S@dendrite|inhibitory'
-        value1 = '4'
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'Con:RC_ext->MG-FR@dendrite|inhibitory'
-        value1 = '4'
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'Con:RC_ext->MG-FF@dendrite|inhibitory'
-        value1 = '4'
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'Con:MG-S>RC_ext-@soma|excitatory'
-        value1 = '6'
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'Con:MG-FR>RC_ext-@soma|excitatory'
-        value1 = '6'
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'Con:MG-FF>RC_ext-@soma|excitatory'
-        value1 = '6'
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-
-        ! Conductances
-        paramTag = 'gmax:RC_ext->MG-S@dendrite|inhibitory'
-        value1 = '0.44'
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'gmax:RC_ext->MG-FR@dendrite|inhibitory'
-        value1 = '0.44'
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'gmax:RC_ext->MG-FF@dendrite|inhibitory'
-        value1 = '0.44'
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'gmax:MG-S>RC_ext-@soma|excitatory'
-        value1 = '0.15'
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'gmax:MG-FR>RC_ext-@soma|excitatory'
-        value1 = '0.15'
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'gmax:MG-FF>RC_ext-@soma|excitatory'
-        value1 = '0.15'
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-
-        ! Morphology
-        paramTag = 'd@soma:RC_ext-'
-        value1 = '25'
-        value2 = '25'
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'l@soma:RC_ext-'
-        value1 = '242'
-        value2 = '242'
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'res@soma:RC_ext-'
-        value1 = '760'
-        value2 = '760'
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-
-    else if (param.eq.'final') then
         ! Threshold
         paramTag = 'threshold:RC_ext-'
         value1 = '22.9608'
@@ -365,10 +222,6 @@ program DynamicProperties
         value1 = '0'
         value2 = '6'
         call conf%changeConfigurationParameter(paramTag, value1, value2)
-    else
-        print *, 'Wrong parametrization option'
-        stop (1)
-    endif
     
     ! Stimulus
     paramTag = 'stimStart_PTN'
@@ -463,9 +316,9 @@ program DynamicProperties
         end do
         
         do i = 1, size(t)        
-            do j = 1, size(synapticNoisePools)
-                call synapticNoisePools(j)%atualizePool(t(i))
-            end do
+            !do j = 1, size(synapticNoisePools)
+            !    call synapticNoisePools(j)%atualizePool(t(i))
+            !end do
             do j = 1, size(interneuronPools)
                 call interneuronPools(j)%atualizeInterneuronPool(t(i))
                 RCv_mV(i) = interneuronPools(j)%v_mV(1)        
@@ -497,7 +350,7 @@ program DynamicProperties
 
         call motorUnitPools(1)%reset()
         call interneuronPools(1)%reset()
-        call synapticNoisePools(1)%reset()
+        !call synapticNoisePools(1)%reset()
 
         !call gp%title('Membrane potential of the soma of the RC #1')
         !call gp%xlabel('t (ms))')
