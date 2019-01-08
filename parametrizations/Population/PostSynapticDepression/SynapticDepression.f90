@@ -257,18 +257,18 @@ program SynapticDepression
     call conf%changeConfigurationParameter(paramTag, value1, value2)
 
     ! Dynamics of MN-RC synapse
-    paramtag = 'dyn:MG-S>RC_ext-@soma|excitatory'
-    value1 = 'Depressing'!'None'
-    value2 = ''
-    call conf%changeconfigurationparameter(paramtag, value1, value2)
-    paramTag = 'dyn:MG-FR>RC_ext-@soma|excitatory'
-    value1 = 'Depressing'!'None'
-    value2 = ''
-    call conf%changeConfigurationParameter(paramTag, value1, value2)
-    paramTag = 'dyn:MG-FF>RC_ext-@soma|excitatory'
-    value1 = 'Depressing'!'None'
-    value2 = ''
-    call conf%changeConfigurationParameter(paramTag, value1, value2)
+    !paramtag = 'dyn:MG-S>RC_ext-@soma|excitatory'
+    !value1 = 'Depressing'!'None'
+    !value2 = ''
+    !call conf%changeconfigurationparameter(paramtag, value1, value2)
+    !paramTag = 'dyn:MG-FR>RC_ext-@soma|excitatory'
+    !value1 = 'Depressing'!'None'
+    !value2 = ''
+    !call conf%changeConfigurationParameter(paramTag, value1, value2)
+    !paramTag = 'dyn:MG-FF>RC_ext-@soma|excitatory'
+    !value1 = 'Depressing'!'None'
+    !value2 = ''
+    !call conf%changeConfigurationParameter(paramTag, value1, value2)
 
     print *, 'Building neural elements'
     allocate(neuralTractPools(0))
@@ -324,11 +324,11 @@ program SynapticDepression
         call motorUnitPools(1)%listSpikes()
         call interneuronPools(1)%listSpikes()
 
-        call gp%title('MN spike instants at the soma')
-        call gp%xlabel('t (s))')
-        call gp%ylabel('Motoneuron index')
-        call gp%plot(motorUnitPools(1)%poolSomaSpikes(:,1), &
-        motorUnitPools(1)%poolSomaSpikes(:,2), 'with points pt 5 lc rgb "#0008B0"')
+        !call gp%title('MN spike instants at the soma')
+        !call gp%xlabel('t (s))')
+        !call gp%ylabel('Motoneuron index')
+        !call gp%plot(motorUnitPools(1)%poolSomaSpikes(:,1), &
+        !motorUnitPools(1)%poolSomaSpikes(:,2), 'with points pt 5 lc rgb "#0008B0"')
 
         call gp%title('RC spike instants at the soma')
         call gp%xlabel('t (s))')

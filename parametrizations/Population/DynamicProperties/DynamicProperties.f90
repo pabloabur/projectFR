@@ -48,7 +48,7 @@ program DynamicProperties
     character(len = 80) :: pool, group
     character(len = 100) :: filename = '../../conf.rmto'
     character(len = 100) :: path = '/home/pablo/osf/Master-Thesis-Data/population/'
-    character(len = 100) :: folderName = 'dynamic/false_decay/trial9/'
+    character(len = 100) :: folderName = 'dynamic/false_decay/trial10/'
     type(MotorUnitPool), dimension(:), allocatable, target :: motorUnitPools
     type(NeuralTract), dimension(:), allocatable :: neuralTractPools    
     type(InterneuronPool), dimension(:), allocatable, target :: interneuronPools    
@@ -254,18 +254,18 @@ program DynamicProperties
     call conf%changeConfigurationParameter(paramTag, value1, value2)
 
     ! Dynamics of MN-RC synapse
-    !paramtag = 'dyn:MG-S>RC_ext-@soma|excitatory'
-    !value1 = 'None'
-    !value2 = ''
-    !call conf%changeconfigurationparameter(paramtag, value1, value2)
-    !paramTag = 'dyn:MG-FR>RC_ext-@soma|excitatory'
-    !value1 = 'None'
-    !value2 = ''
-    !call conf%changeConfigurationParameter(paramTag, value1, value2)
-    !paramTag = 'dyn:MG-FF>RC_ext-@soma|excitatory'
-    !value1 = 'None'
-    !value2 = ''
-    !call conf%changeConfigurationParameter(paramTag, value1, value2)
+    paramtag = 'dyn:MG-S>RC_ext-@soma|excitatory'
+    value1 = 'None'
+    value2 = ''
+    call conf%changeconfigurationparameter(paramtag, value1, value2)
+    paramTag = 'dyn:MG-FR>RC_ext-@soma|excitatory'
+    value1 = 'None'
+    value2 = ''
+    call conf%changeConfigurationParameter(paramTag, value1, value2)
+    paramTag = 'dyn:MG-FF>RC_ext-@soma|excitatory'
+    value1 = 'None'
+    value2 = ''
+    call conf%changeConfigurationParameter(paramTag, value1, value2)
 
     ! Removing RC spontaneous activity 
     paramtag = 'gmax:Noise>RC_ext-@soma|excitatory'
