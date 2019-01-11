@@ -39,8 +39,8 @@ program IPSP
     logical, parameter :: probDecay = .false.
     real(wp), parameter :: FFConducStrength = 0.3_wp, & 
         declineFactorMN = real(1, wp)/6, declineFactorRC = real(3.5, wp)/3
-    character(len=3), parameter :: nS = '2', nFR = '2', &
-        nFF = '2', nRC = '6', nCM = '0', nMN = '6' ! nS+nFR+nFF
+    character(len=3), parameter :: nS = '1', nFR = '1', &
+        nFF = '1', nRC = '3', nCM = '0', nMN = '3' ! nS+nFR+nFF
 
     call init_random_seed()
 
@@ -73,19 +73,6 @@ program IPSP
     value2 = ''
     call conf%changeConfigurationParameter(paramTag, value1, value2)
 
-        paramTag = 'gmax:MG-S>RC_ext-@soma|excitatory'
-        write(value1, '(F15.6)') FFConducStrength/2.2
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'gmax:MG-FR>RC_ext-@soma|excitatory'
-        write(value1, '(F15.6)') FFConducStrength/1.8
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'gmax:MG-FF>RC_ext-@soma|excitatory'
-        write(value1, '(F15.6)') FFConducStrength
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-
     !!!!!!!!!!!!!!!! Done to ensure that neighboring neurons will not affect each other
     paramtag = 'position:MG-'
     value1 = '0'
@@ -98,10 +85,6 @@ program IPSP
 
     !!!!!!!!!!!!!!!! RC
     ! Turning off spontaneous activity
-    paramtag = 'gmax:Noise>RC_ext-@soma|excitatory'
-    value1 = '0.03015'
-    value2 = ''
-    call conf%changeconfigurationparameter(paramtag, value1, value2)
     paramtag = 'NoiseFunction_RC_ext'
     value1 = '0'!'7'
     value2 = ''
@@ -169,37 +152,37 @@ program IPSP
     do i = 1, size(t)
         if (t(i)>10.0.and.t(i)<10.5) then
             interneuronPools(1)%iInjected(1) = 6.0
+            interneuronPools(1)%iInjected(2) = 6.0
             interneuronPools(1)%iInjected(3) = 6.0
-            interneuronPools(1)%iInjected(5) = 6.0
         else
             interneuronPools(1)%iInjected(:) = 0.0
         end if
         do j = 1, size(interneuronPools)
             call interneuronPools(j)%atualizeInterneuronPool(t(i))
             RC1(i) = interneuronPools(j)%v_mV(1)
-            RC2(i) = interneuronPools(j)%v_mV(3)
-            RC3(i) = interneuronPools(j)%v_mV(5)
+            RC2(i) = interneuronPools(j)%v_mV(2)
+            RC3(i) = interneuronPools(j)%v_mV(3)
         end do
         do j = 1, size(motorUnitPools)
             call motorUnitPools(j)%atualizeMotorUnitPool(t(i), 32.0_wp, 32.0_wp)
             MNSv_mV(i) = motorUnitPools(j)%v_mV(2*(1))
-            MNFRv_mV(i) = motorUnitPools(j)%v_mV(2*(3))
-            MNFFv_mV(i) = motorUnitPools(j)%v_mV(2*(5))
+            MNFRv_mV(i) = motorUnitPools(j)%v_mV(2*(2))
+            MNFFv_mV(i) = motorUnitPools(j)%v_mV(2*(3))
         end do
     end do
 
     print *, 'Position of RC 1'
     print *, interneuronPools(1)%unit(1)%position_mm
     print *, 'Position of RC 3'
-    print *, interneuronPools(1)%unit(3)%position_mm
+    print *, interneuronPools(1)%unit(2)%position_mm
     print *, 'Position of RC 5'
-    print *, interneuronPools(1)%unit(5)%position_mm
+    print *, interneuronPools(1)%unit(3)%position_mm
     print *, 'Position of MN 1'
     print *, motorUnitPools(1)%unit(1)%position_mm
     print *, 'Position of MN 3'
-    print *, motorUnitPools(1)%unit(3)%position_mm
+    print *, motorUnitPools(1)%unit(2)%position_mm
     print *, 'Position of MN 5'
-    print *, motorUnitPools(1)%unit(5)%position_mm
+    print *, motorUnitPools(1)%unit(3)%position_mm
     call interneuronPools(1)%listSpikes()
     call gp%title('RC spike instants at the soma')
     call gp%xlabel('t (s))')

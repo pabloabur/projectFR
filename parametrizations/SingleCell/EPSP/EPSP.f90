@@ -71,19 +71,6 @@ program EPSP
     value2 = ''
     call conf%changeConfigurationParameter(paramTag, value1, value2)
 
-        paramTag = 'gmax:MG-S>RC_ext-@soma|excitatory'
-        write(value1, '(F15.6)') FFConducStrength/2.2
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'gmax:MG-FR>RC_ext-@soma|excitatory'
-        write(value1, '(F15.6)') FFConducStrength/1.8
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'gmax:MG-FF>RC_ext-@soma|excitatory'
-        write(value1, '(F15.6)') FFConducStrength
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-
         ! Columnar length
         paramTag = 'position:MG-'
         value1 = '0'

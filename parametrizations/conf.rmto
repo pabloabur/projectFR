@@ -1,7 +1,43 @@
+%% Morphology
+%position:RC_ext-,0,6
+%threshold:RC_ext-,22.9608,22.9608
+%d@soma:RC_ext-,27,27
+%l@soma:RC_ext-,218.2168,218.2168
+%res@soma:RC_ext-,8500,8500
+%% Channels
+%gmax_Kf:RC_ext-@soma,3300,
+%gmax_Ks:RC_ext-@soma,2300000,
+%alpha_q:RC_ext-@soma,0.004,
+%beta_q:RC_ext-@soma,0.02,
+%alpha_n:RC_ext-@soma,6,
+%beta_n:RC_ext-@soma,0.5,
+%% Connections
+%Con:RC_ext->MG-S@dendrite|inhibitory,100,
+%Con:RC_ext->MG-FR@dendrite|inhibitory,100,
+%Con:RC_ext->MG-FF@dendrite|inhibitory,100,
+%Con:MG-S>RC_ext-@soma|excitatory,100,
+%Con:MG-FR>RC_ext-@soma|excitatory,100,
+%Con:MG-FF>RC_ext-@soma|excitatory,100,
+%% Current
+%gmax:RC_ext->MG-S@dendrite|inhibitory,0.128,
+%gmax:RC_ext->MG-FR@dendrite|inhibitory,0.119,
+%gmax:RC_ext->MG-FF@dendrite|inhibitory,0.094,
+%gmax:MG-FF>RC_ext-@soma|excitatory,0.03300,
+%gmax:MG-FR>RC_ext-@soma|excitatory,0.01833,
+%gmax:MG-S>RC_ext-@soma|excitatory,0.015,
+%dec:RC_ext->MG-S@dendrite|inhibitory,1.166666,
+%dec:RC_ext->MG-FR@dendrite|inhibitory,1.166666,
+%dec:RC_ext->MG-FF@dendrite|inhibitory,1.166666,
+%dec:MG-S>RC_ext-@soma|excitatory,0.166666,
+%dec:MG-FR>RC_ext-@soma|excitatory,0.166666,
+%dec:MG-FF>RC_ext-@soma|excitatory,0.166666,
+%% Synaptic noise
+%gmax:Noise>RC_ext-@soma|excitatory,0.014,
+%NoiseFunction_RC_ext,7,
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%% RC parameterization
 % Morphology
-position:RC_ext-,0,18
+position:RC_ext-,0,6
 threshold:RC_ext-,6.7532,6.7532
 d@soma:RC_ext-,27,27
 l@soma:RC_ext-,218.2168,218.2168
@@ -24,6 +60,12 @@ Con:MG-FF>RC_ext-@soma|excitatory,100,
 gmax:RC_ext->MG-S@dendrite|inhibitory,0.119,
 gmax:RC_ext->MG-FR@dendrite|inhibitory,0.119,
 gmax:RC_ext->MG-FF@dendrite|inhibitory,0.094,
+gmax:MG-FF>RC_ext-@soma|excitatory,0.01500,
+gmax:MG-FR>RC_ext-@soma|excitatory,0.00833,
+gmax:MG-S>RC_ext-@soma|excitatory,0.00681,
+dyn:MG-S>RC_ext-@soma|excitatory,None,
+dyn:MG-FR>RC_ext-@soma|excitatory,None,
+dyn:MG-FF>RC_ext-@soma|excitatory,None,
 dec:RC_ext->MG-S@dendrite|inhibitory,1.166666,
 dec:RC_ext->MG-FR@dendrite|inhibitory,1.166666,
 dec:RC_ext->MG-FF@dendrite|inhibitory,1.166666,
@@ -33,6 +75,15 @@ dec:MG-FF>RC_ext-@soma|excitatory,0.166666,
 % Synaptic noise
 gmax:Noise>RC_ext-@soma|excitatory,0.014,
 NoiseFunction_RC_ext,7,
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%% Changes on MN parameters
+twitchTimePeak:MG-S,110,58
+twitchTimePeak:MG-FR,55,30
+twitchTimePeak:MG-FF,47,20
+twitchPeak:MG-S,0.076,0.8
+twitchPeak:MG-FR,0.06,0.74
+twitchPeak:MG-FF,3.35,14.52
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 Number_MG,0,
@@ -92,19 +143,13 @@ dyn:RC_ext->MG-S@dendrite|inhibitory,None,
 dyn:RC_ext->MG-FR@dendrite|inhibitory,None,
 dyn:RC_ext->MG-FF@dendrite|inhibitory,None,
 %%% all types -> RC
-gmax:MG-S>RC_ext-@soma|excitatory,0.15,
 delay:MG-S>RC_ext-@soma|excitatory,0.3,
-dyn:MG-S>RC_ext-@soma|excitatory,Depressing,
 var:MG-S>RC_ext-@soma|excitatory,0.5,
 tau:MG-S>RC_ext-@soma|excitatory,200,
-gmax:MG-FR>RC_ext-@soma|excitatory,0.15,
 delay:MG-FR>RC_ext-@soma|excitatory,0.3,
-dyn:MG-FR>RC_ext-@soma|excitatory,Depressing,
 var:MG-FR>RC_ext-@soma|excitatory,0.5,
 tau:MG-FR>RC_ext-@soma|excitatory,200,
-gmax:MG-FF>RC_ext-@soma|excitatory,0.15,
 delay:MG-FF>RC_ext-@soma|excitatory,0.3,
-dyn:MG-FF>RC_ext-@soma|excitatory,Depressing,
 var:MG-FF>RC_ext-@soma|excitatory,0.5,
 tau:MG-FF>RC_ext-@soma|excitatory,200,
 %% Noise
@@ -891,12 +936,6 @@ res@soma:MG-S,1150,1050
 res@soma:MG-FR,1050,950
 res@soma:MG-FF,950,650
 res@node:MG-S,120,120
-twitchTimePeak:MG-S,110.0,86.5
-twitchTimePeak:MG-FR,86.5,55.25
-twitchTimePeak:MG-FF,55.25,25
-twitchPeak:MG-S,0.02,1.7
-twitchPeak:MG-FR,1.7,1.9
-twitchPeak:MG-FF,1.9,2.15
 bSatSOCDS:MG-S,1,0.85
 bSatSOCDS:MG-FR,0.85,0.48
 bSatSOCDS:MG-FF,0.48,0.43

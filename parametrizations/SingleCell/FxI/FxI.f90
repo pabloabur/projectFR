@@ -84,35 +84,13 @@ program FxI
     value2 = ''
     call conf%changeConfigurationParameter(paramTag, value1, value2)
 
-        paramTag = 'gmax:MG-S>RC_ext-@soma|excitatory'
-        write(value1, '(F15.6)') FFConducStrength/2.2
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'gmax:MG-FR>RC_ext-@soma|excitatory'
-        write(value1, '(F15.6)') FFConducStrength/1.8
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'gmax:MG-FF>RC_ext-@soma|excitatory'
-        write(value1, '(F15.6)') FFConducStrength
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-
         ! Columnar length
         paramTag = 'position:MG-'
         value1 = '0'
         value2 = '6'
         call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'position:RC_ext-'
-        value1 = '0'
-        value2 = '6'
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-
     !!!!!!!!!!!!!!!! RC
     ! Turning off spontaneous activity
-    paramtag = 'gmax:Noise>RC_ext-@soma|excitatory'
-    value1 = '0.03015'
-    value2 = ''
-    call conf%changeconfigurationparameter(paramtag, value1, value2)
     paramtag = 'NoiseFunction_RC_ext'
     value1 = '0'!'7'
     value2 = ''

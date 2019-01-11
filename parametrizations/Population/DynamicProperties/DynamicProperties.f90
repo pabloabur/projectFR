@@ -89,140 +89,11 @@ program DynamicProperties
     value2 = ''
     call conf%changeConfigurationParameter(paramTag, value1, value2)
 
-        ! Threshold
-        paramTag = 'threshold:RC_ext-'
-        value1 = '22.9608'
-        value2 = '22.9608'
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-
-        ! Connectivity
-        paramTag = 'Con:RC_ext->MG-S@dendrite|inhibitory'
-        value1 = '100'
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'Con:RC_ext->MG-FR@dendrite|inhibitory'
-        value1 = '100'
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'Con:RC_ext->MG-FF@dendrite|inhibitory'
-        value1 = '100'
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'Con:MG-S>RC_ext-@soma|excitatory'
-        value1 = '100'
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'Con:MG-FR>RC_ext-@soma|excitatory'
-        value1 = '100'
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'Con:MG-FF>RC_ext-@soma|excitatory'
-        value1 = '100'
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-
-        ! Conductances
-        paramTag = 'gmax:RC_ext->MG-S@dendrite|inhibitory'
-        value1 = '0.128'
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'gmax:RC_ext->MG-FR@dendrite|inhibitory'
-        value1 = '0.119'
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'gmax:RC_ext->MG-FF@dendrite|inhibitory'
-        value1 = '0.094'
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'gmax:MG-S>RC_ext-@soma|excitatory'
-        write(value1, '(F15.6)') FFConducStrength/2.2
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'gmax:MG-FR>RC_ext-@soma|excitatory'
-        write(value1, '(F15.6)') FFConducStrength/1.8
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'gmax:MG-FF>RC_ext-@soma|excitatory'
-        write(value1, '(F15.6)') FFConducStrength
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-
-        ! Morphology
-        paramTag = 'd@soma:RC_ext-'
-        value1 = '27'
-        value2 = '27'
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'l@soma:RC_ext-'
-        value1 = '218.2168'
-        value2 = '218.2168'
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'res@soma:RC_ext-'
-        value1 = '8500'
-        value2 = '8500'
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-
-        ! Ks
-        paramTag = 'gmax_Kf:RC_ext-@soma'
-        value1 = '3300'
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'gmax_Ks:RC_ext-@soma'
-        value1 = '2300000'
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'beta_q:RC_ext-@soma'
-        value1 = '0.02'
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'alpha_q:RC_ext-@soma'
-        value1 = '0.004'
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'alpha_n:RC_ext-@soma'
-        value1 = '6'
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'beta_n:RC_ext-@soma'
-        value1 = '0.5'
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-
-        ! Decay factors
-        paramTag = 'dec:MG-S>RC_ext-@soma|excitatory'
-        write(value1, '(F15.6)') declineFactorMN
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'dec:MG-FR>RC_ext-@soma|excitatory'
-        write(value1, '(F15.6)') declineFactorMN
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'dec:MG-FF>RC_ext-@soma|excitatory'
-        write(value1, '(F15.6)') declineFactorMN
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'dec:RC_ext->MG-S@dendrite|inhibitory'
-        write(value1, '(F15.6)') declineFactorRC
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'dec:RC_ext->MG-FR@dendrite|inhibitory'
-        write(value1, '(F15.6)') declineFactorRC
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'dec:RC_ext->MG-FF@dendrite|inhibitory'
-        write(value1, '(F15.6)') declineFactorRC
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-
         ! Columnar length
         paramTag = 'position:MG-'
         value1 = '0'
         value2 = '6'
         call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'position:RC_ext-'
-        value1 = '0'
-        value2 = '6'
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-    
     ! Stimulus
     paramTag = 'stimStart_PTN'
     value1 = '0.1'
@@ -253,25 +124,7 @@ program DynamicProperties
     value2 = ''
     call conf%changeConfigurationParameter(paramTag, value1, value2)
 
-    ! Dynamics of MN-RC synapse
-    paramtag = 'dyn:MG-S>RC_ext-@soma|excitatory'
-    value1 = 'None'
-    value2 = ''
-    call conf%changeconfigurationparameter(paramtag, value1, value2)
-    paramTag = 'dyn:MG-FR>RC_ext-@soma|excitatory'
-    value1 = 'None'
-    value2 = ''
-    call conf%changeConfigurationParameter(paramTag, value1, value2)
-    paramTag = 'dyn:MG-FF>RC_ext-@soma|excitatory'
-    value1 = 'None'
-    value2 = ''
-    call conf%changeConfigurationParameter(paramTag, value1, value2)
-
     ! Removing RC spontaneous activity 
-    paramtag = 'gmax:Noise>RC_ext-@soma|excitatory'
-    value1 = '0.03015'
-    value2 = ''
-    call conf%changeconfigurationparameter(paramtag, value1, value2)
     paramtag = 'NoiseFunction_RC_ext'
     value1 = '0'! it was '7', but in the experiment there was none
     value2 = ''
