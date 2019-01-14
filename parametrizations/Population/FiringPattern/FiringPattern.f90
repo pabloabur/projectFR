@@ -63,7 +63,8 @@ program FiringPattern
         declineFactorMN = real(1, wp)/6, declineFactorRC = real(3.5, wp)/3
     character(len=3), parameter :: nS = '75', nFR = '75', &
         nFF = '150', nRC = '600'
-    integer, dimension(4), parameter :: stimAmp = [90, 75, 60, 50]
+    !integer, dimension(4), parameter :: stimAmp = [90, 75, 60, 50]
+    real(wp), dimension(4) :: stimAmp = [18.0_wp, 12.5_wp, 12.3_wp, 12.1_wp]
 
     call init_random_seed()
 
@@ -112,7 +113,7 @@ program FiringPattern
     value2 = ''
     call conf%changeConfigurationParameter(paramTag, value1, value2)
     paramTag = 'stimPulseDuration_PTN'
-    value1 = '0.5'
+    value1 = '1'
     value2 = ''
     call conf%changeConfigurationParameter(paramTag, value1, value2)
     paramTag = 'stimModulationStart_PTN'
@@ -167,7 +168,8 @@ program FiringPattern
     call cpu_time(tic)
     do k=1, size(stimAmp)
         paramTag = 'stimIntensity_PTN'
-        write(value1, '(I2)') stimAmp(k)
+        write(value1, '(F15.6)') stimAmp(k)
+        print *, value1
         value2 = ''
         call conf%changeConfigurationParameter(paramTag, value1, value2)
 
@@ -212,10 +214,10 @@ program FiringPattern
         !call gp%ylabel('Membrane potential (mV)')
         !call gp%plot(t, MNv_mV, 'with line lw 2 lc rgb "#0008B0"')
 
-        !call gp%title('PTN stimulus')
-        !call gp%xlabel('t (ms))')
-        !call gp%ylabel('Stimulus (mA)')
-        !call gp%plot(t, motorUnitPools(1)%unit(1)%nerveStimulus_mA, 'with line lw 2 lc rgb "#0008B0"')
+        call gp%title('PTN stimulus')
+        call gp%xlabel('t (ms))')
+        call gp%ylabel('Stimulus (mA)')
+        call gp%plot(t, motorUnitPools(1)%unit(1)%nerveStimulus_mA, 'with line lw 2 lc rgb "#0008B0"')
 
         !call gp%title('MN spike instants at the soma')
         !call gp%xlabel('t (s))')
