@@ -84,6 +84,10 @@ twitchTimePeak:MG-FF,47,20
 twitchPeak:MG-S,0.076,0.8
 twitchPeak:MG-FR,0.06,0.74
 twitchPeak:MG-FF,3.35,14.52
+position:MG-,0,6
+axonDelayCondVel:MG-S,64,102
+axonDelayCondVel:MG-FR,82,114
+axonDelayCondVel:MG-FF,74,122
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 Number_MG,0,
@@ -913,7 +917,6 @@ beta_q:MG-FF@soma,0.05,
 % Motoneurons
 %% SOL
 %%% S
-position:MG-,0,18
 threshold:MG-S,12.35,16.45
 threshold:MG-FR,16.45,19.3
 threshold:MG-FF,19.3,20.9
@@ -951,9 +954,6 @@ EMGDuration:MG-FF,0.6,0.5
 axonDelayThreshold:MG-S,18,12.4
 axonDelayThreshold:MG-FR,12.4,12.2
 axonDelayThreshold:MG-FF,12.2,12.0
-axonDelayCondVel:MG-S,44,51
-axonDelayCondVel:MG-FR,51,52
-axonDelayCondVel:MG-FF,52,53
 axonDelayLeakTimeConstant:MG-S,10,10
 axonDelayLeakTimeConstant:MG-FR,10,10
 axonDelayLeakTimeConstant:MG-FF,10,10

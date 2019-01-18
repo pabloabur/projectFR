@@ -36,22 +36,21 @@ program OnionSkin
     !integer, parameter :: wp = kind(1.0d0)
     type(Configuration) :: conf
     integer :: timeLength
-    integer :: i, j, k
-    real(wp), dimension(:), allocatable :: t
+    integer :: i, j, k, l
+    real(wp), dimension(:), allocatable :: t, FR
+    integer, dimension(:), allocatable :: gammaOrder
     real(wp) :: tic, toc
     type(gpf) :: gp
-    real(wp), dimension(10) :: FR
     character(len = 80) :: pool, group
-    integer, dimension(10) :: GammaOrder 
     character(len = 100) :: filename = '../../conf.rmto'
     character(len = 100) :: path = '/home/pablo/osf/Master-Thesis-Data/population/'
-    character(len = 100) :: folderName = 'onion/false_decay/trial1/'
+    character(len = 100) :: folderName = 'onion/false_decay/trial5/'
     type(MotorUnitPool), dimension(:), allocatable, target :: motorUnitPools
     type(NeuralTract), dimension(:), allocatable :: neuralTractPools    
     type(InterneuronPool), dimension(:), allocatable, target :: interneuronPools    
     type(SynapticNoise), dimension(:), allocatable:: synapticNoisePools     
     type(AfferentPool), dimension(:), allocatable:: afferentPools     
-    character(len=5) :: param
+    character(len=1), dimension(2) :: param
     character(len=80) :: paramTag
     character(len=80) :: value1, value2
     real(wp), dimension(:), allocatable :: force
@@ -59,26 +58,18 @@ program OnionSkin
     real(wp) :: dt
     real(wp) :: tf
     logical, parameter :: probDecay = .false.
-    real(wp), parameter :: FFConducStrength = 0.033_wp, & 
-        declineFactorMN = real(1, wp)/6, declineFactorRC = real(3.5, wp)/3
     character(len=3), parameter :: nS = '75', nFR = '75', &
-        nFF = '150', nCM = '400', nMN = '300' ! nS+nFR+nFF
-    character(len=3) :: nRC
+        nFF = '150', nCM = '400', nMN = '300', nRC = '600' ! nS+nFR+nFF
+    ! 340 gives 100% MVC
+    ! 20% MVC/s, reaching 80% MVC
+    integer, dimension(2) :: mvc = [310, 220]
     
     call init_random_seed()
 
     conf = Configuration(filename)
-    conf%simDuration_ms = 2000
+    conf%simDuration_ms = 9000
 
-    call get_command_argument(1, param)
-    if (param.eq.'c') then
-        nRC = '600'
-    else if (param.eq.'o') then
-        nRC = '0'
-    else
-        print *, 'Wrong parametrization option'
-        stop (1)
-    endif
+    param = ['c', 'o']
 
     !Changing configuration file
     paramTag = 'Number_CMExt'
@@ -106,16 +97,6 @@ program OnionSkin
     value2 = ''
     call conf%changeConfigurationParameter(paramTag, value1, value2)
 
-        ! Columnar length
-        paramTag = 'position:MG-'
-        value1 = '0'
-        value2 = '6'
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramtag = 'NoiseFunction_RC_ext'
-        value1 = '0'!'7' ! Spontaneuous activity change mean MN membrane potential
-        value2 = ''
-        call conf%changeconfigurationparameter(paramtag, value1, value2)
-
     !!!!!!!!!!!!!!!! Independent noise
     call conf%changeConfigurationParameter(paramTag, value1, value2)
     paramTag = 'NoiseTarget_MG'
@@ -125,13 +106,6 @@ program OnionSkin
     paramTag = 'NoiseFunction_MG'
     value1 = '0'
     value2 = ''
-
-    !!!!!!!!!!!!!!!! Descending commands parameters
-    GammaOrder = [7, 5, 4, 4, 4, 3, 2, 2, 1, 1]
-    !FR = [150, 300, 450, 600, 750, 900, 1050, 1200, 1350, 1500]
-    !FR = [200, 210, 220, 230, 240, 900, 1050, 1200, 1350, 1500]
-    !FR = [20, 40, 60, 80, 100, 120, 140, 160, 180, 200]
-    FR = [34, 68, 102, 136, 170, 204, 238, 272, 306, 340]
 
     ! Removing influence of stimulus (required)
     paramTag = 'stimIntensity_PTN'
@@ -148,14 +122,10 @@ program OnionSkin
     pool = 'MG'
     motorUnitPools(1) = MotorUnitPool(conf, pool)    
 
-    if (param.eq.'c') then
-        allocate(interneuronPools(1))
-        pool = 'RC'
-        group = 'ext'    
-        interneuronPools(1) = InterneuronPool(conf, pool, group)
-    else if (param.eq.'o') then
-        allocate(interneuronPools(0))
-    endif
+    allocate(interneuronPools(1))
+    pool = 'RC'
+    group = 'ext'    
+    interneuronPools(1) = InterneuronPool(conf, pool, group)
 
     allocate(afferentPools(0))
 
@@ -169,34 +139,65 @@ program OnionSkin
     timeLength = nint(tf/dt)
     
     allocate(t(timeLength))
+    allocate(FR(timeLength))
     allocate(force(timeLength))
+    allocate(gammaOrder(timeLength))
 
     t = [(dt*(i-1), i=1, timeLength)]
 
     print *, 'Running simulation'
     call cpu_time(tic)
-    do k=1, size(FR)
+    ! Defining gamma order as a vector depending on the force of this simulation
+    do i=1, size(t)
+        if (i*dt>0.and.i*dt<1550) then
+            gammaOrder(i) = 7
+        else if (i*dt>1550.and.i*dt<1910) then
+            gammaOrder(i) = 5
+        else if (i*dt>1910.and.i*dt<2850) then
+            gammaOrder(i) = 4
+        else if (i*dt>2850.and.i*dt<4050) then
+            gammaOrder(i) = 3
+        else if (i*dt>4050.and.i*dt<5050) then
+            gammaOrder(i) = 2
+        else if (i*dt>5050.and.i*dt<6164) then
+            gammaOrder(i) = 3
+        else if (i*dt>6164.and.i*dt<7088) then
+            gammaOrder(i) = 4
+        else if (i*dt>7088.and.i*dt<7475) then
+            gammaOrder(i) = 5
+        else if (i*dt>7475.and.i*dt<7893) then
+            gammaOrder(i) = 7
+        end if
+    end do
+
+    do k = 1, size(param)
+        ! Creating descending command vector
+        do i=1, timeLength
+            if (i*dt < 4000) then
+                FR(i) = mvc(k)/(4000/dt)*i
+            else if (i*dt < 5000) then
+                FR(i) = mvc(k)
+            else
+                FR(i) = -mvc(k)/(4000/dt)*(i - 9000/dt)
+            end if
+        end do
         do i = 1, size(t)
             ! Updating elements
-            !do j = 1, size(synapticNoisePools)
-            !    call synapticNoisePools(j)%atualizePool(t(i))
-            !end do
             do j = 1, size(neuralTractPools)
-                call neuralTractPools(j)%atualizePool(t(i), FR(k), GammaOrder(1))
+                call neuralTractPools(j)%atualizePool(t(i), FR(i), gammaOrder(1))
             end do
             do j = 1, size(motorUnitPools)
                 call motorUnitPools(j)%atualizeMotorUnitPool(t(i), 32.0_wp, 32.0_wp)
             end do
-            if (param.eq.'c') then
+            if (param(k).eq.'c') then
                 do j = 1, size(interneuronPools)
                     call interneuronPools(j)%atualizeInterneuronPool(t(i))
-                !    RCv_mV(i) = interneuronPools(j)%v_mV(1)        
                 end do
             endif
         end do
 
         call motorUnitPools(1)%listSpikes()
-        if (param.eq.'c') then
+        if (param(k).eq.'c') then
             call interneuronPools(1)%listSpikes()
         end if
 
@@ -206,23 +207,29 @@ program OnionSkin
         call gp%plot(motorUnitPools(1)%poolSomaSpikes(:,1), &
         motorUnitPools(1)%poolSomaSpikes(:,2), 'with points pt 5 lc rgb "#0008B0"')
 
-        !call gp%title('RC spike instants at the soma')
-        !call gp%xlabel('t (s))')
-        !call gp%ylabel('Interneuron index')
-        !call gp%plot(interneuronPools(1)%poolSomaSpikes(:,1), &
-        !interneuronPools(1)%poolSomaSpikes(:,2), 'with points pt 5 lc rgb "#0008B0"')
-
         call gp%title('force')
         call gp%xlabel('t (ms))')
         call gp%ylabel('force (N)')
         call gp%plot(t, motorUnitPools(1)%NoHillMuscle%force, 'with line lw 2 lc rgb "#0008B0"')
 
-        if (param.eq.'c') then
-            write(filename, '("output", I1, "c.dat")') k-1
-            filename = trim(path) // trim(folderName) // filename
-        else if (param.eq.'o') then
-            write(filename, '("output", I1, "o.dat")') k-1
-            filename = trim(path) // trim(folderName) // filename
+        call gp%title('descending command')
+        call gp%xlabel('t (ms))')
+        call gp%ylabel('descending command rate (pps)')
+        call gp%plot(t, FR, 'with line lw 2 lc rgb "#0008B0"')
+
+        if (param(k).eq.'c') then
+            call gp%title('RC spike instants at the soma')
+            call gp%xlabel('t (s))')
+            call gp%ylabel('Interneuron index')
+            call gp%plot(interneuronPools(1)%poolSomaSpikes(:,1), &
+            interneuronPools(1)%poolSomaSpikes(:,2), 'with points pt 5 lc rgb "#0008B0"')
+        end if
+
+        ! Saving spike times
+        if (param(k).eq.'c') then
+            filename = trim(path) // trim(folderName) // "outputc.dat"
+        else if (param(k).eq.'o') then
+            filename = trim(path) // trim(folderName) // "outputo.dat"
         endif
         open(1, file=filename, status = 'replace')
         do i = 1, size(motorUnitPools(1)%poolSomaSpikes, 1)
@@ -231,13 +238,24 @@ program OnionSkin
         end do
         close(1)
 
-        if (param.eq.'c') then
+        ! Saving force
+        if (param(k).eq.'c') then
+            filename = trim(path) // trim(folderName) // "forcec.dat"
+        else if (param(k).eq.'o') then
+            filename = trim(path) // trim(folderName) // "forceo.dat"
+        endif
+        open(1, file=filename, status = 'replace')
+        do i = 1, timeLength
+            write(1, '(F15.2, 1X, F15.6)') t(i), motorUnitPools(1)%NoHillMuscle%force(i)
+        end do
+        close(1)
+
+        if (param(k).eq.'c') then
             call interneuronPools(1)%reset()
         endif
         call neuralTractPools(1)%reset()
         call motorUnitPools(1)%reset()
     end do
-
     call cpu_time(toc)
     print '(F15.6, A)', toc - tic, ' seconds'
 
