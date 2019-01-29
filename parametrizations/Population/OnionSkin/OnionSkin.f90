@@ -36,7 +36,7 @@ program OnionSkin
     !integer, parameter :: wp = kind(1.0d0)
     type(Configuration) :: conf
     integer :: timeLength
-    integer :: i, j, k, l
+    integer :: i, j, k
     real(wp), dimension(:), allocatable :: t, FR
     integer, dimension(:), allocatable :: gammaOrder
     real(wp) :: tic, toc
@@ -145,30 +145,32 @@ program OnionSkin
 
     t = [(dt*(i-1), i=1, timeLength)]
 
+    ! Simply make all values compatible with poisson without changing rest of the code
+    gammaOrder(:) = 1
     print *, 'Running simulation'
     call cpu_time(tic)
     ! Defining gamma order as a vector depending on the force of this simulation
-    do i=1, size(t)
-        if (i*dt>0.and.i*dt<1550) then
-            gammaOrder(i) = 7
-        else if (i*dt>1550.and.i*dt<1910) then
-            gammaOrder(i) = 5
-        else if (i*dt>1910.and.i*dt<2850) then
-            gammaOrder(i) = 4
-        else if (i*dt>2850.and.i*dt<4050) then
-            gammaOrder(i) = 3
-        else if (i*dt>4050.and.i*dt<5050) then
-            gammaOrder(i) = 2
-        else if (i*dt>5050.and.i*dt<6164) then
-            gammaOrder(i) = 3
-        else if (i*dt>6164.and.i*dt<7088) then
-            gammaOrder(i) = 4
-        else if (i*dt>7088.and.i*dt<7475) then
-            gammaOrder(i) = 5
-        else if (i*dt>7475.and.i*dt<7893) then
-            gammaOrder(i) = 7
-        end if
-    end do
+    !do i=1, size(t)
+    !    if (i*dt>0.and.i*dt<1550) then
+    !        gammaOrder(i) = 7
+    !    else if (i*dt>1550.and.i*dt<1910) then
+    !        gammaOrder(i) = 5
+    !    else if (i*dt>1910.and.i*dt<2850) then
+    !        gammaOrder(i) = 4
+    !    else if (i*dt>2850.and.i*dt<4050) then
+    !        gammaOrder(i) = 3
+    !    else if (i*dt>4050.and.i*dt<5050) then
+    !        gammaOrder(i) = 2
+    !    else if (i*dt>5050.and.i*dt<6164) then
+    !        gammaOrder(i) = 3
+    !    else if (i*dt>6164.and.i*dt<7088) then
+    !        gammaOrder(i) = 4
+    !    else if (i*dt>7088.and.i*dt<7475) then
+    !        gammaOrder(i) = 5
+    !    else if (i*dt>7475.and.i*dt<7893) then
+    !        gammaOrder(i) = 7
+    !    end if
+    !end do
 
     do k = 1, size(param)
         ! Creating descending command vector
