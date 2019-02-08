@@ -37,15 +37,17 @@ program Granit
     type(Configuration) :: conf
     integer :: timeLength
     integer :: i, j, k, l
-    real(wp), dimension(:), allocatable :: t
+    real(wp), dimension(:), allocatable :: t, MNSoma_mV
     real(wp) :: tic, toc
+    type(gpf) :: gp
     !real(wp) :: FR(15) = [(i, i = 5, 537, 38)]
-    integer, dimension(7), parameter :: fs = [10, 20, 30, 40, 50, 60, 70]
+    real(wp), dimension(9), parameter :: fs = &
+        [1, 75, 150, 225, 300, 375, 450, 525, 600]
     integer :: GammaOrder 
     character(len = 80) :: pool, group
     character(len = 100) :: filename = '../../conf.rmto'
     character(len = 100) :: path = '/home/pablo/osf/Master-Thesis-Data/population/'
-    character(len = 100) :: folderName = 'granit/trial1/'
+    character(len = 100) :: folderName = 'granit/trial4/'
     type(MotorUnitPool), dimension(:), allocatable, target :: motorUnitPools
     type(NeuralTract), dimension(:), allocatable :: neuralTractPools    
     type(InterneuronPool), dimension(:), allocatable, target :: interneuronPools    
@@ -59,9 +61,9 @@ program Granit
     real(wp) :: dt
     real(wp) :: tf
     logical, parameter :: probDecay = .false.
-    character(len=3), parameter :: nS = '500', nFR = '0', &
-        nFF = '0', nCM = '400', nMN = '500'! nS+nFR+nFF
-    character(len=4), parameter :: nRC = '1000' 
+    character(len=3), parameter :: nS = '150', nFR = '0', &
+        nFF = '0', nCM = '400', nMN = '150'! nS+nFR+nFF
+    character(len=4), parameter :: nRC = '300'
 
     call init_random_seed()
 
@@ -188,16 +190,16 @@ program Granit
         value2 = '20'
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'twitchPeak:SOL-S'
-        value1 = '0.076'
-        value2 = '0.8'
+        value1 = '0.0009408'
+        value2 = '0.0098784'
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'twitchPeak:SOL-FR'
-        value1 = '0.06'
-        value2 = '0.74'
+        value1 = '0.00066149'
+        value2 = '0.008085'
         call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'twitchPeak:MG-FF'
-        value1 = '3.35'
-        value2 = '14.52'
+        paramTag = 'twitchPeak:SOL-FF'
+        value1 = '0.03283'
+        value2 = '0.14229'
         call conf%changeConfigurationParameter(paramTag, value1, value2)
 
         ! Axon conductions
@@ -217,11 +219,21 @@ program Granit
         ! Columnar length
         paramTag = 'position:SOL-'
         value1 = '0'
-        value2 = '10'
+        value2 = '3'
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'position:RC_ext-'
         value1 = '0'
-        value2 = '10'
+        value2 = '3'
+        call conf%changeConfigurationParameter(paramTag, value1, value2)
+
+        ! Some parameters were very high. Probably need it for another simulation
+        paramTag = 'threshold:SOL-S'
+        value1 = '12.35'
+        value2 = '16.45'
+        call conf%changeConfigurationParameter(paramTag, value1, value2)
+        paramTag = 'Con:CMExt->SOL-S@dendrite|excitatory'
+        value1 = '30'
+        value2 = ''
         call conf%changeConfigurationParameter(paramTag, value1, value2)
 
     ! Dynamics of MN-RC synapse
@@ -250,36 +262,36 @@ program Granit
 
     GammaOrder = 1
 
-    ! Stimulus
-    paramTag = 'stimStart_PTN'
-    value1 = '0'
-    value2 = ''
-    call conf%changeConfigurationParameter(paramTag, value1, value2)
-    paramTag = 'stimStop_PTN'
-    value1 = '4000'
-    value2 = ''
-    call conf%changeConfigurationParameter(paramTag, value1, value2)
+    !! Stimulus
+    !paramTag = 'stimStart_PTN'
+    !value1 = '0'
+    !value2 = ''
+    !call conf%changeConfigurationParameter(paramTag, value1, value2)
+    !paramTag = 'stimStop_PTN'
+    !value1 = '4000'
+    !value2 = ''
+    !call conf%changeConfigurationParameter(paramTag, value1, value2)
     paramTag = 'stimIntensity_PTN'
-    value1 = '80' ! 0 to turn off
+    value1 = '0' ! 0 to turn off, 80 for supramaximal
     value2 = ''
     call conf%changeConfigurationParameter(paramTag, value1, value2)
-    paramTag = 'stimPulseDuration_PTN'
-    value1 = '0.2'
-    value2 = ''
-    call conf%changeConfigurationParameter(paramTag, value1, value2)
-    paramTag = 'stimModulationStart_PTN'
-    value1 = '0'
-    value2 = ''
-    call conf%changeConfigurationParameter(paramTag, value1, value2)
-    paramTag = 'stimModulationStop_PTN'
-    value1 = '0'
-    value2 = ''
-    call conf%changeConfigurationParameter(paramTag, value1, value2)
+    !paramTag = 'stimPulseDuration_PTN'
+    !value1 = '0.2'
+    !value2 = ''
+    !call conf%changeConfigurationParameter(paramTag, value1, value2)
+    !paramTag = 'stimModulationStart_PTN'
+    !value1 = '0'
+    !value2 = ''
+    !call conf%changeConfigurationParameter(paramTag, value1, value2)
+    !paramTag = 'stimModulationStop_PTN'
+    !value1 = '0'
+    !value2 = ''
+    !call conf%changeConfigurationParameter(paramTag, value1, value2)
 
     print *, 'Building neural elements'
-    allocate(neuralTractPools(0))
-    !pool = 'CMExt'
-    !neuralTractPools(1) = NeuralTract(conf, pool)
+    allocate(neuralTractPools(1))
+    pool = 'CMExt'
+    neuralTractPools(1) = NeuralTract(conf, pool)
 
     allocate(motorUnitPools(1))
     pool = 'SOL'
@@ -302,6 +314,7 @@ program Granit
     timeLength = nint(tf/dt)
     
     allocate(t(timeLength))
+    allocate(MNSoma_mV(timeLength))
     allocate(force(timeLength))
 
     t = [(dt*(i-1), i=1, timeLength)]
@@ -311,22 +324,27 @@ program Granit
 
     do l = 1, size(param)
         do k=1, size(fs)
-            paramTag = 'stimFrequency_PTN'
-            write(value1, '(I15)') fs(k)
-            value2 = ''
-            call conf%changeConfigurationParameter(paramTag, value1, value2)
+            !paramTag = 'stimFrequency_PTN'
+            !write(value1, '(I15)') fs(k)
+            !value2 = ''
+            !call conf%changeConfigurationParameter(paramTag, value1, value2)
 
-            ! Apply stimulus to the nerve
-            do i = 1, size(motorUnitPools(1)%unit)
-                call motorUnitPools(1)%unit(i)%createStimulus()
-            end do
+            !! Apply stimulus to the nerve
+            !do i = 1, size(motorUnitPools(1)%unit)
+            !    call motorUnitPools(1)%unit(i)%createStimulus()
+            !end do
         
             do i = 1, size(t)
-                do j = 1, size(motorUnitPools)
-                    call motorUnitPools(j)%atualizeMotorUnitPool(t(i), 32.0_wp, 32.0_wp)
+                do j = 1, size(neuralTractPools)
+                    call neuralTractPools(j)%atualizePool(t(i), fs(k), GammaOrder)
                 end do
+                ! I do not know how which noise belongs to which neural element
                 do j = 1, size(synapticNoisePools)
                     call synapticNoisePools(j)%atualizePool(t(i))
+                end do
+                do j = 1, size(motorUnitPools)
+                    call motorUnitPools(j)%atualizeMotorUnitPool(t(i), 32.0_wp, 32.0_wp)
+                    MNSoma_mV(i) = motorUnitPools(j)%v_mV(2*(1))
                 end do
                 if (param(l).eq.'c') then
                     do j = 1, size(interneuronPools)
@@ -383,12 +401,24 @@ program Granit
             !call gp%plot(interneuronPools(1)%poolSomaSpikes(:,1), &
             !interneuronPools(1)%poolSomaSpikes(:,2), 'with points pt 5 lc rgb "#0008B0"')
 
+            !call gp%title('force')
+            !call gp%xlabel('t (ms))')
+            !call gp%ylabel('force (N)')
+            !call gp%plot(t, force, 'with line lw 2 lc rgb "#0008B0"') 
+
+            !call gp%title('membrane')
+            !call gp%xlabel('t (ms))')
+            !call gp%ylabel('volts (mV)')
+            !call gp%plot(t, MNSoma_mV, 'with line lw 2 lc rgb "#0008B0"') 
+
             if (param(l).eq.'c') then
                 call interneuronPools(1)%reset()
-                call synapticNoisePools(2)%reset()
             endif
             call motorUnitPools(1)%reset()
-            call synapticNoisePools(1)%reset()
+            call neuralTractPools(1)%reset()
+            do j = 1, size(synapticNoisePools)
+                call synapticNoisePools(j)%reset()
+            end do
         end do
     end do
 

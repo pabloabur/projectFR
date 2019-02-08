@@ -81,9 +81,9 @@ NoiseFunction_RC_ext,7,
 twitchTimePeak:MG-S,110,58
 twitchTimePeak:MG-FR,55,30
 twitchTimePeak:MG-FF,47,20
-twitchPeak:MG-S,0.076,0.8
-twitchPeak:MG-FR,0.06,0.74
-twitchPeak:MG-FF,3.35,14.52
+twitchPeak:MG-S,0.0009408,0.0098784
+twitchPeak:MG-FR,0.00066149,0.008085
+twitchPeak:MG-FF,0.03283,0.14229
 position:MG-,0,6
 axonDelayCondVel:MG-S,64,102
 axonDelayCondVel:MG-FR,82,114
@@ -97,25 +97,25 @@ RC_extSomaRefPer,1.0,
 % RC connections
 %% SOL
 %%% RC -> S
-Con:RC_ext->SOL-S@dendrite|inhibitory,0,
+Con:RC_ext->SOL-S@dendrite|inhibitory,100,
 gmax:RC_ext->SOL-S@dendrite|inhibitory,0.44,
 delay:RC_ext->SOL-S@dendrite|inhibitory,0.3,
 dyn:RC_ext->SOL-S@dendrite|inhibitory,None,
 dec:RC_ext->SOL-S@dendrite|inhibitory,0.22,
 %%% RC -> FR
-Con:RC_ext->SOL-FR@dendrite|inhibitory,0,
+Con:RC_ext->SOL-FR@dendrite|inhibitory,100,
 gmax:RC_ext->SOL-FR@dendrite|inhibitory,0.44,
 delay:RC_ext->SOL-FR@dendrite|inhibitory,0.3,
 dyn:RC_ext->SOL-FR@dendrite|inhibitory,None,
 dec:RC_ext->SOL-FR@dendrite|inhibitory,0.22,
 %%% RC -> FF
-Con:RC_ext->SOL-FF@dendrite|inhibitory,0,
+Con:RC_ext->SOL-FF@dendrite|inhibitory,100,
 gmax:RC_ext->SOL-FF@dendrite|inhibitory,0.44,
 delay:RC_ext->SOL-FF@dendrite|inhibitory,0.3,
 dyn:RC_ext->SOL-FF@dendrite|inhibitory,None,
 dec:RC_ext->SOL-FF@dendrite|inhibitory,0.22,
 %%% S -> RC
-Con:SOL-S>RC_ext-@soma|excitatory,0,
+Con:SOL-S>RC_ext-@soma|excitatory,100,
 gmax:SOL-S>RC_ext-@soma|excitatory,0.15,
 delay:SOL-S>RC_ext-@soma|excitatory,0.3,
 dyn:SOL-S>RC_ext-@soma|excitatory,Depressing,
@@ -123,7 +123,7 @@ dec:SOL-S>RC_ext-@soma|excitatory,0.01,
 var:SOL-S>RC_ext-@soma|excitatory,0.5,
 tau:SOL-S>RC_ext-@soma|excitatory,200,
 %%% FR -> RC
-Con:SOL-FR>RC_ext-@soma|excitatory,0,
+Con:SOL-FR>RC_ext-@soma|excitatory,100,
 gmax:SOL-FR>RC_ext-@soma|excitatory,0.15,
 delay:SOL-FR>RC_ext-@soma|excitatory,0.3,
 dyn:SOL-FR>RC_ext-@soma|excitatory,Depressing,
@@ -131,7 +131,7 @@ dec:SOL-FR>RC_ext-@soma|excitatory,0.01,
 var:SOL-FR>RC_ext-@soma|excitatory,0.5,
 tau:SOL-FR>RC_ext-@soma|excitatory,200,
 %%% FF -> RC
-Con:SOL-FF>RC_ext-@soma|excitatory,0,
+Con:SOL-FF>RC_ext-@soma|excitatory,100,
 gmax:SOL-FF>RC_ext-@soma|excitatory,0.15,
 delay:SOL-FF>RC_ext-@soma|excitatory,0.3,
 dyn:SOL-FF>RC_ext-@soma|excitatory,Depressing,
@@ -196,7 +196,7 @@ NoiseFunction_MG,21,
 NoiseGammaOrder_SOL,10,
 NoiseTarget_SOL,FR,
 NoiseFunction_SOL,21,
-MUnumber_SOL-S,1,
+MUnumber_SOL-S,0,
 MUnumber_SOL-FR,0,
 MUnumber_SOL-FF,0,
 MUnumber_MG-S,300,
@@ -301,7 +301,7 @@ tPeakSyn:SOL-FF|excitatory,0.2,
 tPeakSyn:SOL-S|inhibitory,0.4,
 tPeakSyn:SOL-FR|inhibitory,0.4,
 tPeakSyn:SOL-FF|inhibitory,0.4,
-Con:CMExt->SOL-S@dendrite|excitatory,100,
+Con:CMExt->SOL-S@dendrite|excitatory,30,
 Con:CMExt->SOL-FR@dendrite|excitatory,30,
 Con:CMExt->SOL-FF@dendrite|excitatory,30,
 gmax:CMExt->SOL-S@dendrite|excitatory,0.6,
@@ -628,8 +628,7 @@ membCapac,1,
 %% SOL
 %%% S
 position:SOL-,0,18
-%threshold:SOL-S,12.35,16.45
-threshold:SOL-S,500,500
+threshold:SOL-S,12.35,16.45
 threshold:SOL-FR,16.45,19.3
 threshold:SOL-FF,19.3,20.9
 d@dendrite:SOL-S,41.5,62.5
