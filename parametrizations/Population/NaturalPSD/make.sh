@@ -14,6 +14,7 @@ gfortran -c -g ../../../Compartment.f90
 gfortran -c -g ../../../AxonDelay.f90
 gfortran -c -g ../../../MotorUnit.f90
 gfortran -c -g ~/intel/mkl/include/mkl_spblas.f90
+#gfortran -c -g ~/intel/mkl/include/mkl_vsl.f90 -fno-range-check -m64 -I/home/pablo/intel/compilers_and_libraries_2018.3.222/linux/mkl/include -I/home/pablo/intel/compilers_and_libraries_2018.3.222/linux/mkl/examples/vslf/_results/gnu_lp64_sequential_intel64_lib /home/pablo/intel/compilers_and_libraries_2018.3.222/linux/mkl/examples/vslf/source/vsrnggaussian.f
 gfortran -c -g ../../../MuscularActivation.f90
 gfortran -c -g ../../../MuscleNoHill.f90
 gfortran -c -g ../../../MuscleHill.f90
