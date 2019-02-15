@@ -127,6 +127,7 @@ module InterneuronPoolClass
             init_InterNeuronPool%iInjected(:) = 0.0
             init_InterNeuronPool%iIonic(:) = 0.0
             ! # Retrieving data from Interneuron class
+            init_InterNeuronPool%G(:,:) = 0.0
             do i = 1, init_InterNeuronPool%Nnumber
                 init_InterNeuronPool%v_mV((i-1)*init_InterNeuronPool%unit(i)%compNumber+1:&
                                                     i*init_InterNeuronPool%unit(i)%compNumber) =&

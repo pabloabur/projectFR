@@ -40,7 +40,7 @@ program FrequencyAnalysis
     integer :: i, j, k, l
     real(wp), dimension(:), allocatable :: t, &
         synapticInput, MNDend_mV, commomDriveG, V
-    real(wp), allocatable :: Vs(:,:), inFR(:,:)
+    real(wp), allocatable :: Vs(:,:)
     real(wp) :: tic, toc
     type(gpf) :: gp
     real(wp), dimension(:), allocatable :: FR
@@ -67,16 +67,16 @@ program FrequencyAnalysis
     character(len=1), parameter :: noiseOrder = '1'
     character(len=2), parameter :: noiseTarget = 'FR'
     !character(len=3), parameter :: noiseFunc = '275' ! Natural PSD
-    character(len=3), parameter :: noiseFunc = '625' ! Step simulation
-    !character(len=2), parameter :: noiseg = '10' ! '2.1' for compensation
-    character(len=4), parameter :: noiseg = '0.04' !  Step simulation
+    character(len=3), parameter :: noiseFunc = '9999'!4499 ! Step simulation
+    real(wp), parameter :: noiseFRc = 9999_wp
+    real(wp), parameter :: noiseFRo = 4499_wp
+    character(len=4), parameter :: noiseg = '13' !  Step simulation
     ! Quantity parameters
     character(len=3), parameter :: nS = '75', nFR = '75', &
         nFF = '150', nCM = '400', nMN = '300', nRC = '600' ! nS+nFR+nFF
     !! Free inputs
     !! Step inputs
     integer :: sampleSize = 105 ! Quantify of used MNs
-    integer :: poolSize = 300 ! Quantify of MNs
     real(wp) :: gc, gld, gls, Vth
     real(wp), dimension(:), allocatable :: Irh
     ! wgn parameters
@@ -114,7 +114,7 @@ program FrequencyAnalysis
     !******* Changing basic parameters
     !*************************************
     conf = Configuration(filename)
-    conf%simDuration_ms = 9000
+    conf%simDuration_ms = 300!9000
 
     param = ['c', 'o']
 
@@ -145,28 +145,27 @@ program FrequencyAnalysis
     call conf%changeConfigurationParameter(paramTag, value1, value2)
 
 
-    ! This is not being used anymore
     !!!!!!!!!!!!!!!! Independent noise
-    !paramTag = 'Con:Noise>MG-@dendrite|excitatory'
-    !value1 = noiseCon
-    !value2 = ''
-    !call conf%changeConfigurationParameter(paramTag, value1, value2)
-    !paramTag = 'NoiseGammaOrder_MG'
-    !value1 = noiseOrder
-    !value2 = ''
-    !call conf%changeConfigurationParameter(paramTag, value1, value2)
-    !paramTag = 'NoiseTarget_MG'
-    !value1 = noiseTarget
-    !value2 = ''
-    !call conf%changeConfigurationParameter(paramTag, value1, value2)
-    paramTag = 'NoiseFunction_MG'
-    value1 = '0'!noiseFunc
+    paramTag = 'Con:Noise>MG-@dendrite|excitatory'
+    value1 = noiseCon
     value2 = ''
     call conf%changeConfigurationParameter(paramTag, value1, value2)
-    !paramTag = 'gmax:Noise>MG-@dendrite|excitatory'
-    !value1 = noiseg
-    !value2 = ''
-    !call conf%changeConfigurationParameter(paramTag, value1, value2)
+    paramTag = 'NoiseGammaOrder_MG'
+    value1 = noiseOrder
+    value2 = ''
+    call conf%changeConfigurationParameter(paramTag, value1, value2)
+    paramTag = 'NoiseTarget_MG'
+    value1 = noiseTarget
+    value2 = ''
+    call conf%changeConfigurationParameter(paramTag, value1, value2)
+    paramTag = 'NoiseFunction_MG'
+    value1 = noiseFunc
+    value2 = ''
+    call conf%changeConfigurationParameter(paramTag, value1, value2)
+    paramTag = 'gmax:Noise>MG-@dendrite|excitatory'
+    value1 = noiseg
+    value2 = ''
+    call conf%changeConfigurationParameter(paramTag, value1, value2)
 
     GammaOrder = 1
     ! Removing influence of stimulus (required)
@@ -204,26 +203,26 @@ program FrequencyAnalysis
     value2 = '500'
     call conf%changeConfigurationParameter(paramTag, value1, value2)
     !!!!!!!!!!!!!!!! Independent noise
-    !paramTag = 'Con:Noise>SOL-@dendrite|excitatory'
-    !value1 = noiseCon
-    !value2 = ''
-    !call conf%changeConfigurationParameter(paramTag, value1, value2)
-    !paramTag = 'NoiseGammaOrder_SOL'
-    !value1 = noiseOrder
-    !value2 = ''
-    !call conf%changeConfigurationParameter(paramTag, value1, value2)
-    !paramTag = 'NoiseTarget_SOL'
-    !value1 = noiseTarget
-    !value2 = ''
-    !call conf%changeConfigurationParameter(paramTag, value1, value2)
-    paramTag = 'NoiseFunction_SOL'
-    value1 = '0'!noiseFunc
+    paramTag = 'Con:Noise>SOL-@dendrite|excitatory'
+    value1 = noiseCon
     value2 = ''
     call conf%changeConfigurationParameter(paramTag, value1, value2)
-    !paramTag = 'gmax:Noise>SOL-@dendrite|excitatory'
-    !value1 = noiseg
-    !value2 = ''
-    !call conf%changeConfigurationParameter(paramTag, value1, value2)
+    paramTag = 'NoiseGammaOrder_SOL'
+    value1 = noiseOrder
+    value2 = ''
+    call conf%changeConfigurationParameter(paramTag, value1, value2)
+    paramTag = 'NoiseTarget_SOL'
+    value1 = noiseTarget
+    value2 = ''
+    call conf%changeConfigurationParameter(paramTag, value1, value2)
+    paramTag = 'NoiseFunction_SOL'
+    value1 = noiseFunc
+    value2 = ''
+    call conf%changeConfigurationParameter(paramTag, value1, value2)
+    paramTag = 'gmax:Noise>SOL-@dendrite|excitatory'
+    value1 = noiseg
+    value2 = ''
+    call conf%changeConfigurationParameter(paramTag, value1, value2)
 
     print *, '*************************************'
     print *, '************ Building neural elements'
@@ -262,7 +261,6 @@ program FrequencyAnalysis
     allocate(MNDend_mV(timeLength))
     allocate(V(timeLength))
     allocate(Vs(sampleSize, timeLength)) ! For all MNs in simulation
-    allocate(inFR(poolSize, timeLength)) ! For all MNs in simulation
     allocate(Irh(sampleSize))
 
     t = [(dt*(i-1), i=1, timeLength)]
@@ -282,26 +280,12 @@ program FrequencyAnalysis
             endif
         else if (inputParam.eq.'step') then
             ! Loading commom synaptic input
-            open(1, file='inputs/csi.txt', status = 'old')
+            open(1, file='csi.txt', status = 'old')
                 do i = 1, timeLength
                     read(1, '(F9.6)') FR(i) ! Only works if I use format, but requires
                     FR(i) = 1000000*FR(i)   ! this gambiarra
                 end do
             close(1)
-            ! Loading independent noise, depending on inhibition
-            if (param(k).eq.'c') then
-                open(1, file='inputs/inc.txt', status = 'old')
-                    do i = 1, poolSize
-                        read(1, *) inFR(i, :)
-                    end do
-                close(1)
-            else if (param(k).eq.'o') then
-                open(1, file='inputs/ino.txt', status = 'old')
-                    do i = 1, poolSize
-                        read(1, *) inFR(i, :)
-                    end do
-                close(1)
-            endif
         else if (inputParam.eq.'injc') then
             if (param(k).eq.'c') then
                 FR(:) = 20_wp ! This is a guess
@@ -338,26 +322,29 @@ program FrequencyAnalysis
                 do j = 1, sampleSize
                     motorUnitPools(1)%iInjected(2*(j)) = 2_wp/15_wp*(j-16_wp)+7.8_wp
                 end do
-            else if (inputParam.eq.'step') then
-                do j = 1, poolSize
-                    motorUnitPools(1)%iInjected(2*(j)-1) = inFR(j,i)
-                end do
-                ! 200 is arbitrary. It was picked from IN that could not activate MNs
-                motorUnitPools(2)%iInjected(2*(1)-1) = inFR(250,i)
             end if
 
             ! Updating elements
             do j = 1, size(neuralTractPools)
                 call neuralTractPools(j)%atualizePool(t(i), FR(i), GammaOrder)
             end do
-            do j = 1, size(synapticNoisePools)
-                call synapticNoisePools(j)%atualizePool(t(i))
-            end do
+
+            if (param(k).eq.'c') then
+                do j = 1, size(synapticNoisePools)
+                    call synapticNoisePools(j)%atualizePool(t(i), noiseFRc)
+                end do
+            else if (param(k).eq.'o') then
+                do j = 1, size(synapticNoisePools)
+                    call synapticNoisePools(j)%atualizePool(t(i), noiseFRo)
+                end do
+            endif
+
             if (param(k).eq.'c') then
                 do j = 1, size(interneuronPools)
                     call interneuronPools(j)%atualizeInterneuronPool(t(i))
                 end do
             endif
+
             do j = 1, size(motorUnitPools)
                 if (j == 1) then ! MG pool, in this case
                     call motorUnitPools(j)%atualizeMotorUnitPool(t(i), 32.0_wp, 32.0_wp)
@@ -373,7 +360,7 @@ program FrequencyAnalysis
             end do
         end do
 
-        call neuralTractPools(1)%listSpikes()
+        !call neuralTractPools(1)%listSpikes()
         call motorUnitPools(1)%listSpikes()
         call motorUnitPools(1)%getMotorUnitPoolEMG()
         if (param(k).eq.'c') then
@@ -387,42 +374,42 @@ program FrequencyAnalysis
         !*************************************
         !*************** Saving data
         !*************************************
-        ! Saving spikes
-        if (param(k).eq.'c') then
-            filename = trim(path) // trim(folderName) // "spksc.dat"
-        else if (param(k).eq.'o') then
-            filename = trim(path) // trim(folderName) // "spkso.dat"
-        endif
-        open(1, file=filename, status = 'replace')
-        do i = 1, size(motorUnitPools(1)%poolSomaSpikes, 1)
-            write(1, '(F15.6, 1X, F15.1)') motorUnitPools(1)%poolSomaSpikes(i,1), &
-                motorUnitPools(1)%poolSomaSpikes(i,2)
-        end do
-        close(1)
+        !! Saving spikes
+        !if (param(k).eq.'c') then
+        !    filename = trim(path) // trim(folderName) // "spksc.dat"
+        !else if (param(k).eq.'o') then
+        !    filename = trim(path) // trim(folderName) // "spkso.dat"
+        !endif
+        !open(1, file=filename, status = 'replace')
+        !do i = 1, size(motorUnitPools(1)%poolSomaSpikes, 1)
+        !    write(1, '(F15.6, 1X, F15.1)') motorUnitPools(1)%poolSomaSpikes(i,1), &
+        !        motorUnitPools(1)%poolSomaSpikes(i,2)
+        !end do
+        !close(1)
 
-        ! Saving force
-        if (param(k).eq.'c') then
-            filename = trim(path) // trim(folderName) // "forcec.dat"
-        else if (param(k).eq.'o') then
-            filename = trim(path) // trim(folderName) // "forceo.dat"
-        endif
-        open(1, file=filename, status = 'replace')
-        do i = 1, timeLength
-               write(1, '(F15.2, 1X, F15.6)') t(i), force(i)
-        end do
-        close(1)
+        !! Saving force
+        !if (param(k).eq.'c') then
+        !    filename = trim(path) // trim(folderName) // "forcec.dat"
+        !else if (param(k).eq.'o') then
+        !    filename = trim(path) // trim(folderName) // "forceo.dat"
+        !endif
+        !open(1, file=filename, status = 'replace')
+        !do i = 1, timeLength
+        !       write(1, '(F15.2, 1X, F15.6)') t(i), force(i)
+        !end do
+        !close(1)
 
-        ! Saving input conductance and EMG
-        if (param(k).eq.'c') then
-            filename = trim(path) // trim(folderName) // "g_emgc.dat"
-        else if (param(k).eq.'o') then
-            filename = trim(path) // trim(folderName) // "g_emgo.dat"
-        endif
-        open(1, file=filename, status = 'replace')
-        do i = 1, timeLength
-            write(1, '(F15.6, 1X, F15.6)') commomDriveG(i), motorUnitPools(1)%emg(i)
-        end do
-        close(1)
+        !! Saving input conductance and EMG
+        !if (param(k).eq.'c') then
+        !    filename = trim(path) // trim(folderName) // "g_emgc.dat"
+        !else if (param(k).eq.'o') then
+        !    filename = trim(path) // trim(folderName) // "g_emgo.dat"
+        !endif
+        !open(1, file=filename, status = 'replace')
+        !do i = 1, timeLength
+        !    write(1, '(F15.6, 1X, F15.6)') commomDriveG(i), motorUnitPools(1)%emg(i)
+        !end do
+        !close(1)
 
         !*************************************
         !*************** Plotting
@@ -435,26 +422,26 @@ program FrequencyAnalysis
         !    interneuronPools(1)%poolSomaSpikes(:,2), 'with points pt 5 lc rgb "#0008B0"')
         !end if
 
-        call gp%title('descending command')
+        call gp%title('Descending command')
         call gp%xlabel('t (ms))')
         call gp%ylabel('descending command rate (pps)')
         call gp%plot(t, FR, 'with line lw 2 lc rgb "#0008B0"')
 
-        call gp%title('independent noise')
+        call gp%title('Commom drive')
         call gp%xlabel('t (ms))')
         call gp%ylabel('rate (pps)')
-        call gp%plot(t, inFR(239, :), 'with line lw 2 lc rgb "#0008B0"')
+        call gp%plot(t, commomDriveG, 'with line lw 2 lc rgb "#0008B0"')
 
-        !call gp%title('MN spike instants at the soma')
-        !call gp%xlabel('t (s))')
-        !call gp%ylabel('Motoneuron index')
-        !call gp%plot(motorUnitPools(1)%poolSomaSpikes(:,1), &
-        !motorUnitPools(1)%poolSomaSpikes(:,2), 'with points pt 5 lc rgb "#0008B0"')
+        call gp%title('MN spike instants at the soma')
+        call gp%xlabel('t (s))')
+        call gp%ylabel('Motoneuron index')
+        call gp%plot(motorUnitPools(1)%poolSomaSpikes(:,1), &
+        motorUnitPools(1)%poolSomaSpikes(:,2), 'with points pt 5 lc rgb "#0008B0"')
 
-        !call gp%title('force')
-        !call gp%xlabel('t (ms))')
-        !call gp%ylabel('force (N)')
-        !call gp%plot(t, motorUnitPools(1)%NoHillMuscle%force, 'with line lw 2 lc rgb "#0008B0"')
+        call gp%title('force')
+        call gp%xlabel('t (ms))')
+        call gp%ylabel('force (N)')
+        call gp%plot(t, motorUnitPools(1)%NoHillMuscle%force, 'with line lw 2 lc rgb "#0008B0"')
 
         !*************************************
         !*************** Reset elements
@@ -468,6 +455,7 @@ program FrequencyAnalysis
         call neuralTractPools(1)%reset()
         do j = 1, size(synapticNoisePools)
             call synapticNoisePools(j)%reset()
+            print *, j
         end do
 
         call cpu_time(toc)

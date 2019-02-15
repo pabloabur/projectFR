@@ -31,54 +31,54 @@ csiInput=[waveTail,csiInput(1:sampleCut-1)];
 
 % Saving data
 data=csiInput';
-save csi2.txt data
+save csi.txt data
 
 %*******************
 %**** Independent noise
 %*******************
-tempINInput = (square(2*pi*f*t*1e-3, pulseWidth/(T))+1)/2;  
-waveTail = tempINInput(sampleCut:end);
-tempINInput = [waveTail,tempINInput(1:sampleCut-1)];
-  
-for k = 1:2 % 1 for open loop and 2 for closed loop
-    inInput = [];
-    for j = 1:nMN
-      while (status==0)
-        if (k==1)
-            noiseInput = noiseStd*noise(length(tempINInput), 1,'white')+noiseMeanO;
-        else
-            noiseInput = noiseStd*noise(length(tempINInput), 1,'white')+noiseMeanC;
-        endif
-      
-        % Test whiteness
-        N = length(tempINInput);
-        y=0;
-        E=2*(N-2)/3;
-        var=(16*N-29)/90;
-        x=noiseInput;
-        for i=2:N-1
-          if ((x(i-1)<x(i) && x(i)>x(i+1)) || (x(i-1)>x(i) && x(i)<x(i+1)))
-            y++;
-          endif
-        end
-        z = abs((y-E)/sqrt(var));
-        if (z<1.4)
-          status = 1;
-        endif
-      endwhile
-      
-      inInput = vertcat(inInput, tempINInput.*noiseInput');
-      status = 0;
-
-      if (k==1)
-        save ino2.txt inInput
-      else
-        save inc2.txt inInput
-      endif
-      % Removed headers manually, but I could just use csvwrite
-    endfor
-endfor
-  
+%tempINInput = (square(2*pi*f*t*1e-3, pulseWidth/(T))+1)/2;  
+%waveTail = tempINInput(sampleCut:end);
+%tempINInput = [waveTail,tempINInput(1:sampleCut-1)];
+%  
+%for k = 1:2 % 1 for open loop and 2 for closed loop
+%    inInput = [];
+%    for j = 1:nMN
+%      while (status==0)
+%        if (k==1)
+%            noiseInput = noiseStd*noise(length(tempINInput), 1,'white')+noiseMeanO;
+%        else
+%            noiseInput = noiseStd*noise(length(tempINInput), 1,'white')+noiseMeanC;
+%        endif
+%      
+%        % Test whiteness
+%        N = length(tempINInput);
+%        y=0;
+%        E=2*(N-2)/3;
+%        var=(16*N-29)/90;
+%        x=noiseInput;
+%        for i=2:N-1
+%          if ((x(i-1)<x(i) && x(i)>x(i+1)) || (x(i-1)>x(i) && x(i)<x(i+1)))
+%            y++;
+%          endif
+%        end
+%        z = abs((y-E)/sqrt(var));
+%        if (z<1.4)
+%          status = 1;
+%        endif
+%      endwhile
+%      
+%      inInput = vertcat(inInput, tempINInput.*noiseInput');
+%      status = 0;
+%
+%      if (k==1)
+%        save ino2.txt inInput
+%      else
+%        save inc2.txt inInput
+%      endif
+%      % Removed headers manually, but I could just use csvwrite
+%    endfor
+%endfor
+%  
 %*******************
 %**** Plots
 %*******************

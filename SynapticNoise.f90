@@ -104,7 +104,7 @@ module SynapticNoiseClass
             print '(A)', 'Synaptic Noise on ' // trim(pool) // ' built'
         end function
 
-        subroutine atualizePool(self, t)
+        subroutine atualizePool(self, t, noiseFR)
             ! '''
             ! Update all neural tract units from the neural tract.
             
@@ -112,12 +112,14 @@ module SynapticNoiseClass
             !     + **t**: current instant, in ms.
             ! '''
             class(SynapticNoise), intent(inout) :: self
-            real(wp), intent(in) :: t
+            real(wp), intent(in) :: t, noiseFR
+            real(wp) :: tempNoise
             integer :: i    
                      
-
+            ! TODO Improve this, if necessary. Made smallest change just for my case
+            tempNoise = noiseFR*self%conf%timeStep_ms/1000.0
             do i = 1, self%Number
-                call self%unit(i)%atualizeNeuralTractUnit(t, self%FR, self%GammaOrder)
+                call self%unit(i)%atualizeNeuralTractUnit(t, tempNoise, self%GammaOrder)
             end do
             self%timeIndex = self%timeIndex + 1
         end subroutine
