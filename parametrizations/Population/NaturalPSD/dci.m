@@ -20,7 +20,7 @@ noiseMeanO = 25;
 noiseMeanC = 60;
 noiseStd = 100;
 status = 0; % variable used to test whiteness
-csiAmplitude = 100; % Half of desired value because max(square)=2
+csiAmplitude = 7.5; % Half of desired value because max(square)=2
 
 %*******************
 %**** CSI input
