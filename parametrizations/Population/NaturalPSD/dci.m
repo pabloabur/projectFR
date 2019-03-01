@@ -12,9 +12,9 @@ pulseWidth = 10; % ms
 f = 10; % Hz
 T = 100; % ms
 t=[0:dt:tf];
-tCut = tf-T/2; % First element of a interval to be placed at
+tCut = tf-T/2; % Initial instant of the interval to be sliced and placed at
                % the beginning of wave
-sampleCut = tCut/dt;
+sampleCut = tCut/dt; % Samples value of the above parameter
 nMN = 300; % Number of MNs to be activated
 noiseMeanO = 25;
 noiseMeanC = 60;
@@ -25,7 +25,8 @@ csiAmplitude = 7.5; % Half of desired value because max(square)=2
 %*******************
 %**** CSI input
 %*******************
-csiInput = (square(2*pi*f*t*1e-3, pulseWidth/T)+1)*csiAmplitude;
+% N.B. duty cycle of square function is defined in percentage
+csiInput = (square(2*pi*f*t*1e-3, pulseWidth/T*100)+1)*csiAmplitude;
 waveTail=csiInput(sampleCut:end);
 csiInput=[waveTail,csiInput(1:sampleCut-1)];
 

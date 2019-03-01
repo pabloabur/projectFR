@@ -61,14 +61,14 @@ program Granit
     real(wp) :: dt
     real(wp) :: tf
     logical, parameter :: probDecay = .false.
-    character(len=3), parameter :: nS = '3', nFR = '0', &
-        nFF = '0', nCM = '400', nMN = '3'! nS+nFR+nFF
+    character(len=3), parameter :: nS = '75', nFR = '75', &
+        nFF = '150', nCM = '400', nMN = '300'! nS+nFR+nFF
     character(len=4), parameter :: nRC = '1'
 
     call init_random_seed()
 
     conf = Configuration(filename)
-    conf%simDuration_ms = 1000
+    conf%simDuration_ms = 500
 
     param = ['o']!, 'o']
 
@@ -206,12 +206,24 @@ program Granit
         value2 = '12.5'
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'twTetSOCDS:SOL-FR'
-        value1 = '0.0441'
-        value2 = '0.539'
+        value1 = '66.66'
+        value2 = '66.66'
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'twTetSOCDS:SOL-FF'
-        value1 = '0.294'
-        value2 = '1.274'
+        value1 = '8.95'
+        value2 = '8.95'
+        call conf%changeConfigurationParameter(paramTag, value1, value2)
+        paramTag = 'bSatSOCDS:SOL-S'
+        value1 = '0.16'
+        value2 = '0.16'
+        call conf%changeConfigurationParameter(paramTag, value1, value2)
+        paramTag = 'bSatSOCDS:SOL-FR'
+        value1 = '0.03'
+        value2 = '0.03'
+        call conf%changeConfigurationParameter(paramTag, value1, value2)
+        paramTag = 'bSatSOCDS:SOL-FF'
+        value1 = '0.223'
+        value2 = '0.223'
         call conf%changeConfigurationParameter(paramTag, value1, value2)
 
         ! Axon conductions
@@ -347,10 +359,10 @@ program Granit
             !end do
         
             do i = 1, size(t)
-                if (t(i)>200.and.t(i)<201) then
-                    motorUnitPools(1)%iInjected(2*(1)) = 15_wp
+                if (t(i)>2.and.t(i)<500) then
+                    motorUnitPools(1)%iInjected(2*(151)) = 85_wp
                 else
-                    motorUnitPools(1)%iInjected(2*(1)) = 0_wp
+                    motorUnitPools(1)%iInjected(2*(151)) = 0_wp
                 endif
                 do j = 1, size(neuralTractPools)
                     call neuralTractPools(j)%atualizePool(t(i), fs(k), GammaOrder)
@@ -406,11 +418,11 @@ program Granit
             !end do
             !close(1)
 
-            !call gp%title('MN spike instants at the soma')
-            !call gp%xlabel('t (s))')
-            !call gp%ylabel('Motoneuron index')
-            !call gp%plot(motorUnitPools(1)%poolSomaSpikes(:,1), &
-            !motorUnitPools(1)%poolSomaSpikes(:,2), 'with points pt 5 lc rgb "#0008B0"')
+            call gp%title('MN spike instants at the soma')
+            call gp%xlabel('t (s))')
+            call gp%ylabel('Motoneuron index')
+            call gp%plot(motorUnitPools(1)%poolSomaSpikes(:,1), &
+            motorUnitPools(1)%poolSomaSpikes(:,2), 'with points pt 5 lc rgb "#0008B0"')
 
             !call gp%title('RC spike instants at the soma')
             !call gp%xlabel('t (s))')

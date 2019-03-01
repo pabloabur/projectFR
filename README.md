@@ -2,7 +2,7 @@
 
 This is a Neuromusculoskletal simulator written in Fortran. 
 
-This software uses MKL Intel Library, avaliable at [https://software.intel.com/en-us/mkl]. After installing it on your computer run the following command at a terminal:
+This software uses MKL Intel Library, avaliable at [https://software.intel.com/en-us/mkl]. Register for free download, choose the correct version for you operating system and run script file for installation. After installing it on your computer run the following command at a terminal:
 
     source $MKLDIR/bin/mklvars.sh [intel64/ia32]
 

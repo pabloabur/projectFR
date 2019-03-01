@@ -48,7 +48,7 @@ program FrequencyAnalysis
     character(len = 80) :: pool, group
     character(len = 100) :: filename = '../../conf.rmto'
     character(len = 100) :: path = '/home/pablo/osf/Master-Thesis-Data/population/'
-    character(len = 100) :: folderName = 'psd/natural/trial7/'
+    character(len = 100) :: folderName = 'psd/natural/trial7/trial5/'
     type(MotorUnitPool), dimension(:), allocatable, target :: motorUnitPools
     type(NeuralTract), dimension(:), allocatable :: neuralTractPools    
     type(InterneuronPool), dimension(:), allocatable, target :: interneuronPools    
@@ -66,18 +66,16 @@ program FrequencyAnalysis
     character(len=3), parameter :: noiseCon = '100'
     character(len=1), parameter :: noiseOrder = '1'
     character(len=2), parameter :: noiseTarget = 'FR'
-    !character(len=3), parameter :: noiseFunc = '275' ! Natural PSD
-    character(len=3), parameter :: noiseFunc = '999'!499 ! Step simulation
-    real(wp), parameter :: noiseFRc = 3300_wp
-    real(wp), parameter :: noiseFRo = 1000_wp!1200_wp
+    real(wp), parameter :: noiseFRc = 0_wp!3300_wp ! Both zero for DCI only, the latter is for DCI+IN. Same when reading file
+    real(wp), parameter :: noiseFRo = 0_wp!1200_wp
     character(len=2), parameter :: noiseg = '12' !  Step simulation
     ! Quantity parameters
-    character(len=3), parameter :: nS = '75', nFR = '75', &
-        nFF = '150', nCM = '400', nMN = '300', nRC = '600' ! nS+nFR+nFF
+    character(len=3), parameter :: nS = '75', nFR = '0', &
+        nFF = '0', nCM = '400', nMN = '75', nRC = '600' ! nS+nFR+nFF
     !! Free inputs
     !! Step inputs
     integer :: sampleSize = 105 ! Quantify of used MNs
-    integer :: poolSize = 300 ! Quantify of used MNs
+    integer :: poolSize = 75 ! Quantify of used MNs
     real(wp) :: gc, gld, gls, Vth
     real(wp), dimension(:), allocatable :: Irh
     ! wgn parameters
@@ -107,7 +105,10 @@ program FrequencyAnalysis
     else if (inputParam.eq.'injc') then
         print *, 'injected current input'
     else
-        print *, 'Wrong parametrization option'
+        print *, 'Wrong parametrization option. Available options are:'
+        print *, '- step'
+        print *, '- free'
+        print *, '- injc'
         stop (1)
     endif
 
@@ -147,6 +148,7 @@ program FrequencyAnalysis
 
 
     !!!!!!!!!!!!!!!! Independent noise
+    ! N.B. noiseFunc is not being used anymore, it is passed as argument now
     paramTag = 'Con:Noise>MG-@dendrite|excitatory'
     value1 = noiseCon
     value2 = ''
@@ -157,10 +159,6 @@ program FrequencyAnalysis
     call conf%changeConfigurationParameter(paramTag, value1, value2)
     paramTag = 'NoiseTarget_MG'
     value1 = noiseTarget
-    value2 = ''
-    call conf%changeConfigurationParameter(paramTag, value1, value2)
-    paramTag = 'NoiseFunction_MG'
-    value1 = noiseFunc
     value2 = ''
     call conf%changeConfigurationParameter(paramTag, value1, value2)
     paramTag = 'gmax:Noise>MG-@dendrite|excitatory'
@@ -204,6 +202,7 @@ program FrequencyAnalysis
     value2 = '500'
     call conf%changeConfigurationParameter(paramTag, value1, value2)
     !!!!!!!!!!!!!!!! Independent noise
+    ! N.B. noiseFunc is not being used anymore, it is passed as argument now
     paramTag = 'Con:Noise>SOL-@dendrite|excitatory'
     value1 = noiseCon
     value2 = ''
@@ -216,13 +215,15 @@ program FrequencyAnalysis
     value1 = noiseTarget
     value2 = ''
     call conf%changeConfigurationParameter(paramTag, value1, value2)
-    paramTag = 'NoiseFunction_SOL'
-    value1 = noiseFunc
-    value2 = ''
-    call conf%changeConfigurationParameter(paramTag, value1, value2)
     paramTag = 'gmax:Noise>SOL-@dendrite|excitatory'
     value1 = noiseg
     value2 = ''
+    call conf%changeConfigurationParameter(paramTag, value1, value2)
+
+    ! Parameters regarding MNs
+    paramTag = 'position:MG-'
+    value1 = '0'
+    value2 = '1.5'
     call conf%changeConfigurationParameter(paramTag, value1, value2)
 
     print *, '*************************************'
@@ -284,8 +285,16 @@ program FrequencyAnalysis
             ! Loading commom synaptic input
             open(1, file='csi.txt', status = 'old')
                 do i = 1, timeLength
-                    read(1, '(F9.6)') FR(i) ! Only works if I use format, but requires
-                    FR(i) = 1000000*FR(i)   ! this gambiarra
+                    read(1, '(F9.6)') FR(i) ! Only works if I use format, but requires the multiplication used
+                    ! The following is used for single excitatory input only
+                    ! I just want most under 80, and the following values seem to do that
+                    if (param(k).eq.'c') then 
+                    ! DCI only: 32000000 for same force, 25000000 for something else (idk)
+                        FR(i) = 28800000*FR(i)!1000000*FR(i)
+                    else if (param(k).eq.'o') then
+                    ! 18000000*FR(i) for making nearly all S MNs to fire
+                        FR(i) = 16200000*FR(i)!1000000*FR(i)
+                    endif
                 end do
             close(1)
             if (param(k).eq.'c') then
@@ -426,6 +435,11 @@ program FrequencyAnalysis
         !call gp%title('Descending command')
         !call gp%xlabel('t (ms))')
         !call gp%ylabel('descending command rate (pps)')
+        !call gp%plot(t, FR, 'with line lw 2 lc rgb "#0008B0"')
+
+        !call gp%title('Independent noise')
+        !call gp%xlabel('t (ms))')
+        !call gp%ylabel('command rate (pps)')
         !call gp%plot(t, noiseFR, 'with line lw 2 lc rgb "#0008B0"')
 
         !call gp%title('Commom drive')
@@ -438,6 +452,11 @@ program FrequencyAnalysis
         !call gp%ylabel('Motoneuron index')
         !call gp%plot(motorUnitPools(1)%poolSomaSpikes(:,1), &
         !motorUnitPools(1)%poolSomaSpikes(:,2), 'with points pt 5 lc rgb "#0008B0"')
+
+        !call gp%title('Soma voltage of MN 1')
+        !call gp%xlabel('t (ms))')
+        !call gp%ylabel('Volts (mV)')
+        !call gp%plot(t, Vs(1,:), 'with line lw 2 lc rgb "#0008B0"')
 
         !call gp%title('force')
         !call gp%xlabel('t (ms))')
