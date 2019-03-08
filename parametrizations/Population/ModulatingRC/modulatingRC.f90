@@ -37,45 +37,79 @@ program modulatingRC
     type(Configuration) :: conf
     integer :: timeLength
     integer :: i, j
-    real(wp), dimension(:), allocatable :: t, force
+    real(wp), dimension(:), allocatable :: t, force, soma_mV
     real(wp) :: tic, toc
-    real(wp) :: FR(14) = [(i, i = 20, 410, 30)]
+    type(gpf) :: gp
+    real(wp), dimension(:), allocatable :: FR
     integer :: GammaOrder 
     character(len = 80) :: pool, group
-    character(len = 80) :: filename = '../../conf.rmto'
+    character(len = 100) :: filename = '../../conf.rmto'
+    character(len = 100) :: path = '/home/pablo/osf/Master-Thesis-Data/population/'
+    character(len = 100) :: folderName = 'modulation/low/trial1/'
     type(MotorUnitPool), dimension(:), allocatable, target :: motorUnitPools
     type(NeuralTract), dimension(:), allocatable :: neuralTractPools    
     type(InterneuronPool), dimension(:), allocatable, target :: interneuronPools    
     type(SynapticNoise), dimension(:), allocatable:: synapticNoisePools     
     type(AfferentPool), dimension(:), allocatable:: afferentPools     
-    character(len=5) :: param
+    character(len=7) :: params
+    character(len=5) :: inputParam
+    character(len=1) :: inputMod
+    character(len=6) :: gmaxS, gmaxFR, gmaxFF
     character(len=80) :: paramTag
     character(len=80) :: value1, value2
     ! Input parameters
     real(wp) :: dt
     real(wp) :: tf
     logical, parameter :: probDecay = .false.
-    real(wp), parameter :: FFConducStrength = 0.0275_wp, & 
-        declineFactorMN = real(1, wp)/6, declineFactorRC = real(3.5, wp)/3
     character(len=3), parameter :: nS = '75', nFR = '75', &
-        nFF = '150', nCM = '400', nMN = '300' ! nS+nFR+nFF
-    character(len=4) :: nRC
-    integer :: k
+        nFF = '150', nCM = '400', nMN = '300', nRC = '600' ! nS+nFR+nFF
 
     call init_random_seed()
 
-    call get_command_argument(1, param)
-    if (param.eq.'c') then
-        nRC = '600'
-    else if (param.eq.'o') then
-        nRC = '0'
+    !*************************************
+    !******* Getting input
+    !*************************************
+    call get_command_argument(2, inputMod)
+    if (inputMod.eq.'d') then
+        print *, 'double modulation'
+    else if (inputMod.eq.'s') then
+        print *, 'standard modulation'
+    else if (inputMod.eq.'h') then
+        print *, 'half modulation'
     else
-        print *, 'Wrong parametrization option'
+        print *, 'Wrong modulation option. Available options are:'
+        print *, '- d'
+        print *, '- s'
+        print *, '- h'
+        stop (1)
+    endif
+    
+    call get_command_argument(1, inputParam)
+    if (inputParam.eq.'high') then
+        print *, 'high input'
+    else if (inputParam.eq.'low') then
+        print *, 'low input'
+    else
+        print *, 'Wrong parametrization option. Available options are:'
+        print *, '- high'
+        print *, '- low'
         stop (1)
     endif
 
+    !*************************************
+    !******* Changing basic parameters
+    !*************************************
     conf = Configuration(filename)
-    conf%simDuration_ms = 1500
+    if (inputParam.eq.'high') then
+        conf%simDuration_ms = 500
+    else if (inputParam.eq.'low') then
+        conf%simDuration_ms = 2000
+    else
+        print *, 'Wrong parametrization option. Available options are:'
+        print *, '- high'
+        print *, '- low'
+        stop (1)
+    endif
 
     !Changing configuration file
     paramTag = 'Number_CMExt'
@@ -103,204 +137,52 @@ program modulatingRC
     value2 = ''
     call conf%changeConfigurationParameter(paramTag, value1, value2)
 
-        ! Threshold
-        paramTag = 'threshold:RC_ext-'
-        value1 = '18.9089'
-        value2 = '18.9089'
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-
-        ! Connectivity
-        paramTag = 'Con:RC_ext->MG-S@dendrite|inhibitory'
-        value1 = '100'
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'Con:RC_ext->MG-FR@dendrite|inhibitory'
-        value1 = '100'
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'Con:RC_ext->MG-FF@dendrite|inhibitory'
-        value1 = '100'
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'Con:MG-S>RC_ext-@soma|excitatory'
-        value1 = '100'
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'Con:MG-FR>RC_ext-@soma|excitatory'
-        value1 = '100'
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'Con:MG-FF>RC_ext-@soma|excitatory'
-        value1 = '100'
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-
-        ! Conductances
-        paramTag = 'gmax:RC_ext->MG-S@dendrite|inhibitory'
-        value1 = '0.130'!'0.260'!'0.065'!
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'gmax:RC_ext->MG-FR@dendrite|inhibitory'
-        value1 = '0.119'!'0.238'!'0.0595'!
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'gmax:RC_ext->MG-FF@dendrite|inhibitory'
-        value1 = '0.081'!'0.162'!'0.0405'!
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'gmax:MG-S>RC_ext-@soma|excitatory'
-        write(value1, '(F15.6)') FFConducStrength/2.2
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'gmax:MG-FR>RC_ext-@soma|excitatory'
-        write(value1, '(F15.6)') FFConducStrength/1.8
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'gmax:MG-FF>RC_ext-@soma|excitatory'
-        write(value1, '(F15.6)') FFConducStrength
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-
-        ! Morphology
-        paramTag = 'd@soma:RC_ext-'
-        value1 = '27'
-        value2 = '27'
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'l@soma:RC_ext-'
-        value1 = '218.2168'
-        value2 = '218.2168'
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'res@soma:RC_ext-'
-        value1 = '7000'
-        value2 = '7000'
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-
-        ! Ks
-        paramTag = 'gmax_Kf:RC_ext-@soma'
-        value1 = '3300'
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'gmax_Ks:RC_ext-@soma'
-        value1 = '2300000'
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'beta_q:RC_ext-@soma'
-        value1 = '0.02'
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'alpha_q:RC_ext-@soma'
-        value1 = '0.004'
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'alpha_n:RC_ext-@soma'
-        value1 = '6'
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'beta_n:RC_ext-@soma'
-        value1 = '0.5'
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-
-        ! Decay factors
-        paramTag = 'dec:MG-S>RC_ext-@soma|excitatory'
-        write(value1, '(F15.6)') declineFactorMN
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'dec:MG-FR>RC_ext-@soma|excitatory'
-        write(value1, '(F15.6)') declineFactorMN
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'dec:MG-FF>RC_ext-@soma|excitatory'
-        write(value1, '(F15.6)') declineFactorMN
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'dec:RC_ext->MG-S@dendrite|inhibitory'
-        write(value1, '(F15.6)') declineFactorRC
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'dec:RC_ext->MG-FR@dendrite|inhibitory'
-        write(value1, '(F15.6)') declineFactorRC
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'dec:RC_ext->MG-FF@dendrite|inhibitory'
-        write(value1, '(F15.6)') declineFactorRC
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-
-        ! Columnar length
-        paramTag = 'position:MG-'
-        value1 = '0'
-        value2 = '6'
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'position:RC_ext-'
-        value1 = '0'
-        value2 = '6'
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-
-        ! ! RC spontaneous activity 
-        paramtag = 'gmax:Noise>RC_ext-@soma|excitatory'
-        value1 = '0.028'
-        value2 = ''
-        call conf%changeconfigurationparameter(paramtag, value1, value2)
-        paramtag = 'NoiseFunction_RC_ext'
-        value1 = '7'
-        value2 = ''
-        call conf%changeconfigurationparameter(paramtag, value1, value2)
-
-    ! Dynamics of MN-RC synapse
-    paramtag = 'dyn:MG-S>RC_ext-@soma|excitatory'
-    value1 = 'None'
-    value2 = ''
-    call conf%changeconfigurationparameter(paramtag, value1, value2)
-    paramTag = 'dyn:MG-FR>RC_ext-@soma|excitatory'
-    value1 = 'None'
-    value2 = ''
-    call conf%changeConfigurationParameter(paramTag, value1, value2)
-    paramTag = 'dyn:MG-FF>RC_ext-@soma|excitatory'
-    value1 = 'None'
-    value2 = ''
-    call conf%changeConfigurationParameter(paramTag, value1, value2)
-
-    !!!!!!!!!!!!!!!! Independent noise
-    paramTag = 'Con:Noise>MG-@dendrite|excitatory'
-    value1 = '100'
-    value2 = ''
-    call conf%changeConfigurationParameter(paramTag, value1, value2)
-    paramTag = 'NoiseGammaOrder_MG'
-    value1 = '7'
-    value2 = ''
-    call conf%changeConfigurationParameter(paramTag, value1, value2)
-    paramTag = 'NoiseTarget_MG'
-    value1 = 'FR'
-    value2 = ''
-    call conf%changeConfigurationParameter(paramTag, value1, value2)
-    paramTag = 'NoiseFunction_MG'
-    value1 = '0'
-    value2 = ''
-    call conf%changeConfigurationParameter(paramTag, value1, value2)
-    paramTag = 'gmax:Noise>MG-@dendrite|excitatory'
-    value1 = '10'
-    value2 = ''
-    call conf%changeConfigurationParameter(paramTag, value1, value2)
-
-    !!!!!!!!!!!!!!!! Descending commands parameters
-    paramTag = 'gmax:CMExt->MG-S@dendrite|excitatory'
-    value1 = '0.6'
-    value2 = ''
-    call conf%changeConfigurationParameter(paramTag, value1, value2)
-    paramTag = 'gmax:CMExt->MG-FR@dendrite|excitatory'
-    value1 = '0.6'
-    value2 = ''
-    call conf%changeConfigurationParameter(paramTag, value1, value2)
-    paramTag = 'gmax:CMExt->MG-FF@dendrite|excitatory'
-    value1 = '0.6'
-    value2 = ''
-    call conf%changeConfigurationParameter(paramTag, value1, value2)
-    GammaOrder = 7
+    if (inputParam.eq.'high') then
+        GammaOrder = 1
+    else if (inputParam.eq.'low') then
+        GammaOrder = 7
+    else
+        print *, 'Wrong parametrization option. Available options are:'
+        print *, '- high'
+        print *, '- low'
+        stop (1)
+    endif
 
     ! Removing influence of stimulus (required)
     paramTag = 'stimIntensity_PTN'
     value1 = '0'
+    value2 = ''
+    call conf%changeConfigurationParameter(paramTag, value1, value2)
+
+    ! Conductances
+    if (inputMod.eq.'d') then
+        gmaxS = '0.2380'
+        gmaxFR = '0.2380'
+        gmaxFF = '0.1880'
+    else if (inputMod.eq.'s') then
+        gmaxS = '0.1190'
+        gmaxFR = '0.1190'
+        gmaxFF = '0.0940'
+    else if (inputMod.eq.'h') then
+        gmaxS = '0.0595'
+        gmaxFR = '0.0595'
+        gmaxFF = '0.0470'
+    else
+        print *, 'Wrong modulation option. Available options are:'
+        print *, '- high'
+        print *, '- low'
+        stop (1)
+    endif
+    paramTag = 'gmax:RC_ext->MG-S@dendrite|inhibitory'
+    value1 = gmaxS
+    value2 = ''
+    call conf%changeConfigurationParameter(paramTag, value1, value2)
+    paramTag = 'gmax:RC_ext->MG-FR@dendrite|inhibitory'
+    value1 = gmaxFR
+    value2 = ''
+    call conf%changeConfigurationParameter(paramTag, value1, value2)
+    paramTag = 'gmax:RC_ext->MG-FF@dendrite|inhibitory'
+    value1 = gmaxFF
     value2 = ''
     call conf%changeConfigurationParameter(paramTag, value1, value2)
 
@@ -313,14 +195,10 @@ program modulatingRC
     pool = 'MG'
     motorUnitPools(1) = MotorUnitPool(conf, pool)    
 
-    if (param.eq.'c') then
-        allocate(interneuronPools(1))
-        pool = 'RC'
-        group = 'ext'    
-        interneuronPools(1) = InterneuronPool(conf, pool, group)
-    else if (param.eq.'o') then
-        allocate(interneuronPools(0))
-    endif
+    allocate(interneuronPools(1))
+    pool = 'RC'
+    group = 'ext'    
+    interneuronPools(1) = InterneuronPool(conf, pool, group)
 
     allocate(afferentPools(0))
 
@@ -335,70 +213,126 @@ program modulatingRC
     
     allocate(t(timeLength))
     allocate(force(timeLength))
+    allocate(FR(timeLength))
+    allocate(soma_mV(timeLength))
 
     t = [(dt*(i-1), i=1, timeLength)]
     
-    print *, 'Running simulation'
+    if (inputParam.eq.'low') then
+        FR(:) = 250_wp
+    else if (inputParam.eq.'high') then
+        FR(:) = 1500_wp
+    else
+        print *, 'Wrong parametrization option. Available options are:'
+        print *, '- high'
+        print *, '- low'
+        stop (1)
+    endif
+
     call cpu_time(tic)
 
-    do k=1, size(FR)
-        do i = 1, size(t)
-            do j = 1, size(neuralTractPools)
-                call neuralTractPools(j)%atualizePool(t(i), FR(k), GammaOrder)
-            end do
-            do j = 1, size(motorUnitPools)
-                call motorUnitPools(j)%atualizeMotorUnitPool(t(i), 32.0_wp, 32.0_wp)
-            end do
-            do j = 1, size(synapticNoisePools)
-                call synapticNoisePools(j)%atualizePool(t(i))
-            end do
-            if (param.eq.'c') then
-                do j = 1, size(interneuronPools)
-                    call interneuronPools(j)%atualizeInterneuronPool(t(i))
-                end do
+    !*************************************
+    !*************** Running simulation
+    !*************************************
+    do i = 1, size(t)
+        do j = 1, size(neuralTractPools)
+            call neuralTractPools(j)%atualizePool(t(i), FR(i), GammaOrder)
+        end do
+        do j = 1, size(motorUnitPools)
+            call motorUnitPools(j)%atualizeMotorUnitPool(t(i), 32.0_wp, 32.0_wp)
+            if (j==1) then
+                soma_mV(i) = motorUnitPools(j)%v_mV(2*(1))
             endif
         end do
-
-        call motorUnitPools(1)%listSpikes()
-        if (param.eq.'c') then
-            call interneuronPools(1)%listSpikes()
-        endif
-
-        do i = 1, timeLength
-            force(i) = motorUnitPools(1)%NoHillMuscle%force(i)
+        do j = 1, size(synapticNoisePools)
+            if (synapticNoisePools(j)%pool.eq.'MG') then
+                call synapticNoisePools(j)%atualizePool(t(i), 0.0_wp)
+            else if (synapticNoisePools(j)%pool.eq.'RC_ext') then
+                call synapticNoisePools(j)%atualizePool(t(i), 7.0_wp)
+            else
+                print *, 'Error assigning noise value to pool'
+                stop (1)
+            endif
         end do
-
-        if (param.eq.'c') then
-            write(filename, '("force", I2, ".dat")') k
-        else if (param.eq.'o') then
-            write(filename, '("datNoRC/force", I2, ".dat")') k
-        endif
-        open(1, file=filename, status = 'replace')
-        do i = 1, timeLength
-               write(1, '(F9.3, 1X, F15.2)') t(i), force(i)
+        do j = 1, size(interneuronPools)
+            call interneuronPools(j)%atualizeInterneuronPool(t(i))
         end do
-        close(1)
-
-        !call gp%title('MN spike instants at the soma')
-        !call gp%xlabel('t (s))')
-        !call gp%ylabel('Motoneuron index')
-        !call gp%plot(motorUnitPools(1)%poolSomaSpikes(:,1), &
-        !motorUnitPools(1)%poolSomaSpikes(:,2), 'with points pt 5 lc rgb "#0008B0"')
-
-        !call gp%title('RC spike instants at the soma')
-        !call gp%xlabel('t (s))')
-        !call gp%ylabel('Interneuron index')
-        !call gp%plot(interneuronPools(1)%poolSomaSpikes(:,1), &
-        !interneuronPools(1)%poolSomaSpikes(:,2), 'with points pt 5 lc rgb "#0008B0"')
-
-        if (param.eq.'c') then
-            call interneuronPools(1)%reset()
-            call synapticNoisePools(2)%reset()
-        endif
-        call neuralTractPools(1)%reset()
-        call motorUnitPools(1)%reset()
-        call synapticNoisePools(1)%reset()
     end do
+
+    call motorUnitPools(1)%listSpikes()
+    call interneuronPools(1)%listSpikes()
+
+    do i = 1, timeLength
+        force(i) = motorUnitPools(1)%NoHillMuscle%force(i)
+    end do
+
+    !*************************************
+    !*************** Saving data
+    !*************************************
+    if (inputParam.eq.'high') then
+        if (inputMod.eq.'d') then
+            params = "hid.dat"
+        else if (inputMod.eq.'s') then
+            params = "his.dat"
+        else if (inputMod.eq.'h') then
+            params = "hih.dat"
+        endif
+    else if (inputParam.eq.'low') then
+        if (inputMod.eq.'d') then
+            params = "lod.dat"
+        else if (inputMod.eq.'s') then
+            params = "los.dat"
+        else if (inputMod.eq.'h') then
+            params = "loh.dat"
+        endif
+    endif
+    filename = trim(path) // trim(folderName) // "force" // params
+    open(1, file=filename, status = 'replace')
+    do i = 1, timeLength
+           write(1, '(F9.3, 1X, F15.6)') t(i), force(i)
+    end do
+    close(1)
+
+    !*************************************
+    !*************** Plotting
+    !*************************************
+    call gp%title('MN spike instants at the soma')
+    call gp%xlabel('t (s))')
+    call gp%ylabel('Motoneuron index')
+    call gp%plot(motorUnitPools(1)%poolSomaSpikes(:,1), &
+    motorUnitPools(1)%poolSomaSpikes(:,2), 'with points pt 5 lc rgb "#0008B0"')
+
+    !call gp%title('RC spike instants at the soma')
+    !call gp%xlabel('t (s))')
+    !call gp%ylabel('Interneuron index')
+    !call gp%plot(interneuronPools(1)%poolSomaSpikes(:,1), &
+    !interneuronPools(1)%poolSomaSpikes(:,2), 'with points pt 5 lc rgb "#0008B0"')
+
+    !call gp%title('force')
+    !call gp%xlabel('t (s))')
+    !call gp%ylabel('force')
+    !call gp%plot(t, force, 'with points pt 5 lc rgb "#0008B0"')
+
+    !call gp%title('descending command')
+    !call gp%xlabel('t (s))')
+    !call gp%ylabel('fr')
+    !call gp%plot(t, FR, 'with points pt 5 lc rgb "#0008B0"')
+
+    !call gp%title('membrane')
+    !call gp%xlabel('t (ms))')
+    !call gp%ylabel('volts (mV)')
+    !call gp%plot(t, soma_mV, 'with line lw 2 lc rgb "#0008B0"') 
+
+    !*************************************
+    !*************** Resets
+    !*************************************
+    !call interneuronPools(1)%reset()
+    !do j = 1, size(synapticNoisePools)
+    !    call synapticNoisePools(j)%reset()
+    !end do
+    !call neuralTractPools(1)%reset()
+    !call motorUnitPools(1)%reset()
+    !call synapticNoisePools(1)%reset()
 
     call cpu_time(toc)
     print '(F15.6, A)', toc - tic, ' seconds'

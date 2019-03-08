@@ -96,7 +96,6 @@ program RecruitmentOrder
     call conf%changeConfigurationParameter(paramTag, value1, value2)
 
     !!!!!!!!!!!!!!!! Independent noise
-    call conf%changeConfigurationParameter(paramTag, value1, value2)
     paramTag = 'NoiseTarget_MG'
     value1 = 'FR'
     value2 = ''
@@ -104,6 +103,7 @@ program RecruitmentOrder
     paramTag = 'NoiseFunction_MG'
     value1 = '0'
     value2 = ''
+    call conf%changeConfigurationParameter(paramTag, value1, value2)
 
     !!!!!!!!!!!!!!!! Descending commands parameters
     GammaOrder = [7, 5, 4, 3, 2, 1]

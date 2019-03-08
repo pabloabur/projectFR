@@ -346,7 +346,16 @@ program FrequencyAnalysis
             end do
 
             do j = 1, size(synapticNoisePools)
-                call synapticNoisePools(j)%atualizePool(t(i), noiseFR(i))
+                if (synapticNoisePools(j)%pool.eq.'MG') then
+                    call synapticNoisePools(j)%atualizePool(t(i), noiseFR(i))
+                if (synapticNoisePools(j)%pool.eq.'SOL') then
+                    call synapticNoisePools(j)%atualizePool(t(i), noiseFR(i))
+                else if (synapticNoisePools(j)%pool.eq.'RC_ext') then
+                    call synapticNoisePools(j)%atualizePool(t(i), 7.0_wp)
+                else
+                    print *, 'Error assigning noise value to pool'
+                    stop (1)
+                endif
             end do
 
             if (param(k).eq.'c') then

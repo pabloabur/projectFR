@@ -98,7 +98,6 @@ program OnionSkin
     call conf%changeConfigurationParameter(paramTag, value1, value2)
 
     !!!!!!!!!!!!!!!! Independent noise
-    call conf%changeConfigurationParameter(paramTag, value1, value2)
     paramTag = 'NoiseTarget_MG'
     value1 = 'FR'
     value2 = ''
@@ -106,6 +105,7 @@ program OnionSkin
     paramTag = 'NoiseFunction_MG'
     value1 = '0'
     value2 = ''
+    call conf%changeConfigurationParameter(paramTag, value1, value2)
 
     ! Removing influence of stimulus (required)
     paramTag = 'stimIntensity_PTN'
