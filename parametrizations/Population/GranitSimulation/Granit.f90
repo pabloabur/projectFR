@@ -218,8 +218,8 @@ program Granit
         value2 = '0.16'
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'bSatSOCDS:SOL-FR'
-        value1 = '0.03'
-        value2 = '0.03'
+        value1 = '0.1'
+        value2 = '0.1'
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'bSatSOCDS:SOL-FF'
         value1 = '0.223'
@@ -359,10 +359,11 @@ program Granit
             !end do
         
             do i = 1, size(t)
-                if (t(i)>2.and.t(i)<500) then
-                    motorUnitPools(1)%iInjected(2*(151)) = 85_wp
+                if (t(i)>2.and.t(i)<500) then ! 3 and 500 for exploring twitches
+                    motorUnitPools(1)%iInjected(2*(76)) = 85_wp
+                    print *, motorUnitPools(1)%unit(76)%twitchAmp_N*motorUnitPools(1)%unit(76)%twTet
                 else
-                    motorUnitPools(1)%iInjected(2*(151)) = 0_wp
+                    motorUnitPools(1)%iInjected(2*(76)) = 0_wp
                 endif
                 do j = 1, size(neuralTractPools)
                     call neuralTractPools(j)%atualizePool(t(i), fs(k), GammaOrder)

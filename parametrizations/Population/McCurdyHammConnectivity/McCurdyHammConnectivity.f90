@@ -58,8 +58,6 @@ program McCurdyHammConnectivity
     real(wp) :: dt
     real(wp) :: tf
     logical, parameter :: probDecay = .false.
-    real(wp), parameter :: FFConducStrength = 0.015_wp, &
-        declineFactorMN = real(1, wp)/6, declineFactorRC = real(3.5, wp)/3
     character(len=3), parameter :: nS = '75', nFR = '75', &
         nFF = '150', nRC = '600', nCM = '0', nMN = '300' ! nS+nFR+nFF
     integer, parameter :: MNNumber = 300
@@ -112,12 +110,6 @@ program McCurdyHammConnectivity
     value2 = ''
     call conf%changeConfigurationParameter(paramTag, value1, value2)
 
-        ! Columnar length
-        paramTag = 'position:MG-'
-        value1 = '0'
-        value2 = '6'
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-
         ! ! RC spontaneous activity 
         paramtag = 'NoiseFunction_RC_ext'
         value1 = '0' ! Spontaneuous activity change mean MN membrane potential
@@ -139,14 +131,14 @@ program McCurdyHammConnectivity
     call conf%changeConfigurationParameter(paramTag, value1, value2)
 
     !!!!!!!!!!!!!!!! Independent noise
-    call conf%changeConfigurationParameter(paramTag, value1, value2)
     paramTag = 'NoiseTarget_MG'
     value1 = 'FR'
     value2 = ''
     call conf%changeConfigurationParameter(paramTag, value1, value2)
     paramTag = 'NoiseFunction_MG'
-    value1 = '0'
+    value1 = '0' ! Turned off
     value2 = ''
+    call conf%changeConfigurationParameter(paramTag, value1, value2)
 
     ! Removing influence of stimulus (required)
     paramTag = 'stimIntensity_PTN'

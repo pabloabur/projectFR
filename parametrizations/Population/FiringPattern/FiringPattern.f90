@@ -48,7 +48,7 @@ program FiringPattern
     character(len = 80) :: pool, group
     character(len = 80) :: filename = '../../conf.rmto'
     character(len = 100) :: path = '/home/pablo/osf/Master-Thesis-Data/population/'
-    character(len = 100) :: folderName = 'firing/false_decay/'
+    character(len = 100) :: folderName = 'firing/false_decay/trial3/'
     type(MotorUnitPool), dimension(:), allocatable, target :: motorUnitPools
     type(NeuralTract), dimension(:), allocatable :: neuralTractPools    
     type(InterneuronPool), dimension(:), allocatable, target :: interneuronPools    
@@ -59,8 +59,6 @@ program FiringPattern
     character(len=80) :: value1, value2
     ! Input parameters
     logical, parameter :: probDecay = .false.
-    real(wp), parameter :: FFConducStrength = 0.033_wp, & 
-        declineFactorMN = real(1, wp)/6, declineFactorRC = real(3.5, wp)/3
     character(len=3), parameter :: nS = '75', nFR = '75', &
         nFF = '150', nRC = '600'
     !integer, dimension(4), parameter :: stimAmp = [90, 75, 60, 50]
@@ -89,12 +87,6 @@ program FiringPattern
     value2 = ''
     call conf%changeConfigurationParameter(paramTag, value1, value2)
 
-        ! Columnar length
-        paramTag = 'position:MG-'
-        value1 = '0'
-        value2 = '6'
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-    
     ! Stimulus
     paramTag = 'stimStart_PTN'
     value1 = '0.1'
@@ -180,7 +172,14 @@ program FiringPattern
         
         do i = 1, size(t)        
             do j = 1, size(synapticNoisePools)
-                call synapticNoisePools(j)%atualizePool(t(i))
+                if (synapticNoisePools(j)%pool.eq.'MG') then
+                    call synapticNoisePools(j)%atualizePool(t(i), 0.0_wp)
+                else if (synapticNoisePools(j)%pool.eq.'RC_ext') then
+                    call synapticNoisePools(j)%atualizePool(t(i), 7.0_wp)
+                else
+                    print *, 'Error assigning noise value to pool'
+                    stop (1)
+                endif
             end do
             do j = 1, size(interneuronPools)
                 call interneuronPools(j)%atualizeInterneuronPool(t(i))
@@ -214,10 +213,10 @@ program FiringPattern
         !call gp%ylabel('Membrane potential (mV)')
         !call gp%plot(t, MNv_mV, 'with line lw 2 lc rgb "#0008B0"')
 
-        call gp%title('PTN stimulus')
-        call gp%xlabel('t (ms))')
-        call gp%ylabel('Stimulus (mA)')
-        call gp%plot(t, motorUnitPools(1)%unit(1)%nerveStimulus_mA, 'with line lw 2 lc rgb "#0008B0"')
+        !call gp%title('PTN stimulus')
+        !call gp%xlabel('t (ms))')
+        !call gp%ylabel('Stimulus (mA)')
+        !call gp%plot(t, motorUnitPools(1)%unit(1)%nerveStimulus_mA, 'with line lw 2 lc rgb "#0008B0"')
 
         !call gp%title('MN spike instants at the soma')
         !call gp%xlabel('t (s))')
@@ -227,7 +226,9 @@ program FiringPattern
 
         call motorUnitPools(1)%reset()
         call interneuronPools(1)%reset()
-        call synapticNoisePools(1)%reset()
+        do j = 1, size(synapticNoisePools)
+            call synapticNoisePools(j)%reset()
+        end do
     end do
     
     call cpu_time(toc)

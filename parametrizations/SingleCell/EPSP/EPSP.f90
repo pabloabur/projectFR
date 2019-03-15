@@ -35,9 +35,7 @@ program EPSP
     real(wp) :: tf
     ! Input parameters
     logical, parameter :: probDecay = .false.
-    real(wp), parameter :: FFConducStrength = 0.023_wp, & 
-        declineFactorMN = real(1, wp)/6, declineFactorRC = real(3.5, wp)/3
-    character(len=3), parameter :: nS = '1', nFR = '0', &
+    character(len=3), parameter :: nS = '2', nFR = '0', &
         nFF = '0', nRC = '1', nCM = '0', nMN = '1' ! nS+nFR+nFF
 
     call init_random_seed()
@@ -165,14 +163,14 @@ program EPSP
         write(1, '(F10.5, 1X, F10.5)') t(i), RCv_mV(i)
     end do
     close(1)
-    !call gp%title('Membrane potential of the soma of the RC #1')
-    !call gp%xlabel('t (ms))')
-    !call gp%ylabel('Membrane potential (mV)')
-    !call gp%plot(t, RCv_mV, 'with line lw 2 lc rgb "#0008B0"') 
+    call gp%title('Membrane potential of the soma of the RC #1')
+    call gp%xlabel('t (ms))')
+    call gp%ylabel('Membrane potential (mV)')
+    call gp%plot(t, RCv_mV, 'with line lw 2 lc rgb "#0008B0"') 
 
-    !call gp%title('Membrane potential of the soma of the MN #1')
-    !call gp%xlabel('t (ms))')
-    !call gp%ylabel('Membrane potential (mV)')
-    !call gp%plot(t, MNv_mV, 'with line lw 2 lc rgb "#0008B0"')
+    call gp%title('Membrane potential of the soma of the MN #1')
+    call gp%xlabel('t (ms))')
+    call gp%ylabel('Membrane potential (mV)')
+    call gp%plot(t, MNv_mV, 'with line lw 2 lc rgb "#0008B0"')
     
 end program EPSP

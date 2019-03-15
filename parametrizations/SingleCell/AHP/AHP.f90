@@ -36,8 +36,6 @@ program AHP
     real(wp) :: tf
     ! Input parameters
     logical, parameter :: probDecay = .false.
-    real(wp), parameter :: FFConducStrength = 0.33_wp, & 
-        declineFactorMN = real(1, wp)/6, declineFactorRC = real(3.5, wp)/3
     character(len=3), parameter :: nS = '0', nFR = '0', &
         nFF = '0', nRC = '1', nCM = '0', nMN = '0' ! nS+nFR+nFF
 
@@ -71,12 +69,6 @@ program AHP
     value1 = nMN
     value2 = ''
     call conf%changeConfigurationParameter(paramTag, value1, value2)
-
-        ! Columnar length
-        paramTag = 'position:MG-'
-        value1 = '0'
-        value2 = '6'
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
 
     !!!!!!!!!!!!!!!! RC
     ! Turning off spontaneous activity

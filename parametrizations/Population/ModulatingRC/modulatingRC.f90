@@ -45,7 +45,7 @@ program modulatingRC
     character(len = 80) :: pool, group
     character(len = 100) :: filename = '../../conf.rmto'
     character(len = 100) :: path = '/home/pablo/osf/Master-Thesis-Data/population/'
-    character(len = 100) :: folderName = 'modulation/low/trial1/'
+    character(len = 100) :: folderName = 'modulation/trial1/'
     type(MotorUnitPool), dimension(:), allocatable, target :: motorUnitPools
     type(NeuralTract), dimension(:), allocatable :: neuralTractPools    
     type(InterneuronPool), dimension(:), allocatable, target :: interneuronPools    
@@ -89,8 +89,11 @@ program modulatingRC
         print *, 'high input'
     else if (inputParam.eq.'low') then
         print *, 'low input'
+    else if (inputParam.eq.'max') then
+        print *, 'max input'
     else
         print *, 'Wrong parametrization option. Available options are:'
+        print *, '- max'
         print *, '- high'
         print *, '- low'
         stop (1)
@@ -101,9 +104,11 @@ program modulatingRC
     !*************************************
     conf = Configuration(filename)
     if (inputParam.eq.'high') then
-        conf%simDuration_ms = 500
+        conf%simDuration_ms = 2000
     else if (inputParam.eq.'low') then
         conf%simDuration_ms = 2000
+    else if (inputParam.eq.'max') then
+        conf%simDuration_ms = 500
     else
         print *, 'Wrong parametrization option. Available options are:'
         print *, '- high'
@@ -138,6 +143,8 @@ program modulatingRC
     call conf%changeConfigurationParameter(paramTag, value1, value2)
 
     if (inputParam.eq.'high') then
+        GammaOrder = 1
+    else if (inputParam.eq.'max') then
         GammaOrder = 1
     else if (inputParam.eq.'low') then
         GammaOrder = 7
@@ -219,11 +226,37 @@ program modulatingRC
     t = [(dt*(i-1), i=1, timeLength)]
     
     if (inputParam.eq.'low') then
-        FR(:) = 250_wp
+        !!!!!!!!! 5% MVC
+        if (inputMod.eq.'d') then
+            FR(:) = 320_wp ! strong
+        else if (inputMod.eq.'s') then
+            FR(:) = 250_wp ! medium (and uncompensated case)
+        else if (inputMod.eq.'h') then
+            FR(:) = 210_wp ! weak
+        endif
+    else if (inputParam.eq.'max') then
+        ! uncompensated case
+        !FR(:) = 1500_wp
+        ! compensated case
+        if (inputMod.eq.'d') then
+            FR(:) = 2150_wp ! strong
+        else if (inputMod.eq.'s') then
+            FR(:) = 1650_wp ! medium
+        else if (inputMod.eq.'h') then
+            FR(:) = 1450_wp ! weak
+        endif
     else if (inputParam.eq.'high') then
-        FR(:) = 1500_wp
+        !!!!!!!!! 70% MVC
+        if (inputMod.eq.'d') then
+            FR(:) = 1150_wp ! strong
+        else if (inputMod.eq.'s') then
+            FR(:) = 950_wp ! medium (and uncompensated case)
+        else if (inputMod.eq.'h') then
+            FR(:) = 825_wp ! weak
+        endif
     else
         print *, 'Wrong parametrization option. Available options are:'
+        print *, '- max'
         print *, '- high'
         print *, '- low'
         stop (1)
@@ -277,6 +310,14 @@ program modulatingRC
         else if (inputMod.eq.'h') then
             params = "hih.dat"
         endif
+    else if (inputParam.eq.'max') then
+        if (inputMod.eq.'d') then
+            params = "mad.dat"
+        else if (inputMod.eq.'s') then
+            params = "mas.dat"
+        else if (inputMod.eq.'h') then
+            params = "mah.dat"
+        endif
     else if (inputParam.eq.'low') then
         if (inputMod.eq.'d') then
             params = "lod.dat"
@@ -296,11 +337,11 @@ program modulatingRC
     !*************************************
     !*************** Plotting
     !*************************************
-    call gp%title('MN spike instants at the soma')
-    call gp%xlabel('t (s))')
-    call gp%ylabel('Motoneuron index')
-    call gp%plot(motorUnitPools(1)%poolSomaSpikes(:,1), &
-    motorUnitPools(1)%poolSomaSpikes(:,2), 'with points pt 5 lc rgb "#0008B0"')
+    !call gp%title('MN spike instants at the soma')
+    !call gp%xlabel('t (s))')
+    !call gp%ylabel('Motoneuron index')
+    !call gp%plot(motorUnitPools(1)%poolSomaSpikes(:,1), &
+    !motorUnitPools(1)%poolSomaSpikes(:,2), 'with points pt 5 lc rgb "#0008B0"')
 
     !call gp%title('RC spike instants at the soma')
     !call gp%xlabel('t (s))')

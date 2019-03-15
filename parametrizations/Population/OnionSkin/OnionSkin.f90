@@ -60,14 +60,12 @@ program OnionSkin
     logical, parameter :: probDecay = .false.
     character(len=3), parameter :: nS = '75', nFR = '75', &
         nFF = '150', nCM = '400', nMN = '300', nRC = '600' ! nS+nFR+nFF
-    ! 340 gives 100% MVC
-    ! 20% MVC/s, reaching 80% MVC
-    integer, dimension(2) :: mvc = [310, 220]
+    integer, dimension(2) :: mvc = [932, 700]
     
     call init_random_seed()
 
     conf = Configuration(filename)
-    conf%simDuration_ms = 9000
+    conf%simDuration_ms = 500!9000
 
     param = ['c', 'o']
 
@@ -149,7 +147,8 @@ program OnionSkin
     gammaOrder(:) = 1
     print *, 'Running simulation'
     call cpu_time(tic)
-    ! Defining gamma order as a vector depending on the force of this simulation
+    !! Increasing gamma order
+    !! Defining gamma order as a vector depending on the force of this simulation
     !do i=1, size(t)
     !    if (i*dt>0.and.i*dt<1550) then
     !        gammaOrder(i) = 7
@@ -175,18 +174,29 @@ program OnionSkin
     do k = 1, size(param)
         ! Creating descending command vector
         do i=1, timeLength
-            if (i*dt < 4000) then
-                FR(i) = mvc(k)/(4000/dt)*i
-            else if (i*dt < 5000) then
+            !if (i*dt < 4000) then
+            !    FR(i) = mvc(k)/(4000/dt)*i
+            !else if (i*dt < 5000) then
                 FR(i) = mvc(k)
-            else
-                FR(i) = -mvc(k)/(4000/dt)*(i - 9000/dt)
-            end if
+            !else
+            !    FR(i) = -mvc(k)/(4000/dt)*(i - 9000/dt)
+            !end if
         end do
+
         do i = 1, size(t)
             ! Updating elements
             do j = 1, size(neuralTractPools)
                 call neuralTractPools(j)%atualizePool(t(i), FR(i), gammaOrder(1))
+            end do
+            do j = 1, size(synapticNoisePools)
+                if (synapticNoisePools(j)%pool.eq.'MG') then
+                    call synapticNoisePools(j)%atualizePool(t(i), 0.0_wp)
+                else if (synapticNoisePools(j)%pool.eq.'RC_ext') then
+                    call synapticNoisePools(j)%atualizePool(t(i), 7.0_wp)
+                else
+                    print *, 'Error assigning noise value to pool'
+                    stop (1)
+                endif
             end do
             do j = 1, size(motorUnitPools)
                 call motorUnitPools(j)%atualizeMotorUnitPool(t(i), 32.0_wp, 32.0_wp)
@@ -214,18 +224,18 @@ program OnionSkin
         call gp%ylabel('force (N)')
         call gp%plot(t, motorUnitPools(1)%NoHillMuscle%force, 'with line lw 2 lc rgb "#0008B0"')
 
-        call gp%title('descending command')
-        call gp%xlabel('t (ms))')
-        call gp%ylabel('descending command rate (pps)')
-        call gp%plot(t, FR, 'with line lw 2 lc rgb "#0008B0"')
+        !call gp%title('descending command')
+        !call gp%xlabel('t (ms))')
+        !call gp%ylabel('descending command rate (pps)')
+        !call gp%plot(t, FR, 'with line lw 2 lc rgb "#0008B0"')
 
-        if (param(k).eq.'c') then
-            call gp%title('RC spike instants at the soma')
-            call gp%xlabel('t (s))')
-            call gp%ylabel('Interneuron index')
-            call gp%plot(interneuronPools(1)%poolSomaSpikes(:,1), &
-            interneuronPools(1)%poolSomaSpikes(:,2), 'with points pt 5 lc rgb "#0008B0"')
-        end if
+        !if (param(k).eq.'c') then
+        !    call gp%title('RC spike instants at the soma')
+        !    call gp%xlabel('t (s))')
+        !    call gp%ylabel('Interneuron index')
+        !    call gp%plot(interneuronPools(1)%poolSomaSpikes(:,1), &
+        !    interneuronPools(1)%poolSomaSpikes(:,2), 'with points pt 5 lc rgb "#0008B0"')
+        !end if
 
         ! Saving spike times
         if (param(k).eq.'c') then
@@ -257,6 +267,9 @@ program OnionSkin
         endif
         call neuralTractPools(1)%reset()
         call motorUnitPools(1)%reset()
+        do j = 1, size(synapticNoisePools)
+            call synapticNoisePools(j)%reset()
+        end do
     end do
     call cpu_time(toc)
     print '(F15.6, A)', toc - tic, ' seconds'

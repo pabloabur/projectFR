@@ -56,7 +56,6 @@ program StaticProperties
     character(len=80) :: value1, value2
     ! Input parameters
     logical, parameter :: probDecay = .false.
-    real(wp), parameter :: declineFactorMN = real(1, wp)/6, declineFactorRC = real(3.5, wp)/3
     real(wp), parameter :: FFConducStrength = 0.033_wp ! Simple weight decay
     !real(wp), parameter :: FFConducStrength = 0.025_wp ! Decay of probability of connection (Pconn) with distance
     !real(wp), parameter :: FFConducStrength = 0.04_wp ! Decay of weight and Pconn with distance
@@ -90,15 +89,10 @@ program StaticProperties
     value2 = ''
     call conf%changeConfigurationParameter(paramTag, value1, value2)
 
-        ! Columnar length
-        paramTag = 'position:MG-'
-        value1 = '0'
-        value2 = '6'
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramtag = 'NoiseFunction_RC_ext'
-        value1 = '0'! it was '7', but in the experiment there was none
-        value2 = ''
-        call conf%changeconfigurationparameter(paramtag, value1, value2)
+    paramtag = 'NoiseFunction_RC_ext'
+    value1 = '0'! it was '7', but in the experiment there was none
+    value2 = ''
+    call conf%changeconfigurationparameter(paramtag, value1, value2)
     
     ! Stimulus
     paramTag = 'stimStart_PTN'

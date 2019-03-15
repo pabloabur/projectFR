@@ -48,7 +48,7 @@ program DynamicProperties
     character(len = 80) :: pool, group
     character(len = 100) :: filename = '../../conf.rmto'
     character(len = 100) :: path = '/home/pablo/osf/Master-Thesis-Data/population/'
-    character(len = 100) :: folderName = 'dynamic/false_decay/trial10/'
+    character(len = 100) :: folderName = 'dynamic/false_decay/trial1/'
     type(MotorUnitPool), dimension(:), allocatable, target :: motorUnitPools
     type(NeuralTract), dimension(:), allocatable :: neuralTractPools    
     type(InterneuronPool), dimension(:), allocatable, target :: interneuronPools    
@@ -58,8 +58,6 @@ program DynamicProperties
     character(len=80) :: value1, value2
     ! Input parameters
     logical, parameter :: probDecay = .false.
-    real(wp), parameter :: FFConducStrength = 0.033_wp, & 
-        declineFactorMN = real(1, wp)/6, declineFactorRC = real(3.5, wp)/3
     character(len=3), parameter :: stimAmp = '80', nS = '75', nFR = '75', &
         nFF = '150', nRC = '600'
     integer, parameter :: frequency1 = 5
@@ -89,11 +87,16 @@ program DynamicProperties
     value2 = ''
     call conf%changeConfigurationParameter(paramTag, value1, value2)
 
-        ! Columnar length
-        paramTag = 'position:MG-'
-        value1 = '0'
-        value2 = '6'
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
+    !!!!!!!!!!!!!!!! Independent noise
+    paramTag = 'NoiseTarget_MG'
+    value1 = 'FR'
+    value2 = ''
+    call conf%changeConfigurationParameter(paramTag, value1, value2)
+    paramTag = 'NoiseFunction_MG'
+    value1 = '0' ! Turned off
+    value2 = ''
+    call conf%changeConfigurationParameter(paramTag, value1, value2)
+
     ! Stimulus
     paramTag = 'stimStart_PTN'
     value1 = '0.1'

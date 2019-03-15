@@ -36,8 +36,6 @@ program AHP
     real(wp) :: tf
     ! Input parameters
     logical, parameter :: probDecay = .false.
-    real(wp), parameter :: FFConducStrength = 0.3_wp, & 
-        declineFactorMN = real(1, wp)/6, declineFactorRC = real(3.5, wp)/3
     character(len=3), parameter :: nS = '0', nFR = '0', &
         nFF = '0', nRC = '1', nCM = '0', nMN = '0' ! nS+nFR+nFF
 
@@ -71,29 +69,6 @@ program AHP
     value1 = nMN
     value2 = ''
     call conf%changeConfigurationParameter(paramTag, value1, value2)
-
-        paramTag = 'gmax:MG-S>RC_ext-@soma|excitatory'
-        write(value1, '(F15.6)') FFConducStrength/2.2
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'gmax:MG-FR>RC_ext-@soma|excitatory'
-        write(value1, '(F15.6)') FFConducStrength/1.8
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'gmax:MG-FF>RC_ext-@soma|excitatory'
-        write(value1, '(F15.6)') FFConducStrength
-        value2 = ''
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-
-        ! Columnar length
-        paramTag = 'position:MG-'
-        value1 = '0'
-        value2 = '6'
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'position:RC_ext-'
-        value1 = '0'
-        value2 = '6'
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
 
     ! Dynamics of MN-RC synapse
     paramtag = 'dyn:MG-S>RC_ext-@soma|excitatory'
@@ -150,7 +125,7 @@ program AHP
 
     do i = 1, size(t)
         do j = 1, size(synapticNoisePools)
-            call synapticNoisePools(j)%atualizePool(t(i))
+            call synapticNoisePools(j)%atualizePool(t(i), 7.0_wp)
         end do
         do j = 1, size(interneuronPools)
             call interneuronPools(j)%atualizeInterneuronPool(t(i))

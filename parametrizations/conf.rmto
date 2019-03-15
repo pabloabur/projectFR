@@ -75,6 +75,7 @@ dec:MG-FF>RC_ext-@soma|excitatory,0.166666,
 % Synaptic noise
 gmax:Noise>RC_ext-@soma|excitatory,0.014,
 NoiseFunction_RC_ext,7,
+Number_RC_ext,600,
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%% Changes on MN parameters
@@ -84,15 +85,43 @@ twitchTimePeak:MG-FF,47,20
 twitchPeak:MG-S,0.0009408,0.0098784
 twitchPeak:MG-FR,0.00066149,0.008085
 twitchPeak:MG-FF,0.03283,0.14229
+twTetSOCDS:MG-S,12.5,12.5
+twTetSOCDS:MG-FR,66.66,66.66
+twTetSOCDS:MG-FF,8.95,8.95
+bSatSOCDS:MG-S,0.16,0.16
+bSatSOCDS:MG-FR,0.03,0.03
+bSatSOCDS:MG-FF,0.223,0.223
 position:MG-,0,6
 axonDelayCondVel:MG-S,64,102
 axonDelayCondVel:MG-FR,82,114
 axonDelayCondVel:MG-FF,74,122
+NoiseFunction_MG,0,
+MUnumber_MG-S,75,
+MUnumber_MG-FR,75,
+MUnumber_MG-FF,150,
+Number_MG,300,
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%% Changes on Descending commands parameters
+Number_CMExt,400,
+Con:CMExt->MG-S@dendrite|excitatory,30,
+Con:CMExt->MG-FR@dendrite|excitatory,30,
+Con:CMExt->MG-FF@dendrite|excitatory,30,
+gmax:CMExt->MG-S@dendrite|excitatory,0.6,
+gmax:CMExt->MG-FR@dendrite|excitatory,0.6,
+gmax:CMExt->MG-FF@dendrite|excitatory,0.6,
+delay:CMExt->MG-S@dendrite|excitatory,0.3,
+delay:CMExt->MG-FR@dendrite|excitatory,0.3,
+delay:CMExt->MG-FF@dendrite|excitatory,0.3,
+dyn:CMExt->MG-S@dendrite|excitatory,None,
+dyn:CMExt->MG-FR@dendrite|excitatory,None,
+dyn:CMExt->MG-FF@dendrite|excitatory,None,
+dec:CMExt->MG-S@dendrite|excitatory,inf,
+dec:CMExt->MG-FR@dendrite|excitatory,inf,
+dec:CMExt->MG-FF@dendrite|excitatory,inf,
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Number_MG,0,
 Number_SOL,0,
-Number_RC_ext,2,
 RC_extSomaRefPer,1.0,
 % RC connections
 %% SOL
@@ -192,16 +221,12 @@ beta_h:RC_ext-@soma,4,
 % 
 NoiseGammaOrder_MG,10,
 NoiseTarget_MG,FR,
-NoiseFunction_MG,21,
 NoiseGammaOrder_SOL,10,
 NoiseTarget_SOL,FR,
 NoiseFunction_SOL,21,
 MUnumber_SOL-S,0,
 MUnumber_SOL-FR,0,
 MUnumber_SOL-FF,0,
-MUnumber_MG-S,300,
-MUnumber_MG-FR,150,
-MUnumber_MG-FF,150,
 MUnumber_LG-S,130,
 MUnumber_LG-FR,65,
 MUnumber_LG-FF,65,
@@ -220,7 +245,6 @@ Number_Ib-SOL,200,
 Number_Ib-MG,40,
 Number_Ib-LG,38,
 Number_Ib-TA,140,
-Number_CMExt,400,
 NumberAxonNodes,0,
 Number_gII_ext,350,
 Number_IaIn_ext,350,
@@ -808,21 +832,6 @@ tPeakSyn:MG-FF|excitatory,0.2,
 tPeakSyn:MG-S|inhibitory,0.4,
 tPeakSyn:MG-FR|inhibitory,0.4,
 tPeakSyn:MG-FF|inhibitory,0.4,
-Con:CMExt->MG-S@dendrite|excitatory,30,
-Con:CMExt->MG-FR@dendrite|excitatory,30,
-Con:CMExt->MG-FF@dendrite|excitatory,30,
-gmax:CMExt->MG-S@dendrite|excitatory,0.6,
-gmax:CMExt->MG-FR@dendrite|excitatory,0.6,
-gmax:CMExt->MG-FF@dendrite|excitatory,0.6,
-delay:CMExt->MG-S@dendrite|excitatory,0.3,
-delay:CMExt->MG-FR@dendrite|excitatory,0.3,
-delay:CMExt->MG-FF@dendrite|excitatory,0.3,
-dyn:CMExt->MG-S@dendrite|excitatory,None,
-dyn:CMExt->MG-FR@dendrite|excitatory,None,
-dyn:CMExt->MG-FF@dendrite|excitatory,None,
-dec:CMExt->MG-S@dendrite|excitatory,inf,
-dec:CMExt->MG-FR@dendrite|excitatory,inf,
-dec:CMExt->MG-FF@dendrite|excitatory,inf,
 Con:Ia-MG>MG-S@dendrite|excitatory,80,
 Con:Ia-MG>MG-FR@dendrite|excitatory,80,
 Con:Ia-MG>MG-FF@dendrite|excitatory,80,
@@ -938,12 +947,6 @@ res@soma:MG-S,1150,1050
 res@soma:MG-FR,1050,950
 res@soma:MG-FF,950,650
 res@node:MG-S,120,120
-bSatSOCDS:MG-S,1,0.85
-bSatSOCDS:MG-FR,0.85,0.48
-bSatSOCDS:MG-FF,0.48,0.43
-twTetSOCDS:MG-S,2.16,2.49
-twTetSOCDS:MG-FR,2.49,4.25
-twTetSOCDS:MG-FF,4.25,4.72
 EMGAmplitude:MG-S,0.001,0.057
 EMGAmplitude:MG-FR,0.057,0.061
 EMGAmplitude:MG-FF,0.061,0.072
