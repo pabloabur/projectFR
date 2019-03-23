@@ -18,6 +18,11 @@
 !     Contact: renato.watanabe@ufabc.edu.br
 ! '''
 
+! README
+! This does not seem to be working as it should. It is advisable to run 
+! one simulation at at time, each for one value of param, i.e. param=['c']
+! and then param=['o'] (or vice versa)
+
 program Granit
     use MotorUnitPoolClass
     use NeuralTractClass
@@ -41,8 +46,8 @@ program Granit
     real(wp) :: tic, toc
     type(gpf) :: gp
     !real(wp) :: FR(15) = [(i, i = 5, 537, 38)]
-    real(wp), dimension(1), parameter :: fs = &
-        [10]!, 1000]
+    real(wp), dimension(9), parameter :: fs = &
+        [1, 75, 150, 225, 300, 375, 450, 525, 600]
     integer :: GammaOrder 
     character(len = 80) :: pool, group
     character(len = 100) :: filename = '../../conf.rmto'
@@ -53,7 +58,7 @@ program Granit
     type(InterneuronPool), dimension(:), allocatable, target :: interneuronPools    
     type(SynapticNoise), dimension(:), allocatable:: synapticNoisePools     
     type(AfferentPool), dimension(:), allocatable:: afferentPools     
-    character(len=1), dimension(1) :: param
+    character(len=1), dimension(2) :: param
     character(len=80) :: paramTag
     character(len=80) :: value1, value2
     real(wp), dimension(:), allocatable :: force
@@ -61,16 +66,16 @@ program Granit
     real(wp) :: dt
     real(wp) :: tf
     logical, parameter :: probDecay = .false.
-    character(len=3), parameter :: nS = '75', nFR = '75', &
-        nFF = '150', nCM = '400', nMN = '300'! nS+nFR+nFF
-    character(len=4), parameter :: nRC = '1'
+    character(len=3), parameter :: nS = '150', nFR = '0', &
+        nFF = '0', nCM = '400', nMN = '150'! nS+nFR+nFF
+    character(len=4), parameter :: nRC = '300'
 
     call init_random_seed()
 
     conf = Configuration(filename)
-    conf%simDuration_ms = 500
+    conf%simDuration_ms = 4000
 
-    param = ['o']!, 'o']
+    param = ['c', 'o']
 
     !Changing configuration file
     paramTag = 'Number_CMExt'
@@ -218,8 +223,8 @@ program Granit
         value2 = '0.16'
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'bSatSOCDS:SOL-FR'
-        value1 = '0.1'
-        value2 = '0.1'
+        value1 = '0.03'
+        value2 = '0.03'
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'bSatSOCDS:SOL-FF'
         value1 = '0.223'
@@ -321,10 +326,10 @@ program Granit
     pool = 'SOL'
     motorUnitPools(1) = MotorUnitPool(conf, pool)    
 
-    allocate(interneuronPools(0))
-    !pool = 'RC'
-    !group = 'ext'    
-    !interneuronPools(1) = InterneuronPool(conf, pool, group)
+    allocate(interneuronPools(1))
+    pool = 'RC'
+    group = 'ext'    
+    interneuronPools(1) = InterneuronPool(conf, pool, group)
 
     allocate(afferentPools(0))
 
@@ -359,18 +364,18 @@ program Granit
             !end do
         
             do i = 1, size(t)
-                if (t(i)>2.and.t(i)<500) then ! 3 and 500 for exploring twitches
-                    motorUnitPools(1)%iInjected(2*(76)) = 85_wp
-                    print *, motorUnitPools(1)%unit(76)%twitchAmp_N*motorUnitPools(1)%unit(76)%twTet
-                else
-                    motorUnitPools(1)%iInjected(2*(76)) = 0_wp
-                endif
                 do j = 1, size(neuralTractPools)
                     call neuralTractPools(j)%atualizePool(t(i), fs(k), GammaOrder)
                 end do
-                ! I do not know how which noise belongs to which neural element
                 do j = 1, size(synapticNoisePools)
-                    call synapticNoisePools(j)%atualizePool(t(i), 0.0_wp)
+                    if (synapticNoisePools(j)%pool.eq.'SOL') then
+                        call synapticNoisePools(j)%atualizePool(t(i), 0.0_wp)
+                    else if (synapticNoisePools(j)%pool.eq.'RC_ext') then
+                        call synapticNoisePools(j)%atualizePool(t(i), 7.0_wp)
+                    else
+                        print *, 'Error assigning noise value to pool'
+                        stop (1)
+                    endif
                 end do
                 do j = 1, size(motorUnitPools)
                     call motorUnitPools(j)%atualizeMotorUnitPool(t(i), 32.0_wp, 32.0_wp)
@@ -392,32 +397,32 @@ program Granit
                 force(i) = motorUnitPools(1)%NoHillMuscle%force(i)
             end do
 
-            !if (param(l).eq.'c') then
-            !    write(filename, '("force", I2, "c.dat")') k
-            !    filename = trim(path) // trim(folderName) // filename
-            !else if (param(l).eq.'o') then
-            !    write(filename, '("force", I2, "o.dat")') k
-            !    filename = trim(path) // trim(folderName) // filename
-            !endif
-            !open(1, file=filename, status = 'replace')
-            !do i = 1, timeLength
-            !    write(1, '(F9.3, 1X, F15.2)') t(i), force(i)
-            !end do
-            !close(1)
+            if (param(l).eq.'c') then
+                write(filename, '("force", I2, "c.dat")') k
+                filename = trim(path) // trim(folderName) // filename
+            else if (param(l).eq.'o') then
+                write(filename, '("force", I2, "o.dat")') k
+                filename = trim(path) // trim(folderName) // filename
+            endif
+            open(1, file=filename, status = 'replace')
+            do i = 1, timeLength
+                write(1, '(F9.3, 1X, F15.6)') t(i), force(i)
+            end do
+            close(1)
 
-            !if (param(l).eq.'c') then
-            !    write(filename, '("spks", I2, "c.dat")') k
-            !    filename = trim(path) // trim(folderName) // filename
-            !else if (param(l).eq.'o') then
-            !    write(filename, '("spks", I2, "o.dat")') k
-            !    filename = trim(path) // trim(folderName) // filename
-            !endif
-            !open(1, file=filename, status = 'replace')
-            !do i = 1, size(motorUnitPools(1)%poolSomaSpikes, 1)
-            !    write(1, '(F15.6, 1X, F15.1)') motorUnitPools(1)%poolSomaSpikes(i,1), &
-            !        motorUnitPools(1)%poolSomaSpikes(i,2)
-            !end do
-            !close(1)
+            if (param(l).eq.'c') then
+                write(filename, '("spks", I2, "c.dat")') k
+                filename = trim(path) // trim(folderName) // filename
+            else if (param(l).eq.'o') then
+                write(filename, '("spks", I2, "o.dat")') k
+                filename = trim(path) // trim(folderName) // filename
+            endif
+            open(1, file=filename, status = 'replace')
+            do i = 1, size(motorUnitPools(1)%poolSomaSpikes, 1)
+                write(1, '(F15.6, 1X, F15.1)') motorUnitPools(1)%poolSomaSpikes(i,1), &
+                    motorUnitPools(1)%poolSomaSpikes(i,2)
+            end do
+            close(1)
 
             call gp%title('MN spike instants at the soma')
             call gp%xlabel('t (s))')

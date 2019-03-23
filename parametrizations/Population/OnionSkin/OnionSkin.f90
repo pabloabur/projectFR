@@ -44,7 +44,7 @@ program OnionSkin
     character(len = 80) :: pool, group
     character(len = 100) :: filename = '../../conf.rmto'
     character(len = 100) :: path = '/home/pablo/osf/Master-Thesis-Data/population/'
-    character(len = 100) :: folderName = 'onion/false_decay/trial5/'
+    character(len = 100) :: folderName = 'onion/false_decay/trial5/trial2/'
     type(MotorUnitPool), dimension(:), allocatable, target :: motorUnitPools
     type(NeuralTract), dimension(:), allocatable :: neuralTractPools    
     type(InterneuronPool), dimension(:), allocatable, target :: interneuronPools    
@@ -60,12 +60,12 @@ program OnionSkin
     logical, parameter :: probDecay = .false.
     character(len=3), parameter :: nS = '75', nFR = '75', &
         nFF = '150', nCM = '400', nMN = '300', nRC = '600' ! nS+nFR+nFF
-    integer, dimension(2) :: mvc = [932, 700]
+    integer, dimension(2) :: mvc = [950, 710]
     
     call init_random_seed()
 
     conf = Configuration(filename)
-    conf%simDuration_ms = 500!9000
+    conf%simDuration_ms = 9000
 
     param = ['c', 'o']
 
@@ -174,13 +174,13 @@ program OnionSkin
     do k = 1, size(param)
         ! Creating descending command vector
         do i=1, timeLength
-            !if (i*dt < 4000) then
-            !    FR(i) = mvc(k)/(4000/dt)*i
-            !else if (i*dt < 5000) then
+            if (i*dt < 4000) then
+                FR(i) = mvc(k)/(4000/dt)*i
+            else if (i*dt < 5000) then
                 FR(i) = mvc(k)
-            !else
-            !    FR(i) = -mvc(k)/(4000/dt)*(i - 9000/dt)
-            !end if
+            else
+                FR(i) = -mvc(k)/(4000/dt)*(i - 9000/dt)
+            end if
         end do
 
         do i = 1, size(t)
@@ -213,16 +213,16 @@ program OnionSkin
             call interneuronPools(1)%listSpikes()
         end if
 
-        call gp%title('MN spike instants at the soma')
-        call gp%xlabel('t (s))')
-        call gp%ylabel('Motoneuron index')
-        call gp%plot(motorUnitPools(1)%poolSomaSpikes(:,1), &
-        motorUnitPools(1)%poolSomaSpikes(:,2), 'with points pt 5 lc rgb "#0008B0"')
+        !call gp%title('MN spike instants at the soma')
+        !call gp%xlabel('t (s))')
+        !call gp%ylabel('Motoneuron index')
+        !call gp%plot(motorUnitPools(1)%poolSomaSpikes(:,1), &
+        !motorUnitPools(1)%poolSomaSpikes(:,2), 'with points pt 5 lc rgb "#0008B0"')
 
-        call gp%title('force')
-        call gp%xlabel('t (ms))')
-        call gp%ylabel('force (N)')
-        call gp%plot(t, motorUnitPools(1)%NoHillMuscle%force, 'with line lw 2 lc rgb "#0008B0"')
+        !call gp%title('force')
+        !call gp%xlabel('t (ms))')
+        !call gp%ylabel('force (N)')
+        !call gp%plot(t, motorUnitPools(1)%NoHillMuscle%force, 'with line lw 2 lc rgb "#0008B0"')
 
         !call gp%title('descending command')
         !call gp%xlabel('t (ms))')

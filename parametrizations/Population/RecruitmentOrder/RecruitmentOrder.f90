@@ -45,7 +45,7 @@ program RecruitmentOrder
     integer, dimension(6) :: GammaOrder 
     character(len = 100) :: filename = '../../conf.rmto'
     character(len = 100) :: path = '/home/pablo/osf/Master-Thesis-Data/population/'
-    character(len = 100) :: folderName = 'recruitment/false_decay/trial2/'
+    character(len = 100) :: folderName = 'recruitment/false_decay/trial4/'
     type(MotorUnitPool), dimension(:), allocatable, target :: motorUnitPools
     type(NeuralTract), dimension(:), allocatable :: neuralTractPools    
     type(InterneuronPool), dimension(:), allocatable, target :: interneuronPools    
@@ -162,9 +162,16 @@ program RecruitmentOrder
             !end if
 
             ! Updating elements
-            !do j = 1, size(synapticNoisePools)
-            !    call synapticNoisePools(j)%atualizePool(t(i))
-            !end do
+            do j = 1, size(synapticNoisePools)
+                if (synapticNoisePools(j)%pool.eq.'MG') then
+                    call synapticNoisePools(j)%atualizePool(t(i), 0.0_wp)
+                else if (synapticNoisePools(j)%pool.eq.'RC_ext') then
+                    call synapticNoisePools(j)%atualizePool(t(i), 7.0_wp)
+                else
+                    print *, 'Error assigning noise value to pool'
+                    stop (1)
+                endif
+            end do
             do j = 1, size(neuralTractPools)
                 call neuralTractPools(j)%atualizePool(t(i), FR(i), GammaOrder(6))
             end do
