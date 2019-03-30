@@ -258,27 +258,26 @@ program modulatingRC
     if (inputParam.eq.'low') then
         !!!!!!!!! 5% MVC
         if (inputMod.eq.'d') then
-            FR(:) = 320_wp ! strong
+            FR(:) = 348_wp ! strong
         else if (inputMod.eq.'s') then
             FR(:) = 255_wp ! medium
         else if (inputMod.eq.'h') then
-            FR(:) = 200_wp ! weak
+            FR(:) = 210_wp ! weak
         else if (inputMod.eq.'o') then
-            FR(:) = 150_wp
+            FR(:) = 160_wp
         endif
     else if (inputParam.eq.'max') then
         ! uncompensated case
         !FR(:) = 1500_wp
         ! compensated case
-        ! TODO maybe get commented values back
         if (inputMod.eq.'d') then
-            FR(:) = 4000_wp!2190_wp ! strong
+            FR(:) = 2190_wp ! strong
         else if (inputMod.eq.'s') then
-            FR(:) = 4000_wp!1650_wp ! medium
+            FR(:) = 1650_wp ! medium
         else if (inputMod.eq.'h') then
-            FR(:) = 4000_wp!1450_wp ! weak
+            FR(:) = 1450_wp ! weak
         else if (inputMod.eq.'o') then
-            FR(:) = 4000_wp!1245_wp
+            FR(:) = 1245_wp
         endif
     else if (inputParam.eq.'high') then
         !!!!!!!!! 70% MVC
@@ -289,7 +288,7 @@ program modulatingRC
         else if (inputMod.eq.'h') then
             FR(:) = 825_wp ! weak
         else if (inputMod.eq.'o') then
-            FR(:) = 700_wp
+            FR(:) = 705_wp
         endif
     else
         print *, 'Wrong parametrization option'
@@ -395,6 +394,7 @@ program modulatingRC
     !*************** Saving data
     !*************************************
     folderName = trim(folderName) // trim(inputParam) // '/trial' // trim(inputTrial) // '/'
+
     filename = trim(path) // trim(folderName) // "force" // trim(inputMod) // ".dat"
     open(1, file=filename, status = 'replace')
     do i = 1, timeLength

@@ -1,8 +1,8 @@
 #!/bin/sh
 
-for trial in "1" "2" "3" "4" "5"; do
+for trial in {1..5}; do
     echo "------trial $trial"
-    for mod in "o" "h" "s" "d"; do
-        ./modulatingRC high $mod $trial
+    for mod in d s h o; do
+        ./modulatingRC max $mod $trial
     done
 done

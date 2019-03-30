@@ -37,24 +37,26 @@ program FrequencyAnalysis
     type(Configuration) :: conf
     real(wp), parameter :: pi = 4 * atan(1.0_wp)    
     integer :: timeLength
-    integer :: i, j, k, l
+    integer :: i, j, k
     real(wp), dimension(:), allocatable :: t, &
-        synapticInput, MNDend_mV, commomDriveG, V
-    real(wp), allocatable :: Vs(:,:)
+        synapticInput, MNDend_mV, commomDriveG
     real(wp) :: tic, toc
     type(gpf) :: gp
-    real(wp), dimension(:), allocatable :: FR, noiseFR
+    real(wp), dimension(:), allocatable :: FR
     integer :: GammaOrder 
     character(len = 80) :: pool, group
     character(len = 100) :: filename = '../../conf.rmto'
     character(len = 100) :: path = '/home/pablo/osf/Master-Thesis-Data/population/'
-    character(len = 100) :: folderName = 'psd/natural/trial8/trial3/'
+    character(len = 100) :: folderName = 'psd/natural/trial6/'
     type(MotorUnitPool), dimension(:), allocatable, target :: motorUnitPools
     type(NeuralTract), dimension(:), allocatable :: neuralTractPools    
     type(InterneuronPool), dimension(:), allocatable, target :: interneuronPools    
     type(SynapticNoise), dimension(:), allocatable:: synapticNoisePools     
     type(AfferentPool), dimension(:), allocatable:: afferentPools     
+    character(len=2) :: inputTrial
     character(len=4) :: inputParam
+    character(len=2) :: inputMVC
+    character(len=20) :: gmaxS, gmaxFR, gmaxFF
     character(len=80) :: paramTag
     character(len=80) :: value1, value2
     real(wp), dimension(:), allocatable :: force
@@ -62,25 +64,21 @@ program FrequencyAnalysis
     real(wp) :: tf
     logical, parameter :: probDecay = .false.
     ! Noise parameters
+    real(wp) :: noiseFR
     character(len=3), parameter :: noiseCon = '100'
     character(len=1), parameter :: noiseOrder = '1'
     character(len=2), parameter :: noiseTarget = 'FR'
-    ! DCI only
-    !real(wp), parameter :: noiseFRc = 0_wp
-    !real(wp), parameter :: noiseFRo = 0_wp
-    ! DCI+IN (noise strategy)
-    !real(wp), parameter :: noiseFRc = 3300_wp
-    !real(wp), parameter :: noiseFRo = 1400_wp!1200_wp was used previously, but it did not fully compensate inhibition
-    ! DCI+IN (descending command strategy), chosen arbitrarily to be small, after FR definition
-    real(wp), parameter :: noiseFRc = 90_wp
-    real(wp), parameter :: noiseFRo = 90_wp
     character(len=2), parameter :: noiseg = '12' !  Step simulation
+    integer, dimension(:), allocatable :: firingMNsIdx, auxFiring
     ! Quantity parameters
     ! TODO Get back with only 75 S MNs?
     character(len=3), parameter :: nS = '75', nFR = '75', &
         nFF = '150', nCM = '400', nMN = '300', nRC = '600' ! nS+nFR+nFF
-    integer :: sampleSize = 105 ! Quantify of used MNs
-    integer :: poolSize = 75 ! Quantify of used MNs
+    real(wp), dimension(:), allocatable :: V
+    real(wp), dimension(:,:), allocatable :: Vs, Vsf
+    real(wp) :: delta, sumDeltai, sync
+    integer :: sampleSize ! Quantify of used MNs
+    integer :: poolSize = 300 ! Quantify of used MNs
     real(wp) :: gc, gld, gls, Vth
     real(wp), dimension(:), allocatable :: Irh
 
@@ -89,6 +87,7 @@ program FrequencyAnalysis
     !*************************************
     !******* Getting input
     !*************************************
+    call get_command_argument(3, inputTrial)
     call get_command_argument(1, inputParam)
     if (inputParam.eq.'o') then
         print *, 'no renshaw cell'
@@ -107,11 +106,26 @@ program FrequencyAnalysis
         stop (1)
     endif
 
+    call get_command_argument(2, inputMVC)
+    if (inputMVC.eq.'05') then
+        print *, '5% MVC'
+    else if (inputMVC.eq.'30') then
+        print *, '30% MVC'
+    else if (inputMVC.eq.'70') then
+        print *, '70% MVC'
+    else
+        print *, 'Wrong MVC option. Available options are:'
+        print *, '- 05'
+        print *, '- 30'
+        print *, '- 70'
+        stop (1)
+    endif
     !*************************************
     !******* Changing basic parameters
     !*************************************
     conf = Configuration(filename)
-    conf%simDuration_ms = 9000
+    ! TODO uncomment 9000
+    conf%simDuration_ms = 1500!9000
 
     !Changing configuration file
     paramTag = 'Number_CMExt'
@@ -166,6 +180,38 @@ program FrequencyAnalysis
     value2 = ''
     call conf%changeConfigurationParameter(paramTag, value1, value2)
 
+    ! Conductances
+    if (inputParam.eq.'d') then
+        gmaxS = '0.2380'
+        gmaxFR = '0.2380'
+        gmaxFF = '0.1880'
+    else if (inputParam.eq.'s') then
+        gmaxS = '0.1190'
+        gmaxFR = '0.1190'
+        gmaxFF = '0.0940'
+    else if (inputParam.eq.'h') then
+        gmaxS = '0.0595'
+        gmaxFR = '0.0595'
+        gmaxFF = '0.0470'
+    else if (inputParam.eq.'o') then
+        continue
+    else
+        print *, 'Wrong modulation option.'
+        stop (1)
+    endif
+    paramTag = 'gmax:RC_ext->MG-S@dendrite|inhibitory'
+    value1 = gmaxS
+    value2 = ''
+    call conf%changeConfigurationParameter(paramTag, value1, value2)
+    paramTag = 'gmax:RC_ext->MG-FR@dendrite|inhibitory'
+    value1 = gmaxFR
+    value2 = ''
+    call conf%changeConfigurationParameter(paramTag, value1, value2)
+    paramTag = 'gmax:RC_ext->MG-FF@dendrite|inhibitory'
+    value1 = gmaxFF
+    value2 = ''
+    call conf%changeConfigurationParameter(paramTag, value1, value2)
+
     ! I gave up on coherence, so I will not be using SOL pool anymore
     ! N.B. I decided to comment this because there was error
     ! when an SOL update was called and I did not know how to fix it
@@ -173,48 +219,48 @@ program FrequencyAnalysis
     !******* Parameters for SOL pools used for computing 
     !******* synaptic conductance caused by commom drive
     !*************************************
-    !paramTag = 'MUnumber_SOL-S'
-    !value1 = '1'
-    !value2 = ''
-    !call conf%changeConfigurationParameter(paramTag, value1, value2)
-    !paramTag = 'Number_SOL'
-    !value1 = '1'
-    !value2 = ''
-    !call conf%changeConfigurationParameter(paramTag, value1, value2)
-    !paramTag = 'Con:CMExt->SOL-S@dendrite|excitatory'
-    !value1 = '100'
-    !value2 = ''
-    !call conf%changeConfigurationParameter(paramTag, value1, value2)
-    !paramTag = 'Con:RC_ext->SOL-S@dendrite|inhibitory'
-    !value1 = '0'
-    !value2 = ''
-    !call conf%changeConfigurationParameter(paramTag, value1, value2)
-    !paramTag = 'Con:SOL-S>RC_ext-@soma|excitatory'
-    !value1 = '0'
-    !value2 = ''
-    !call conf%changeConfigurationParameter(paramTag, value1, value2)
-    !paramTag = 'threshold:SOL-S'
-    !value1 = '500'
-    !value2 = '500'
-    !call conf%changeConfigurationParameter(paramTag, value1, value2)
-    !!!!!!!!!!!!!!!!! Independent noise
-    !! N.B. noiseFunc is not being used anymore, it is passed as argument now
-    !paramTag = 'Con:Noise>SOL-@dendrite|excitatory'
-    !value1 = noiseCon
-    !value2 = ''
-    !call conf%changeConfigurationParameter(paramTag, value1, value2)
-    !paramTag = 'NoiseGammaOrder_SOL'
-    !value1 = noiseOrder
-    !value2 = ''
-    !call conf%changeConfigurationParameter(paramTag, value1, value2)
-    !paramTag = 'NoiseTarget_SOL'
-    !value1 = noiseTarget
-    !value2 = ''
-    !call conf%changeConfigurationParameter(paramTag, value1, value2)
-    !paramTag = 'gmax:Noise>SOL-@dendrite|excitatory'
-    !value1 = noiseg
-    !value2 = ''
-    !call conf%changeConfigurationParameter(paramTag, value1, value2)
+    paramTag = 'MUnumber_SOL-S'
+    value1 = '1'
+    value2 = ''
+    call conf%changeConfigurationParameter(paramTag, value1, value2)
+    paramTag = 'Number_SOL'
+    value1 = '1'
+    value2 = ''
+    call conf%changeConfigurationParameter(paramTag, value1, value2)
+    paramTag = 'Con:CMExt->SOL-S@dendrite|excitatory'
+    value1 = '100'
+    value2 = ''
+    call conf%changeConfigurationParameter(paramTag, value1, value2)
+    paramTag = 'Con:RC_ext->SOL-S@dendrite|inhibitory'
+    value1 = '0'
+    value2 = ''
+    call conf%changeConfigurationParameter(paramTag, value1, value2)
+    paramTag = 'Con:SOL-S>RC_ext-@soma|excitatory'
+    value1 = '0'
+    value2 = ''
+    call conf%changeConfigurationParameter(paramTag, value1, value2)
+    paramTag = 'threshold:SOL-S'
+    value1 = '500'
+    value2 = '500'
+    call conf%changeConfigurationParameter(paramTag, value1, value2)
+    !!!!!!!!!!!!!!!! Independent noise
+    ! N.B. noiseFunc is not being used anymore, it is passed as argument now
+    paramTag = 'Con:Noise>SOL-@dendrite|excitatory'
+    value1 = noiseCon
+    value2 = ''
+    call conf%changeConfigurationParameter(paramTag, value1, value2)
+    paramTag = 'NoiseGammaOrder_SOL'
+    value1 = noiseOrder
+    value2 = ''
+    call conf%changeConfigurationParameter(paramTag, value1, value2)
+    paramTag = 'NoiseTarget_SOL'
+    value1 = noiseTarget
+    value2 = ''
+    call conf%changeConfigurationParameter(paramTag, value1, value2)
+    paramTag = 'gmax:Noise>SOL-@dendrite|excitatory'
+    value1 = noiseg
+    value2 = ''
+    call conf%changeConfigurationParameter(paramTag, value1, value2)
 
     ! Parameters regarding MNs
     ! TODO go back to old MNs quantities?
@@ -230,11 +276,11 @@ program FrequencyAnalysis
     pool = 'CMExt'
     neuralTractPools(1) = NeuralTract(conf, pool)
 
-    allocate(motorUnitPools(1))
+    allocate(motorUnitPools(2))
     pool = 'MG'
     motorUnitPools(1) = MotorUnitPool(conf, pool)    
-    !pool = 'SOL'
-    !motorUnitPools(2) = MotorUnitPool(conf, pool)    
+    pool = 'SOL'
+    motorUnitPools(2) = MotorUnitPool(conf, pool)    
 
     if (inputParam.ne.'o') then
         allocate(interneuronPools(1))
@@ -258,14 +304,13 @@ program FrequencyAnalysis
     
     allocate(t(timeLength))
     allocate(FR(timeLength))
-    allocate(noiseFR(timeLength))
     allocate(synapticInput(timeLength))
     allocate(force(timeLength))
     allocate(commomDriveG(timeLength))
     allocate(MNDend_mV(timeLength))
     allocate(V(timeLength))
     allocate(Vs(poolSize, timeLength)) ! For all MNs in simulation
-    allocate(Irh(sampleSize))
+    !allocate(Irh(sampleSize))
 
     t = [(dt*(i-1), i=1, timeLength)]
     
@@ -282,32 +327,47 @@ program FrequencyAnalysis
             ! The following is used for single excitatory input only
             ! I just want most under 80, and the following values seem to do that
             if (inputParam.eq.'s') then 
-                ! DCI only
-                !FR(i) = 28800000*FR(i)
                 ! DCI+IN (noise strategy)
-                !FR(i) = 1000000*FR(i)
+                FR(i) = 5000000*FR(i)
                 ! DCI+IN (descending command strategy)
-                ! TODO previously it was 25000000*FR(i) only
-                FR(i) = 255_wp+5000000*FR(i) ! 5 %
-                !FR(i) = 75000000*FR(i)!950_wp+ ! 75 %
+                !if (inputMVC.eq.'05') then
+                !    FR(i) = 250_wp+5000000*FR(i)
+                !else if (inputMVC.eq.'70') then
+                !    FR(i) = 950_wp+10000000*FR(i)
+                !end if
             else if (inputParam.eq.'o') then
-                ! DCI only
-                !FR(i) = 16200000*FR(i)
                 ! DCI+IN (noise strategy)
-                !FR(i) = 1000000*FR(i)
+                FR(i) = 5000000*FR(i)
                 ! DCI+IN (descending command strategy)
-                ! TODO previously it was 13700000*FR(i) only
-                FR(i) = 150_wp+5000000*FR(i) ! 5 %
-                !FR(i) = 41100000*FR(i)!700_wp+ ! 75 %
+                !if (inputMVC.eq.'05') then
+                !    FR(i) = 146_wp+5000000*FR(i)
+                !else if (inputMVC.eq.'70') then
+                !    FR(i) = 700_wp+10000000*FR(i)
+                !end if
+            else if (inputParam.eq.'d') then
+                if (inputMVC.eq.'05') then
+                    FR(i) = 368_wp+5000000*FR(i)
+                else if (inputMVC.eq.'70') then
+                    FR(i) = 1200_wp+10000000*FR(i)
+                end if
+            else if (inputParam.eq.'h') then
+                if (inputMVC.eq.'05') then
+                    FR(i) = 210_wp+5000000*FR(i)
+                else if (inputMVC.eq.'70') then
+                    FR(i) = 830_wp+10000000*FR(i)
+                end if
             endif
         end do
     close(1)
-    ! The following will make the noise with the same format as FR, but accordingly amplitude
+
+    ! DCI+IN (noise strategy)
     if (inputParam.eq.'s') then
-        noiseFR = noiseFRc*FR/maxval(FR)
+        noiseFR = 1000_wp
     else if (inputParam.eq.'o') then
-        noiseFR = noiseFRo*FR/maxval(FR)
+        noiseFR = 625_wp
     endif
+    ! DCI+IN (descending command strategy), chosen arbitrarily to be small, after FR definition
+    !noiseFR = 90_wp
 
     !*************************************
     !*************** Running simulation
@@ -320,9 +380,9 @@ program FrequencyAnalysis
 
         do j = 1, size(synapticNoisePools)
             if (synapticNoisePools(j)%pool.eq.'MG') then
-                call synapticNoisePools(j)%atualizePool(t(i), noiseFR(i))
+                call synapticNoisePools(j)%atualizePool(t(i), noiseFR)
             else if (synapticNoisePools(j)%pool.eq.'SOL') then
-                call synapticNoisePools(j)%atualizePool(t(i), noiseFR(i))
+                call synapticNoisePools(j)%atualizePool(t(i), noiseFR)
             else if (synapticNoisePools(j)%pool.eq.'RC_ext') then
                 call synapticNoisePools(j)%atualizePool(t(i), 7.0_wp)
             else
@@ -338,13 +398,12 @@ program FrequencyAnalysis
         endif
 
         do j = 1, size(motorUnitPools)
+            call motorUnitPools(j)%atualizeMotorUnitPool(t(i), 32.0_wp, 32.0_wp)
             if (j == 1) then ! MG pool, in this case
-                call motorUnitPools(j)%atualizeMotorUnitPool(t(i), 32.0_wp, 32.0_wp)
-                do l = 1, poolSize
-                    Vs(l,i) = motorUnitPools(j)%v_mV(2*(l))
+                do k = 1, poolSize
+                    Vs(k,i) = motorUnitPools(j)%v_mV(2*(k))
                 end do
             else ! j=2, Sol pool
-                call motorUnitPools(j)%atualizeMotorUnitPool(t(i), 32.0_wp, 32.0_wp)
                 MNDend_mV(i) = motorUnitPools(j)%v_mV(2*(1)-1)
                 synapticInput(i) = motorUnitPools(j)%iIonic(1)
                 commomDriveG(i) = synapticInput(i)/(MNDend_mV(i) - 70)
@@ -363,11 +422,64 @@ program FrequencyAnalysis
         force(i) = motorUnitPools(1)%NoHillMuscle%force(i)
     end do
 
+    !****************************
+    !******** Measuring synchrony
+    !****************************
+    ! Synchrony measure computed according to Golomb, Hansel and Mato (2001)
+    ! Global part
+    ! Gathering only firing MNs
+    allocate(firingMNsIdx(1))
+    allocate(auxFiring(1))
+    k = 1
+    firingMNsIdx(1) = int(motorUnitPools(1)%poolSomaSpikes(1,2))
+    do i = 2, size(motorUnitPools(1)%poolSomaSpikes(:,2))
+        if (any(firingMNsIdx == int(motorUnitPools(1)%poolSomaSpikes(i,2)))) cycle
+        ! Dynamically allocate new values
+        k = k + 1
+        do j = 1, size(auxFiring)
+            auxFiring(j) = firingMNsIdx(j)
+        end do
+        deallocate(firingMNsIdx)
+        allocate(firingMNsIdx(k))
+        do j = 1, size(auxFiring)
+            firingMNsIdx(j) = auxFiring(j)
+        end do
+        firingMNsIdx(k) = int(motorUnitPools(1)%poolSomaSpikes(i,2))
+        deallocate(auxFiring)
+        allocate(auxFiring(k))
+    end do
+    sampleSize = size(firingMNsIdx)
+
+    ! Each line of Vs is the membrane potential of each MN
+    allocate(Vsf(sampleSize, timeLength)) ! For all MNs in simulation
+    do i = 1, sampleSize
+        Vsf(i, :) = Vs(firingMNsIdx(i), :)
+    end do
+    V = sum(Vsf, dim=1)/sampleSize
+    ! Eliminating first 100 ms = n*0.05 ms => n = 2000
+    delta = sum(V(2000:)**2)/size(t(2000:)) - (sum(V(2000:))/size(t(2000:)))**2
+
+    ! Individual part
+    sumDeltai = 0
+    do i=1, sampleSize
+        sumDeltai = sumDeltai + sum(Vsf(i, 2000:)**2)/size(t(2000:))-&
+            (sum(Vsf(i, 2000:))/size(t(2000:)))**2
+    end do
+    sumDeltai = sumDeltai/sampleSize
+
+    ! Synchrony measure
+    sync = delta/sumDeltai
+    print *, '------ Sync coefficient ------'
+    print *, sync
+    print *, '------------------------------'
+
     !*************************************
     !*************** Saving data
     !*************************************
     ! Saving spikes
-    filename = trim(path) // trim(folderName) // "spike" // trim(inputParam) // ".dat"
+    folderName = trim(folderName) // 'trial' // trim(inputTrial) // '/'
+
+    filename = trim(path) // trim(folderName) // "spike" // trim(inputMVC) // trim(inputParam) // ".dat"
     open(1, file=filename, status = 'replace')
     do i = 1, size(motorUnitPools(1)%poolSomaSpikes, 1)
         write(1, '(F15.6, 1X, F15.1)') motorUnitPools(1)%poolSomaSpikes(i,1), &
@@ -376,15 +488,22 @@ program FrequencyAnalysis
     close(1)
 
     ! Saving force
-    filename = trim(path) // trim(folderName) // "force" // trim(inputParam) // ".dat"
+    filename = trim(path) // trim(folderName) // "force" // trim(inputMVC) // trim(inputParam) // ".dat"
     open(1, file=filename, status = 'replace')
     do i = 1, timeLength
            write(1, '(F15.2, 1X, F15.6)') t(i), force(i)
     end do
     close(1)
 
+    ! Saving sync coefficient
+    filename = trim(path) // trim(folderName) // "sync" // trim(inputMVC) // trim(inputParam) // ".dat"
+    open(1, file=filename, status = 'replace')
+    write(1, '(F15.8)') sync
+    close(1)
+
+
     ! Saving input conductance and EMG
-    filename = trim(path) // trim(folderName) // "g_emg" // trim(inputParam) // ".dat"
+    filename = trim(path) // trim(folderName) // "g_emg" // trim(inputMVC) // trim(inputParam) // ".dat"
     open(1, file=filename, status = 'replace')
     do i = 1, timeLength
         write(1, '(F15.6, 1X, F15.6)') commomDriveG(i), motorUnitPools(1)%emg(i)

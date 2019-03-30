@@ -335,10 +335,10 @@ program Granit
     call cpu_time(tic)
 
     do i = 1, size(t)
-        if (t(i)>2.and.t(i)<500) then ! 3 and 500
-            motorUnitPools(1)%iInjected(2*(75)) = 85_wp
+        if (t(i)>2.and.t(i)<3) then ! 3 and 500
+            motorUnitPools(1)%iInjected(2*(1)) = 85_wp
         else
-            motorUnitPools(1)%iInjected(2*(75)) = 0_wp
+            motorUnitPools(1)%iInjected(2*(1)) = 0_wp
         endif
         do j = 1, size(motorUnitPools)
             call motorUnitPools(j)%atualizeMotorUnitPool(t(i), 32.0_wp, 32.0_wp)
@@ -352,11 +352,11 @@ program Granit
         force(i) = motorUnitPools(1)%NoHillMuscle%force(i)
     end do
 
-    !call gp%title('MN spike instants at the soma')
-    !call gp%xlabel('t (s))')
-    !call gp%ylabel('Motoneuron index')
-    !call gp%plot(motorUnitPools(1)%poolSomaSpikes(:,1), &
-    !motorUnitPools(1)%poolSomaSpikes(:,2), 'with points pt 5 lc rgb "#0008B0"')
+    call gp%title('MN spike instants at the soma')
+    call gp%xlabel('t (s))')
+    call gp%ylabel('Motoneuron index')
+    call gp%plot(motorUnitPools(1)%poolSomaSpikes(:,1), &
+    motorUnitPools(1)%poolSomaSpikes(:,2), 'with points pt 5 lc rgb "#0008B0"')
 
     !call gp%title('RC spike instants at the soma')
     !call gp%xlabel('t (s))')
