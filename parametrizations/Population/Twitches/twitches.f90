@@ -18,7 +18,7 @@
 !     Contact: renato.watanabe@ufabc.edu.br
 ! '''
 
-program Granit
+program twitches
     use MotorUnitPoolClass
     use NeuralTractClass
     use InterneuronPoolClass
@@ -56,13 +56,13 @@ program Granit
     real(wp) :: tf
     logical, parameter :: probDecay = .false.
     character(len=3), parameter :: nS = '75', nFR = '75', &
-        nFF = '150', nCM = '400', nMN = '300'! nS+nFR+nFF
-    character(len=4), parameter :: nRC = '1'
+        nFF = '150', nCM = '400', nMN = '300' ! nS+nFR+nFF
+    character(len=4), parameter :: nRC = '600'
 
     call init_random_seed()
 
     conf = Configuration(filename)
-    conf%simDuration_ms = 500
+    conf%simDuration_ms = 1000
 
     !Changing configuration file
     paramTag = 'Number_CMExt'
@@ -87,6 +87,10 @@ program Granit
     call conf%changeConfigurationParameter(paramTag, value1, value2)
     paramTag = 'Number_SOL'
     value1 = nMN
+    value2 = ''
+    call conf%changeConfigurationParameter(paramTag, value1, value2)
+    paramTag = 'Number_RC_ext'
+    value1 = nRC
     value2 = ''
     call conf%changeConfigurationParameter(paramTag, value1, value2)
 
@@ -182,40 +186,40 @@ program Granit
         value2 = '20'
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'twitchPeak:SOL-S'
-        value1 = '0.0009408'
-        value2 = '0.0098784'
+        value1 = '0.002'
+        value2 = '0.053'
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'twitchPeak:SOL-FR'
-        value1 = '0.00066149'
-        value2 = '0.008085'
+        value1 = '0.002'
+        value2 = '0.074'
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'twitchPeak:SOL-FF'
-        value1 = '0.03283'
-        value2 = '0.14229'
+        value1 = '0.012'
+        value2 = '0.380'
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'twTetSOCDS:SOL-S'
-        value1 = '12.5'
-        value2 = '12.5'
+        value1 = '8.5'
+        value2 = '7.4'
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'twTetSOCDS:SOL-FR'
-        value1 = '66.66'
-        value2 = '66.66'
+        value1 = '18.5'
+        value2 = '7.7'
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'twTetSOCDS:SOL-FF'
-        value1 = '8.95'
-        value2 = '8.95'
+        value1 = '2.5'
+        value2 = '2.7'
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'bSatSOCDS:SOL-S'
-        value1 = '0.16'
-        value2 = '0.16'
+        value1 = '0.24'
+        value2 = '0.27'
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'bSatSOCDS:SOL-FR'
-        value1 = '0.03'
-        value2 = '0.03'
+        value1 = '0.1'
+        value2 = '0.25'
         call conf%changeConfigurationParameter(paramTag, value1, value2)
         paramTag = 'bSatSOCDS:SOL-FF'
-        value1 = '0.223'
-        value2 = '0.223'
+        value1 = '0.84'
+        value2 = '0.77'
         call conf%changeConfigurationParameter(paramTag, value1, value2)
 
         ! Axon conductions
@@ -232,16 +236,6 @@ program Granit
         value2 = '122'
         call conf%changeConfigurationParameter(paramTag, value1, value2)
 
-        ! Columnar length
-        paramTag = 'position:SOL-'
-        value1 = '0'
-        value2 = '3'
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-        paramTag = 'position:RC_ext-'
-        value1 = '0'
-        value2 = '3'
-        call conf%changeConfigurationParameter(paramTag, value1, value2)
-
         ! Some parameters were very high. Probably need it for another simulation
         paramTag = 'threshold:SOL-S'
         value1 = '12.35'
@@ -251,20 +245,6 @@ program Granit
         value1 = '30'
         value2 = ''
         call conf%changeConfigurationParameter(paramTag, value1, value2)
-
-    ! Dynamics of MN-RC synapse
-    paramtag = 'dyn:SOL-S>RC_ext-@soma|excitatory'
-    value1 = 'None'
-    value2 = ''
-    call conf%changeconfigurationparameter(paramtag, value1, value2)
-    paramTag = 'dyn:SOL-FR>RC_ext-@soma|excitatory'
-    value1 = 'None'
-    value2 = ''
-    call conf%changeConfigurationParameter(paramTag, value1, value2)
-    paramTag = 'dyn:SOL-FF>RC_ext-@soma|excitatory'
-    value1 = 'None'
-    value2 = ''
-    call conf%changeConfigurationParameter(paramTag, value1, value2)
 
     !!!!!!!!!!!!!!!! Turn off independent noise on MNs
     paramTag = 'NoiseTarget_SOL'
@@ -305,15 +285,17 @@ program Granit
     !call conf%changeConfigurationParameter(paramTag, value1, value2)
 
     print *, 'Building neural elements'
-    allocate(neuralTractPools(1))
-    pool = 'CMExt'
-    neuralTractPools(1) = NeuralTract(conf, pool)
+    allocate(neuralTractPools(0))
 
     allocate(motorUnitPools(1))
     pool = 'SOL'
     motorUnitPools(1) = MotorUnitPool(conf, pool)    
 
     allocate(interneuronPools(0))
+    !pool = 'RC'
+    !group = 'ext'    
+    !interneuronPools(1) = InterneuronPool(conf, pool, group)
+
     allocate(afferentPools(0))
 
     synapticNoisePools = synapseFactory(conf, neuralTractPools, &
@@ -335,7 +317,7 @@ program Granit
     call cpu_time(tic)
 
     do i = 1, size(t)
-        if (t(i)>2.and.t(i)<3) then ! 3 and 500
+        if (t(i)>2.and.t(i)<1000) then ! 3 and 1000
             motorUnitPools(1)%iInjected(2*(1)) = 85_wp
         else
             motorUnitPools(1)%iInjected(2*(1)) = 0_wp
@@ -377,4 +359,4 @@ program Granit
     call cpu_time(toc)
     print '(F15.6, A)', toc - tic, ' seconds'
 
-end program Granit
+end program twitches

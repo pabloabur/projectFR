@@ -179,7 +179,6 @@ module MuscularActivationClass
             init_MuscularActivation%activation_Sat(:) = 0.0
             ! ## Dirac's delta approximation amplitude value. Is the inverse
             ! ## of the simulation time step (\f$1/T\f$). 
-            !init_MuscularActivation%bSat(:) = -1.0_wp
             init_MuscularActivation%diracDeltaValue = - init_MuscularActivation%bSat / init_MuscularActivation%conf%timeStep_ms
 
             !self.MUindices = np.arange(0, self.MUnumber)
@@ -236,22 +235,7 @@ module MuscularActivationClass
             ! \f{equation}{
             ! a_{sat} = \frac{1-e^{-b.a_{nSat}}}{1+e^{-b.a_{nSat}}}
             ! \f}
-            !self%activation_Sat(:) = self%activation_nonSat!
             self%activation_Sat(:) = 2.0 / (1.0 + exp(self%activation_nonSat)) - 1.0
-            !    self%bSat*0.75_wp)) - 1.0
-            ! FR 76
-            !self%activation_Sat(:) = (-0.0000034535_wp*self%activation_nonSat**3 + &
-            !                        0.0002354012_wp*self%activation_nonSat**2+ &
-            !                        0.0146554569_wp*self%activation_nonSat)
-            ! S 1
-            !self%activation_Sat(:) = (-0.00057799_wp*self%activation_nonSat**3 + &
-            !                        0.00807448_wp*self%activation_nonSat**2+ &
-            !                        0.0693737_wp*self%activation_nonSat)
-            !do i=1, size(self%activation_Sat)
-            !    if (self%activation_Sat(i).lt.0.0_wp) then
-            !        self%activation_Sat(i) = 0.0_wp
-            !    end if
-            !end do
             stat = mkl_sparse_destroy(self%ActMatrixSp)
         end subroutine
 
