@@ -1,4 +1,12 @@
 ! '''
+!   README: This program performs two distinct simulations: noise 
+!   and descending command strategy. The former basically tries to 
+!   reproduce results from Williams and Baker (2009), while the latter
+!   is a reinterpretation of it. Commented parts are used to choose
+!   between simulations. Note that noise strategy only uses s and o
+!   cases, both for 5% MVC.
+! '''
+! '''
 !     Neuromuscular simulator in Fortran.
 !     Copyright (C) 2018  Renato Naville Watanabe
 !                         Pablo Alejandro    
@@ -47,7 +55,7 @@ program FrequencyAnalysis
     character(len = 80) :: pool, group
     character(len = 100) :: filename = '../../conf.rmto'
     character(len = 100) :: path = '/home/pablo/osf/Master-Thesis-Data/population/'
-    character(len = 100) :: folderName = 'psd/natural/trial6/'
+    character(len = 100) :: folderName = 'psd/natural/trial3/'
     type(MotorUnitPool), dimension(:), allocatable, target :: motorUnitPools
     type(NeuralTract), dimension(:), allocatable :: neuralTractPools    
     type(InterneuronPool), dimension(:), allocatable, target :: interneuronPools    
@@ -71,7 +79,6 @@ program FrequencyAnalysis
     character(len=2), parameter :: noiseg = '12' !  Step simulation
     integer, dimension(:), allocatable :: firingMNsIdx, auxFiring
     ! Quantity parameters
-    ! TODO Get back with only 75 S MNs?
     character(len=3), parameter :: nS = '75', nFR = '75', &
         nFF = '150', nCM = '400', nMN = '300', nRC = '600' ! nS+nFR+nFF
     real(wp), dimension(:), allocatable :: V
@@ -79,8 +86,6 @@ program FrequencyAnalysis
     real(wp) :: delta, sumDeltai, sync
     integer :: sampleSize ! Quantify of used MNs
     integer :: poolSize = 300 ! Quantify of used MNs
-    real(wp) :: gc, gld, gls, Vth
-    real(wp), dimension(:), allocatable :: Irh
 
     call init_random_seed()
 
@@ -124,8 +129,7 @@ program FrequencyAnalysis
     !******* Changing basic parameters
     !*************************************
     conf = Configuration(filename)
-    ! TODO uncomment 9000
-    conf%simDuration_ms = 1500!9000
+    conf%simDuration_ms = 9000
 
     !Changing configuration file
     paramTag = 'Number_CMExt'
@@ -173,7 +177,7 @@ program FrequencyAnalysis
     value2 = ''
     call conf%changeConfigurationParameter(paramTag, value1, value2)
 
-    GammaOrder = 1
+    GammaOrder = 7
     ! Removing influence of stimulus (required)
     paramTag = 'stimIntensity_PTN'
     value1 = '0'
@@ -262,13 +266,6 @@ program FrequencyAnalysis
     value2 = ''
     call conf%changeConfigurationParameter(paramTag, value1, value2)
 
-    ! Parameters regarding MNs
-    ! TODO go back to old MNs quantities?
-    !paramTag = 'position:MG-'
-    !value1 = '0'
-    !value2 = '1.5'
-    !call conf%changeConfigurationParameter(paramTag, value1, value2)
-
     print *, '*************************************'
     print *, '************ Building neural elements'
     print *, '*************************************'
@@ -310,7 +307,6 @@ program FrequencyAnalysis
     allocate(MNDend_mV(timeLength))
     allocate(V(timeLength))
     allocate(Vs(poolSize, timeLength)) ! For all MNs in simulation
-    !allocate(Irh(sampleSize))
 
     t = [(dt*(i-1), i=1, timeLength)]
     
@@ -320,51 +316,43 @@ program FrequencyAnalysis
     !*************************************
     !*************** Preparing proper input
     !*************************************
-    ! Loading commom synaptic input
-    open(1, file='csi.txt', status = 'old')
-        do i = 1, timeLength
-            read(1, '(F9.6)') FR(i) ! Only works if I use format, but requires the multiplication used
-            ! The following is used for single excitatory input only
-            ! I just want most under 80, and the following values seem to do that
-            if (inputParam.eq.'s') then 
-                ! DCI+IN (noise strategy)
-                FR(i) = 5000000*FR(i)
-                ! DCI+IN (descending command strategy)
-                !if (inputMVC.eq.'05') then
-                !    FR(i) = 250_wp+5000000*FR(i)
-                !else if (inputMVC.eq.'70') then
-                !    FR(i) = 950_wp+10000000*FR(i)
-                !end if
-            else if (inputParam.eq.'o') then
-                ! DCI+IN (noise strategy)
-                FR(i) = 5000000*FR(i)
-                ! DCI+IN (descending command strategy)
-                !if (inputMVC.eq.'05') then
-                !    FR(i) = 146_wp+5000000*FR(i)
-                !else if (inputMVC.eq.'70') then
-                !    FR(i) = 700_wp+10000000*FR(i)
-                !end if
-            else if (inputParam.eq.'d') then
-                if (inputMVC.eq.'05') then
-                    FR(i) = 368_wp+5000000*FR(i)
-                else if (inputMVC.eq.'70') then
-                    FR(i) = 1200_wp+10000000*FR(i)
-                end if
-            else if (inputParam.eq.'h') then
-                if (inputMVC.eq.'05') then
-                    FR(i) = 210_wp+5000000*FR(i)
-                else if (inputMVC.eq.'70') then
-                    FR(i) = 830_wp+10000000*FR(i)
-                end if
-            endif
-        end do
-    close(1)
+    if (inputParam.eq.'s') then 
+        ! DCI+IN (noise strategy)
+        FR(:) = 25_wp + 25_wp*sin(2*pi*10*t*1e-3)!square wave was 52.5_wp + 52.5_wp*sin(2*pi*10*t*1e-3)
+        ! DCI+IN (descending command strategy)
+        !if (inputMVC.eq.'05') then
+        !    FR(:) = 250_wp + (37.5_wp + 37.5_wp*sin(2*pi*10*t*1e-3))
+        !else if (inputMVC.eq.'70') then
+        !    FR(:) = 950_wp + (75_wp + 75_wp*sin(2*pi*10*t*1e-3))
+        !end if
+    else if (inputParam.eq.'o') then
+        ! DCI+IN (noise strategy)
+        FR(:) = 25_wp + 25_wp*sin(2*pi*10*t*1e-3)!square wave was 52.5_wp + 52.5_wp*sin(2*pi*10*t*1e-3)
+        ! DCI+IN (descending command strategy)
+        !if (inputMVC.eq.'05') then
+        !    FR(:) = 146_wp + (37.5_wp + 37.5_wp*sin(2*pi*10*t*1e-3))
+        !else if (inputMVC.eq.'70') then
+        !    FR(:) = 685_wp + (75_wp + 75_wp*sin(2*pi*10*t*1e-3))
+        !end if
+    else if (inputParam.eq.'d') then
+        if (inputMVC.eq.'05') then
+            FR(:) = 368_wp + (37.5_wp + 37.5_wp*sin(2*pi*10*t*1e-3))
+        else if (inputMVC.eq.'70') then
+            FR(:) = 1200_wp + (75_wp + 75_wp*sin(2*pi*10*t*1e-3))
+        end if
+    else if (inputParam.eq.'h') then
+        if (inputMVC.eq.'05') then
+            FR(:) = 200_wp + (37.5_wp + 37.5_wp*sin(2*pi*10*t*1e-3))
+        else if (inputMVC.eq.'70') then
+            FR(:) = 815_wp + (75_wp + 75_wp*sin(2*pi*10*t*1e-3))
+        end if
+    endif
 
     ! DCI+IN (noise strategy)
     if (inputParam.eq.'s') then
-        noiseFR = 1000_wp
+        noiseFR = 1040_wp
     else if (inputParam.eq.'o') then
-        noiseFR = 625_wp
+        noiseFR = 575_wp
     endif
     ! DCI+IN (descending command strategy), chosen arbitrarily to be small, after FR definition
     !noiseFR = 90_wp
