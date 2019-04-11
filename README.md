@@ -10,3 +10,8 @@ where $MKLDIR is the directory where the MKL library was installed. Use the opti
 
 After that, you can run any of the examples in the Examples directory. Each example is contained in one directory, where you can find a file make.sh and a file makewithintel.sh . The former compiles the program using the GNU Fortran 8.1 compiler and the latter compiles the program using the ifort (Intel Fortran Compiler).  
 
+# Troubleshooting
+* Unexpected error with injected current
+If motoneurones fire action potentials in the very first seconds of simulation, some errors might occur. This is caused by an implementation feature, so it is advisible to inject currents only after some time after the start of the simulation.
+* Motoneurons stop firing when after first action potential
+This problem can appear in simulations that require the use of reset. Also note that synaptic noises also need to be reseted.
