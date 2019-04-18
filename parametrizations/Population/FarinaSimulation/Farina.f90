@@ -147,11 +147,12 @@ program Farina
     !*************** Preparing proper input
     !*************************************
     if (inputParam.eq.'s') then 
-        FR(:) = 1150._wp
+        FR(:) = 230._wp
     else if (inputParam.eq.'o') then
-        FR(:) = 1110._wp
+        FR(:) = 141._wp
     endif
     noiseFR = 90_wp
+    GammaOrder = 7
 
     !*************************************
     !*************** Running simulation
@@ -238,10 +239,10 @@ program Farina
     !    interneuronPools(1)%poolSomaSpikes(:,2), 'with points pt 5 lc rgb "#0008B0"')
     !end if
 
-    call gp%title('Descending command')
-    call gp%xlabel('t (ms))')
-    call gp%ylabel('descending command rate (pps)')
-    call gp%plot(t, FR, 'with line lw 2 lc rgb "#0008B0"')
+    !call gp%title('Descending command')
+    !call gp%xlabel('t (ms))')
+    !call gp%ylabel('descending command rate (pps)')
+    !call gp%plot(t, FR, 'with line lw 2 lc rgb "#0008B0"')
 
     !call gp%title('Independent noise')
     !call gp%xlabel('t (ms))')
@@ -264,7 +265,7 @@ program Farina
     call gp%ylabel('Volts (mV)')
     call gp%plot(t, Vs(1,:), 'with line lw 2 lc rgb "#0008B0"')
 
-    call gp%title('Soma voltage of MN 1')
+    call gp%title('Soma voltage of MN 5')
     call gp%xlabel('t (ms))')
     call gp%ylabel('Volts (mV)')
     call gp%plot(t, Vs(5,:), 'with line lw 2 lc rgb "#0008B0"')

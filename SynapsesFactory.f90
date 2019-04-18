@@ -1376,7 +1376,8 @@ module SynapsesFactoryModule
                 ! Iterate over groups receiving synaptic noise, i.e. RC, MN, etc
                 do synapseIn = 1, size(NoiseSynapsesOut%item)
                     ! Using a pointer to properly apply noise to all pools involved
-                    ! TODO other pools, like AF, SOL, etc
+                    ! TODO other pools, like AF, SOL, etc. N.B. If there is no MG pool
+                    ! in the simulation, this should not work
                     if (trim(NoiseSynapsesOut%item(synapseIn)%item(1)%string).eq.'RC_ext') then
                         noiseTarget => interneuronPools
                     else if (trim(NoiseSynapsesOut%item(synapseIn)%item(1)%string).eq.'MG') then
