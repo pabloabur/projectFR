@@ -46,7 +46,7 @@ program FrequencyAnalysis
     character(len = 80) :: pool, group
     character(len = 100) :: filename = '../../../conf.rmto'
     character(len = 100) :: path = '/home/pablo/osf/Master-Thesis-Data/population/'
-    character(len = 100) :: folderName = 'psd/cancel/trial1/'
+    character(len = 100) :: folderName = 'psd/cancel/trial2/'
     type(MotorUnitPool), dimension(:), allocatable, target :: motorUnitPools
     type(NeuralTract), dimension(:), allocatable :: neuralTractPools    
     type(InterneuronPool), dimension(:), allocatable, target :: interneuronPools    
@@ -319,7 +319,7 @@ program FrequencyAnalysis
     filename = trim(path) // trim(folderName) // "gsyn" // trim(inputParam) // ".dat"
     open(1, file=filename, status = 'replace')
     do i = 1, timeLength
-        write(1, '(F15.2, 1X, F15.6, 1X, F15.6)') t(i), synConductMG(i), synConductSOL(i)
+        write(1, '(F15.2, 1X, F15.6, 1X, F15.6)') t(i), dendPotMG(i), dendPotSOL(i)
     end do
     close(1)
 
