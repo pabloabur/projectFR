@@ -37,7 +37,7 @@ program Farina
     real(wp), parameter :: pi = 4 * atan(1.0_wp)    
     integer :: timeLength
     integer :: i, j, k
-    real(wp), dimension(:), allocatable :: t
+    real(wp), dimension(:), allocatable :: dendPotMG, t
     real(wp) :: tic, toc
     type(gpf) :: gp
     real(wp), dimension(:), allocatable :: FR
@@ -45,7 +45,7 @@ program Farina
     character(len = 80) :: pool, group
     character(len = 100) :: filename = '../../conf.rmto'
     character(len = 100) :: path = '/home/pablo/osf/Master-Thesis-Data/population/'
-    character(len = 100) :: folderName = 'farina/trial1/'
+    character(len = 100) :: folderName = 'farina/trial2/'
     type(MotorUnitPool), dimension(:), allocatable, target :: motorUnitPools
     type(NeuralTract), dimension(:), allocatable :: neuralTractPools    
     type(InterneuronPool), dimension(:), allocatable, target :: interneuronPools    
@@ -89,8 +89,7 @@ program Farina
     !******* Changing basic parameters
     !*************************************
     conf = Configuration(filename)
-    ! TODO determine appropriate duration
-    conf%simDuration_ms = 1000
+    conf%simDuration_ms = 10000
 
     !!!!!!!!!!!!!!!! Independent noise
     paramTag = 'NoiseGammaOrder_MG'
@@ -135,6 +134,7 @@ program Farina
     
     allocate(t(timeLength))
     allocate(FR(timeLength))
+    allocate(dendPotMG(timeLength))
     allocate(force(timeLength))
     allocate(Vs(poolSize, timeLength)) ! For all MNs in simulation
 
@@ -146,13 +146,15 @@ program Farina
     !*************************************
     !*************** Preparing proper input
     !*************************************
-    if (inputParam.eq.'s') then 
-        FR(:) = 230._wp
-    else if (inputParam.eq.'o') then
-        FR(:) = 141._wp
-    endif
-    noiseFR = 90_wp
+    noiseFR = 50_wp
     GammaOrder = 7
+    if (inputParam.ne.'o') then
+        FR(:) = 438_wp + 2.5_wp*sin(2*pi*0.5_wp*t*1e-3) + &
+                1.25_wp*sin(2*pi*1._wp*t*1e-3) + 0.625_wp*sin(2*pi*2.5_wp*t*1e-3)
+    else
+        FR(:) = 300_wp + 2.5_wp*sin(2*pi*0.5_wp*t*1e-3) + &
+                1.25_wp*sin(2*pi*1._wp*t*1e-3) + 0.625_wp*sin(2*pi*2.5_wp*t*1e-3)
+    endif
 
     !*************************************
     !*************** Running simulation
@@ -185,6 +187,7 @@ program Farina
             do k = 1, poolSize
                 Vs(k,i) = motorUnitPools(j)%v_mV(2*(k))
             end do
+            dendPotMG(i) = motorUnitPools(j)%v_mV(2*(40)-1)
         end do
     end do
 
@@ -213,10 +216,11 @@ program Farina
     close(1)
 
     !! Saving force
-    filename = trim(path) // trim(folderName) // "force" // trim(inputParam) // ".dat"
+    filename = trim(path) // trim(folderName) // "inout" // trim(inputParam) // ".dat"
     open(1, file=filename, status = 'replace')
     do i = 1, timeLength
-           write(1, '(F15.2, 1X, F15.6)') t(i), force(i)
+           write(1, '(F15.2, 1X, F15.6, 1X, F15.6, 1X, F15.6)') t(i), &
+               dendPotMG(i), force(i), FR(i)
     end do
     close(1)
 
@@ -260,34 +264,20 @@ program Farina
     call gp%plot(motorUnitPools(1)%poolSomaSpikes(:,1), &
     motorUnitPools(1)%poolSomaSpikes(:,2), 'with points pt 5 lc rgb "#0008B0"')
 
-    call gp%title('Soma voltage of MN 1')
-    call gp%xlabel('t (ms))')
-    call gp%ylabel('Volts (mV)')
-    call gp%plot(t, Vs(1,:), 'with line lw 2 lc rgb "#0008B0"')
-
-    call gp%title('Soma voltage of MN 5')
-    call gp%xlabel('t (ms))')
-    call gp%ylabel('Volts (mV)')
-    call gp%plot(t, Vs(5,:), 'with line lw 2 lc rgb "#0008B0"')
-
-    !call gp%title('force')
+    !call gp%title('Soma voltage of MN 1')
     !call gp%xlabel('t (ms))')
-    !call gp%ylabel('force (N)')
-    !call gp%plot(t, motorUnitPools(1)%NoHillMuscle%force, 'with line lw 2 lc rgb "#0008B0"')
+    !call gp%ylabel('Volts (mV)')
+    !call gp%plot(t, Vs(1,:), 'with line lw 2 lc rgb "#0008B0"')
 
-    !*************************************
-    !*************** Reset elements
-    !*************************************
-    !if (inputParam.eq.'s') then
-    !    call interneuronPools(1)%reset()
-    !endif
-    !do j = 1, size(motorUnitPools)
-    !    call motorUnitPools(j)%reset()
-    !end do
-    !call neuralTractPools(1)%reset()
-    !do j = 1, size(synapticNoisePools)
-    !    call synapticNoisePools(j)%reset()
-    !end do
+    !call gp%title('Soma voltage of MN 5')
+    !call gp%xlabel('t (ms))')
+    !call gp%ylabel('Volts (mV)')
+    !call gp%plot(t, Vs(5,:), 'with line lw 2 lc rgb "#0008B0"')
+
+    call gp%title('force')
+    call gp%xlabel('t (ms))')
+    call gp%ylabel('force (N)')
+    call gp%plot(t, motorUnitPools(1)%NoHillMuscle%force, 'with line lw 2 lc rgb "#0008B0"')
 
     call cpu_time(toc)
     print '(F15.6, A)', toc - tic, ' seconds'
