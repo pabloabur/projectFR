@@ -45,7 +45,7 @@ program Farina
     character(len = 80) :: pool, group
     character(len = 100) :: filename = '../../conf.rmto'
     character(len = 100) :: path = '/home/pablo/osf/Master-Thesis-Data/population/'
-    character(len = 100) :: folderName = 'farina/trial1/'
+    character(len = 100) :: folderName = 'farina/trial2/'
     type(MotorUnitPool), dimension(:), allocatable, target :: motorUnitPools
     type(NeuralTract), dimension(:), allocatable :: neuralTractPools    
     type(InterneuronPool), dimension(:), allocatable, target :: interneuronPools    
@@ -214,13 +214,15 @@ program Farina
             motorUnitPools(1)%poolSomaSpikes(i,2)
     end do
     close(1)
-    filename = trim(path) // trim(folderName) // "inspike" // trim(inputParam) // ".dat"
-    open(1, file=filename, status = 'replace')
-    do i = 1, size(interneuronPools(1)%poolSomaSpikes, 1)
-        write(1, '(F15.6, 1X, F15.1)') interneuronPools(1)%poolSomaSpikes(i,1), &
-            interneuronPools(1)%poolSomaSpikes(i,2)
-    end do
-    close(1)
+    if (inputParam.ne.'o') then
+        filename = trim(path) // trim(folderName) // "inspike" // trim(inputParam) // ".dat"
+        open(1, file=filename, status = 'replace')
+        do i = 1, size(interneuronPools(1)%poolSomaSpikes, 1)
+            write(1, '(F15.6, 1X, F15.1)') interneuronPools(1)%poolSomaSpikes(i,1), &
+                interneuronPools(1)%poolSomaSpikes(i,2)
+        end do
+        close(1)
+    endif
 
     !! Saving force
     filename = trim(path) // trim(folderName) // "inout" // trim(inputParam) // ".dat"
@@ -242,13 +244,13 @@ program Farina
     !*************************************
     !*************** Plotting
     !*************************************
-    if (inputParam.eq.'s') then
-        call gp%title('RC spike instants at the soma')
-        call gp%xlabel('t (s))')
-        call gp%ylabel('Interneuron index')
-        call gp%plot(interneuronPools(1)%poolSomaSpikes(:,1), &
-        interneuronPools(1)%poolSomaSpikes(:,2), 'with points pt 5 lc rgb "#0008B0"')
-    end if
+    !if (inputParam.eq.'s') then
+    !    call gp%title('RC spike instants at the soma')
+    !    call gp%xlabel('t (s))')
+    !    call gp%ylabel('Interneuron index')
+    !    call gp%plot(interneuronPools(1)%poolSomaSpikes(:,1), &
+    !    interneuronPools(1)%poolSomaSpikes(:,2), 'with points pt 5 lc rgb "#0008B0"')
+    !end if
 
     !call gp%title('Descending command')
     !call gp%xlabel('t (ms))')
@@ -266,15 +268,15 @@ program Farina
     !call gp%plot(motorUnitPools(1)%poolSomaSpikes(:,1), &
     !motorUnitPools(1)%poolSomaSpikes(:,2), 'with points pt 5 lc rgb "#0008B0"')
 
-    call gp%title('Soma voltage')
-    call gp%xlabel('t (ms))')
-    call gp%ylabel('Volts (mV)')
-    call gp%plot(t, Vs(40,:), 'with line lw 2 lc rgb "#0008B0"')
+    !call gp%title('Soma voltage')
+    !call gp%xlabel('t (ms))')
+    !call gp%ylabel('Volts (mV)')
+    !call gp%plot(t, Vs(40,:), 'with line lw 2 lc rgb "#0008B0"')
 
-    call gp%title('Dendrite voltage')
-    call gp%xlabel('t (ms))')
-    call gp%ylabel('Volts (mV)')
-    call gp%plot(t, dendPotMG, 'with line lw 2 lc rgb "#0008B0"')
+    !call gp%title('Dendrite voltage')
+    !call gp%xlabel('t (ms))')
+    !call gp%ylabel('Volts (mV)')
+    !call gp%plot(t, dendPotMG, 'with line lw 2 lc rgb "#0008B0"')
 
     !call gp%title('force')
     !call gp%xlabel('t (ms))')
