@@ -44,8 +44,8 @@ program Farina
     integer :: GammaOrder 
     character(len = 80) :: pool, group
     character(len = 100) :: filename = '../../conf.rmto'
-    character(len = 100) :: path = '/home/pablo/osf/Master-Thesis-Data/population/'
-    character(len = 100) :: folderName = 'farina/trial2/'
+    character(len = 100) :: path = '/home/pablo/git/CSTAnalysis/Data/'
+    character(len = 100) :: folderName
     type(MotorUnitPool), dimension(:), allocatable, target :: motorUnitPools
     type(NeuralTract), dimension(:), allocatable :: neuralTractPools    
     type(InterneuronPool), dimension(:), allocatable, target :: interneuronPools    
@@ -59,6 +59,7 @@ program Farina
     real(wp), dimension(:,:), allocatable :: Vs
     real(wp) :: dt
     real(wp) :: tf
+    real(wp) :: phase
     logical, parameter :: probDecay = .false.
     integer :: poolSize = 300 ! Quantify of used MNs
     ! Noise parameters
@@ -98,6 +99,23 @@ program Farina
     call conf%changeConfigurationParameter(paramTag, value1, value2)
     paramTag = 'gmax:Noise>MG-@dendrite|excitatory'
     value1 = noiseg
+    value2 = ''
+    call conf%changeConfigurationParameter(paramTag, value1, value2)
+
+    !*************************************
+    !******* Open loop case
+    !*************************************
+    ! Opening the loop
+    paramTag = 'Con:MG-S>RC_ext-@soma|excitatory'
+    value1 = '0'
+    value2 = ''
+    call conf%changeConfigurationParameter(paramTag, value1, value2)
+    paramTag = 'Con:MG-FR>RC_ext-@soma|excitatory'
+    value1 = '0'
+    value2 = ''
+    call conf%changeConfigurationParameter(paramTag, value1, value2)
+    paramTag = 'Con:MG-FF>RC_ext-@soma|excitatory'
+    value1 = '0'
     value2 = ''
     call conf%changeConfigurationParameter(paramTag, value1, value2)
 
@@ -146,20 +164,27 @@ program Farina
     !*************************************
     !*************** Preparing proper input
     !*************************************
-    noiseFR = 50_wp
+    noiseFR = 0_wp
     GammaOrder = 7
     if (inputParam.ne.'o') then
-        FR(:) = 438_wp + 10_wp*sin(2*pi*0.5_wp*t*1e-3) + &
-                5_wp*sin(2*pi*1._wp*t*1e-3) + 2.5_wp*sin(2*pi*2.5_wp*t*1e-3)
+        FR(:) = 438_wp
     else
-        FR(:) = 300_wp + 10_wp*sin(2*pi*0.5_wp*t*1e-3) + &
-                5_wp*sin(2*pi*1._wp*t*1e-3) + 2.5_wp*sin(2*pi*2.5_wp*t*1e-3)
+        FR(:) = 300_wp
     endif
+    do i = 1, 40
+        call random_number(phase)
+        FR(:) = FR(:) + 2_wp*sin(2*pi*0.5_wp*i*t*1e-3 + phase*360_wp)
+    end do
 
     !*************************************
     !*************** Running simulation
     !*************************************
     do i = 1, size(t)        
+        ! Inject current to RC
+        if (inputParam.ne.'o') then
+            interneuronPools(1)%iInjected(:) = 3.5_wp
+        endif
+
         ! Updating elements
         do j = 1, size(neuralTractPools)
             call neuralTractPools(j)%atualizePool(t(i), FR(i), GammaOrder)
@@ -169,7 +194,7 @@ program Farina
             if (synapticNoisePools(j)%pool.eq.'MG') then
                 call synapticNoisePools(j)%atualizePool(t(i), noiseFR)
             else if (synapticNoisePools(j)%pool.eq.'RC_ext') then
-                call synapticNoisePools(j)%atualizePool(t(i), 7.0_wp)
+                call synapticNoisePools(j)%atualizePool(t(i), 0.0_wp)
             else
                 print *, 'Error assigning noise value to pool'
                 stop (1)
@@ -205,7 +230,7 @@ program Farina
     !*************** Saving data
     !*************************************
     ! Saving spikes
-    folderName = trim(folderName) // 'trial' // trim(inputTrial) // '/'
+    folderName = 'trial' // trim(inputTrial) // '/'
 
     filename = trim(path) // trim(folderName) // "spike" // trim(inputParam) // ".dat"
     open(1, file=filename, status = 'replace')
