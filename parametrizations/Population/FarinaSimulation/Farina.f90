@@ -44,7 +44,8 @@ program Farina
     integer :: GammaOrder 
     character(len = 80) :: pool, group
     character(len = 100) :: filename = '../../conf.rmto'
-    character(len = 100) :: path = '/home/pablo/git/CSTAnalysis/Data/'
+    ! ol or cl
+    character(len = 100) :: path = '/home/pablo/git/rmtoAnalysis/CSTAnalysis/Data/cl/'
     character(len = 100) :: folderName
     type(MotorUnitPool), dimension(:), allocatable, target :: motorUnitPools
     type(NeuralTract), dimension(:), allocatable :: neuralTractPools    
@@ -103,21 +104,21 @@ program Farina
     call conf%changeConfigurationParameter(paramTag, value1, value2)
 
     !*************************************
-    !******* Open loop case
+    !******* ol only
     !*************************************
     ! Opening the loop
-    paramTag = 'Con:MG-S>RC_ext-@soma|excitatory'
-    value1 = '0'
-    value2 = ''
-    call conf%changeConfigurationParameter(paramTag, value1, value2)
-    paramTag = 'Con:MG-FR>RC_ext-@soma|excitatory'
-    value1 = '0'
-    value2 = ''
-    call conf%changeConfigurationParameter(paramTag, value1, value2)
-    paramTag = 'Con:MG-FF>RC_ext-@soma|excitatory'
-    value1 = '0'
-    value2 = ''
-    call conf%changeConfigurationParameter(paramTag, value1, value2)
+    !paramTag = 'Con:MG-S>RC_ext-@soma|excitatory'
+    !value1 = '0'
+    !value2 = ''
+    !call conf%changeConfigurationParameter(paramTag, value1, value2)
+    !paramTag = 'Con:MG-FR>RC_ext-@soma|excitatory'
+    !value1 = '0'
+    !value2 = ''
+    !call conf%changeConfigurationParameter(paramTag, value1, value2)
+    !paramTag = 'Con:MG-FF>RC_ext-@soma|excitatory'
+    !value1 = '0'
+    !value2 = ''
+    !call conf%changeConfigurationParameter(paramTag, value1, value2)
 
     print *, '*************************************'
     print *, '************ Building neural elements'
@@ -164,7 +165,7 @@ program Farina
     !*************************************
     !*************** Preparing proper input
     !*************************************
-    noiseFR = 0_wp
+    noiseFR = 0_wp ! remove previous 50 value to make things simpler
     GammaOrder = 7
     if (inputParam.ne.'o') then
         FR(:) = 438_wp
@@ -180,10 +181,10 @@ program Farina
     !*************** Running simulation
     !*************************************
     do i = 1, size(t)        
-        ! Inject current to RC
-        if (inputParam.ne.'o') then
-            interneuronPools(1)%iInjected(:) = 3.5_wp
-        endif
+        ! Inject current to RC (ol only)
+        !if (inputParam.ne.'o') then
+        !    interneuronPools(1)%iInjected(:) = 3.5_wp
+        !endif
 
         ! Updating elements
         do j = 1, size(neuralTractPools)
@@ -194,7 +195,8 @@ program Farina
             if (synapticNoisePools(j)%pool.eq.'MG') then
                 call synapticNoisePools(j)%atualizePool(t(i), noiseFR)
             else if (synapticNoisePools(j)%pool.eq.'RC_ext') then
-                call synapticNoisePools(j)%atualizePool(t(i), 0.0_wp)
+                ! 0 if ol, 7 if cl
+                call synapticNoisePools(j)%atualizePool(t(i), 7.0_wp)
             else
                 print *, 'Error assigning noise value to pool'
                 stop (1)
@@ -218,6 +220,7 @@ program Farina
 
     call motorUnitPools(1)%listSpikes()
     call motorUnitPools(1)%getMotorUnitPoolEMG()
+    call neuralTractPools(1)%listSpikes()
     if (inputParam.ne.'o') then
         call interneuronPools(1)%listSpikes()
     endif
@@ -249,14 +252,22 @@ program Farina
         close(1)
     endif
 
-    !! Saving force
-    filename = trim(path) // trim(folderName) // "inout" // trim(inputParam) // ".dat"
+    filename = trim(path) // trim(folderName) // "input" // trim(inputParam) // ".dat"
     open(1, file=filename, status = 'replace')
-    do i = 1, timeLength
-           write(1, '(F15.2, 1X, F15.6, 1X, F15.6, 1X, F15.6)') t(i), &
-               dendPotMG(i), force(i), FR(i)
+    do i = 1, size(motorUnitPools(1)%poolSomaSpikes, 1)
+        write(1, '(F15.6, 1X, F15.1)') neuralTractPools(1)%poolTerminalSpikes(i,1), &
+            neuralTractPools(1)%poolTerminalSpikes(i,2)
     end do
     close(1)
+
+    !! Saving force
+    !filename = trim(path) // trim(folderName) // "inout" // trim(inputParam) // ".dat"
+    !open(1, file=filename, status = 'replace')
+    !do i = 1, timeLength
+    !       write(1, '(F15.2, 1X, F15.6, 1X, F15.6, 1X, F15.6)') t(i), &
+    !           dendPotMG(i), force(i), FR(i)
+    !end do
+    !close(1)
 
     !! Saving input conductance and EMG
     !filename = trim(path) // trim(folderName) // "g_emg" // trim(inputParam) // ".dat"

@@ -2,10 +2,10 @@
 
 ./make.sh
 
-for simType in low high; do # should be simType in max low high for complete simulation
-    for trial in {6..10}; do
+for simType in max; do # should be simType in max low high for complete simulation
+    for trial in {11..20}; do
         echo "------trial $trial"
-        for mod in d s h o; do
+        for mod in s o; do
             ./modulatingRC $simType $mod $trial
         done
     done

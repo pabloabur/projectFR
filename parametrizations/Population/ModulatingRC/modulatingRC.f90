@@ -44,8 +44,8 @@ program modulatingRC
     integer :: GammaOrder 
     character(len = 80) :: pool, group
     character(len = 100) :: filename = '../../conf.rmto'
-    character(len = 100) :: path = '/home/pablo/osf/Master-Thesis-Data/population/'
-    character(len = 100) :: folderName = 'modulation/'
+    character(len = 100) :: path = '/home/pablo/git/rmtoAnalysis/forceDevel/Data/'
+    character(len = 100) :: folderName
     type(MotorUnitPool), dimension(:), allocatable, target :: motorUnitPools
     type(NeuralTract), dimension(:), allocatable :: neuralTractPools    
     type(InterneuronPool), dimension(:), allocatable, target :: interneuronPools    
@@ -126,45 +126,6 @@ program modulatingRC
         print *, '- low'
         stop (1)
     endif
-
-    !Changing configuration file
-    paramTag = 'Number_CMExt'
-    value1 = nCM
-    value2 = ''
-    call conf%changeConfigurationParameter(paramTag, value1, value2)
-    paramTag = 'MUnumber_MG-S'
-    value1 = nS
-    value2 = ''
-    call conf%changeConfigurationParameter(paramTag, value1, value2)
-    paramTag = 'MUnumber_MG-FR'
-    value1 = nFR
-    value2 = ''
-
-    !Changing configuration file
-    paramTag = 'Number_CMExt'
-    value1 = nCM
-    value2 = ''
-    call conf%changeConfigurationParameter(paramTag, value1, value2)
-    paramTag = 'MUnumber_MG-S'
-    value1 = nS
-    value2 = ''
-    call conf%changeConfigurationParameter(paramTag, value1, value2)
-    paramTag = 'MUnumber_MG-FR'
-    value1 = nFR
-    value2 = ''
-    call conf%changeConfigurationParameter(paramTag, value1, value2)
-    paramTag = 'MUnumber_MG-FF'
-    value1 = nFF
-    value2 = ''
-    call conf%changeConfigurationParameter(paramTag, value1, value2)
-    paramTag = 'Number_RC_ext'
-    value1 = nRC
-    value2 = ''
-    call conf%changeConfigurationParameter(paramTag, value1, value2)
-    paramTag = 'Number_MG'
-    value1 = nMN
-    value2 = ''
-    call conf%changeConfigurationParameter(paramTag, value1, value2)
 
     if (inputParam.eq.'high') then
         GammaOrder = 1
@@ -273,11 +234,11 @@ program modulatingRC
         if (inputMod.eq.'d') then
             FR(:) = 2190_wp ! strong
         else if (inputMod.eq.'s') then
-            FR(:) = 1650_wp ! medium
+            FR(:) = 480_wp!1650_wp ! medium
         else if (inputMod.eq.'h') then
             FR(:) = 1450_wp ! weak
         else if (inputMod.eq.'o') then
-            FR(:) = 1245_wp
+            FR(:) = 315_wp!1245_wp
         endif
     else if (inputParam.eq.'high') then
         !!!!!!!!! 70% MVC
@@ -339,61 +300,61 @@ program modulatingRC
         force(i) = motorUnitPools(1)%NoHillMuscle%force(i)
     end do
 
-    !****************************
-    !******** Measuring synchrony
-    !****************************
-    ! Synchrony measure computed according to Golomb, Hansel and Mato (2001)
-    ! Global part
-    ! Gathering only firing MNs
-    allocate(firingMNsIdx(1))
-    allocate(auxFiring(1))
-    k = 1
-    firingMNsIdx(1) = int(motorUnitPools(1)%poolSomaSpikes(1,2))
-    do i = 2, size(motorUnitPools(1)%poolSomaSpikes(:,2))
-        if (any(firingMNsIdx == int(motorUnitPools(1)%poolSomaSpikes(i,2)))) cycle
-        ! Dynamically allocate new values
-        k = k + 1
-        do j = 1, size(auxFiring)
-            auxFiring(j) = firingMNsIdx(j)
-        end do
-        deallocate(firingMNsIdx)
-        allocate(firingMNsIdx(k))
-        do j = 1, size(auxFiring)
-            firingMNsIdx(j) = auxFiring(j)
-        end do
-        firingMNsIdx(k) = int(motorUnitPools(1)%poolSomaSpikes(i,2))
-        deallocate(auxFiring)
-        allocate(auxFiring(k))
-    end do
-    sampleSize = size(firingMNsIdx)
+    !!****************************
+    !!******** Measuring synchrony
+    !!****************************
+    !! Synchrony measure computed according to Golomb, Hansel and Mato (2001)
+    !! Global part
+    !! Gathering only firing MNs
+    !allocate(firingMNsIdx(1))
+    !allocate(auxFiring(1))
+    !k = 1
+    !firingMNsIdx(1) = int(motorUnitPools(1)%poolSomaSpikes(1,2))
+    !do i = 2, size(motorUnitPools(1)%poolSomaSpikes(:,2))
+    !    if (any(firingMNsIdx == int(motorUnitPools(1)%poolSomaSpikes(i,2)))) cycle
+    !    ! Dynamically allocate new values
+    !    k = k + 1
+    !    do j = 1, size(auxFiring)
+    !        auxFiring(j) = firingMNsIdx(j)
+    !    end do
+    !    deallocate(firingMNsIdx)
+    !    allocate(firingMNsIdx(k))
+    !    do j = 1, size(auxFiring)
+    !        firingMNsIdx(j) = auxFiring(j)
+    !    end do
+    !    firingMNsIdx(k) = int(motorUnitPools(1)%poolSomaSpikes(i,2))
+    !    deallocate(auxFiring)
+    !    allocate(auxFiring(k))
+    !end do
+    !sampleSize = size(firingMNsIdx)
 
-    ! Each line of Vs is the membrane potential of each MN
-    allocate(Vsf(sampleSize, timeLength)) ! For all MNs in simulation
-    do i = 1, sampleSize
-        Vsf(i, :) = Vs(firingMNsIdx(i), :)
-    end do
-    V = sum(Vsf, dim=1)/sampleSize
-    ! Eliminating first 100 ms = n*0.05 ms => n = 2000
-    delta = sum(V(2000:)**2)/size(t(2000:)) - (sum(V(2000:))/size(t(2000:)))**2
+    !! Each line of Vs is the membrane potential of each MN
+    !allocate(Vsf(sampleSize, timeLength)) ! For all MNs in simulation
+    !do i = 1, sampleSize
+    !    Vsf(i, :) = Vs(firingMNsIdx(i), :)
+    !end do
+    !V = sum(Vsf, dim=1)/sampleSize
+    !! Eliminating first 100 ms = n*0.05 ms => n = 2000
+    !delta = sum(V(2000:)**2)/size(t(2000:)) - (sum(V(2000:))/size(t(2000:)))**2
 
-    ! Individual part
-    sumDeltai = 0
-    do i=1, sampleSize
-        sumDeltai = sumDeltai + sum(Vsf(i, 2000:)**2)/size(t(2000:))-&
-            (sum(Vsf(i, 2000:))/size(t(2000:)))**2
-    end do
-    sumDeltai = sumDeltai/sampleSize
+    !! Individual part
+    !sumDeltai = 0
+    !do i=1, sampleSize
+    !    sumDeltai = sumDeltai + sum(Vsf(i, 2000:)**2)/size(t(2000:))-&
+    !        (sum(Vsf(i, 2000:))/size(t(2000:)))**2
+    !end do
+    !sumDeltai = sumDeltai/sampleSize
 
-    ! Synchrony measure
-    sync = delta/sumDeltai
-    print *, '------ Sync coefficient ------'
-    print *, sync
-    print *, '------------------------------'
+    !! Synchrony measure
+    !sync = delta/sumDeltai
+    !print *, '------ Sync coefficient ------'
+    !print *, sync
+    !print *, '------------------------------'
 
     !*************************************
     !*************** Saving data
     !*************************************
-    folderName = trim(folderName) // trim(inputParam) // '/trial' // trim(inputTrial) // '/'
+    folderName = 'trial' // trim(inputTrial) // '/'
 
     filename = trim(path) // trim(folderName) // "force" // trim(inputMod) // ".dat"
     open(1, file=filename, status = 'replace')
@@ -402,10 +363,10 @@ program modulatingRC
     end do
     close(1)
 
-    filename = trim(path) // trim(folderName) // "sync" // trim(inputMod) // ".dat"
-    open(1, file=filename, status = 'replace')
-    write(1, '(F15.8)') sync
-    close(1)
+    !filename = trim(path) // trim(folderName) // "sync" // trim(inputMod) // ".dat"
+    !open(1, file=filename, status = 'replace')
+    !write(1, '(F15.8)') sync
+    !close(1)
 
     ! Saving spikes
     filename = trim(path) // trim(folderName) // "spike" // trim(inputMod) // ".dat"
